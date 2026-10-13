@@ -29,6 +29,7 @@ class NonmemberController extends Controller
     {
         try {
             $validator = Validator::make($request->all(), [
+                'non_member_number' => 'required|string|max:255|unique:nonmembers,non_member_number',
                 'full_name' => 'required|string|max:255',
                 'gender' => 'required|in:Male,Female',
                 'id_card_number' => 'required|string|max:255',
@@ -37,6 +38,8 @@ class NonmemberController extends Controller
                 'employer' => 'required|string|max:255',
                 'work_location' => 'required|string|max:255',
             ], [
+                'non_member_number.required' => 'Non-member number is required',
+                'non_member_number.unique' => 'Non-member number already exists',
                 'full_name.required' => 'Full name is required',
                 'gender.in' => 'Gender must be Male or Female',
                 'id_card_number.required' => 'ID card number is required',

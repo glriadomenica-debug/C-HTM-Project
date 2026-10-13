@@ -27,8 +27,12 @@ class Nonmember extends Model
         ];
     }
 
-    public function loans(): HasMany
+    public function loans()
     {
-        return $this->hasMany(Loan::class, 'non_member_id');
+        return $this->hasMany(
+            Loan::class,
+            'non_member_number',
+            'non_member_number'
+        );
     }
 }
