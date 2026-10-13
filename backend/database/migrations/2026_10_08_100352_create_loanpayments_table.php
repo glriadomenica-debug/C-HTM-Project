@@ -1,3 +1,4 @@
+
 <?php
 
 use Illuminate\Database\Migrations\Migration;
@@ -6,27 +7,19 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('loanpayments', function (Blueprint $table) {
             $table->id();
-            $table->bigInteger('loan_id');
-            $table->foreign('loan_id')->references('id')->on('Loans');
-            $table->decimal('amount');
+            $table->foreignId('loan_id')->constrained('loans')->restrictOnDelete();
+            $table->decimal('amount', 12, 2);
             $table->date('payment_date');
-            $table->enum('payment_method', ["Cash", "Bank Transfer"]);
-            $table->string('description');
-            $table->timestamp('created_at');
-            $table->timestamp('updated_at');
+            $table->enum('payment_method', ['Cash', 'Bank Transfer',]);
+            $table->string('description')->nullable();
+            $table->timestamps();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('loanpayments');

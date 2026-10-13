@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('members', function (Blueprint $table) {
             $table->id();
-            $table->string('member_number');
+            $table->string('member_number')->unique();
             $table->string('full_name');
             $table->enum('gender', ["Male", "Female"]);
             $table->string('id_card_number');
@@ -21,9 +21,8 @@ return new class extends Migration
             $table->string('address');
             $table->string('employer');
             $table->string('work_location');
-            $table->enum('membership_status', ["Active", "Inactive"]);
-            $table->timestamp('created_at');
-            $table->timestamp('updated_at');
+            $table->enum('membership_status', ["Active", "Inactive"])->default("Active");
+            $table->timestamps();
         });
     }
 

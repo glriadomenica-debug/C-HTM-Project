@@ -20,8 +20,7 @@ return new class extends Migration
             $table->string('address');
             $table->string('employer');
             $table->string('work_location');
-            $table->timestamp('created_at');
-            $table->timestamp('updated_at');
+            $table->timestamps();
         });
     }
 
