@@ -11,8 +11,8 @@ return new class extends Migration
     {
         Schema::create('deposits', function (Blueprint $table) {
             $table->id();
-
-            $table->foreignId('member_id')->constrained('members')->restrictOnDelete();
+            $table->string('member_number');
+            $table->foreign('member_number')->references('member_number')->on('members')->restrictOnDelete();
             $table->decimal('amount', 12, 2);
             $table->date('deposit_date');
             $table->enum('deposit_type', ['Initial', 'Regular', 'Additional', 'Withdrawal',]);

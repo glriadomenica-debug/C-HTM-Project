@@ -11,8 +11,10 @@ return new class extends Migration
     {
         Schema::create('loans', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('member_id')->nullable()->constrained('members')->restrictOnDelete();
-            $table->foreignId('non_member_id')->nullable()->constrained('nonmembers')->restrictOnDelete();
+            $table->string('member_number')->nullable();
+            $table->string('non_member_number')->nullable();
+            $table->foreign('member_number')->references('member_number')->on('members')->restrictOnDelete();
+            $table->foreign('non_member_number')->references('non_member_number')->on('nonmembers')->restrictOnDelete();
             $table->date('loan_date');
             $table->decimal('loan_amount', 12, 2);
             $table->timestamps();

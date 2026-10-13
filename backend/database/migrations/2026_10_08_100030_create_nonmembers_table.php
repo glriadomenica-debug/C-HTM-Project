@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('nonmembers', function (Blueprint $table) {
             $table->id();
+            $table->string('non_member_number')->unique();
             $table->string('full_name');
             $table->enum('gender', ["Male", "Female"]);
             $table->string('id_card_number');
