@@ -6,7 +6,6 @@ use App\Helpers\ApiMessage;
 use App\Http\Controllers\Controller;
 use App\Models\Loan;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
 class LoanController extends Controller
@@ -32,38 +31,31 @@ class LoanController extends Controller
 
     public function store(Request $request)
     {
-        try {
-            $validator = Validator::make($request->all(), [
-                'member_id' => 'nullable|integer|exists:members,id',
-                'non_member_id' => 'nullable|integer|exists:nonmembers,id',
-                'loan_date' => 'required|date',
-                'loan_amount' => 'required|numeric|gt:0',
-            ], [
-                'member_id.exists' => 'Selected member does not exist',
-                'non_member_id.exists' => 'Selected nonmember does not exist',
-                'loan_amount.gt' => 'Loan amount must be greater than zero',
-            ]);
+        $validator = Validator::make($request->all(), [
+            'member_number' => 'nullable|string|exists:members,member_number',
+            'non_member_number' => 'nullable|string|exists:nonmembers,non_member_number',
+            'loan_date' => 'required|date',
+            'loan_amount' => 'required|numeric|gt:0',
+        ]);
 
-            $validator->after(function ($validator) use ($request) {
-                $hasMember = $request->filled('member_id');
-                $hasNonmember = $request->filled('non_member_id');
+        $validator->after(function ($validator) use ($request) {
+            $hasMember = $request->filled('member_number');
+            $hasNonmember = $request->filled('non_member_number');
 
-                if ($hasMember === $hasNonmember) {
-                    $validator->errors()->add(
-                        'member_id',
-                        'Select exactly one borrower: a member or a nonmember.'
-                    );
-                }
-            });
-
-            if ($validator->fails()) {
-                return ApiMessage::error($validator->errors(), 400);
+            if ($hasMember === $hasNonmember) {
+                $validator->errors()->add(
+                    'member_number',
+                    'Provide exactly one valid member_number or non_member_number.'
+                );
             }
+        });
 
-            $loan = DB::transaction(function () use ($validator) {
-                return Loan::create($validator->validated());
-            });
+        if ($validator->fails()) {
+            return ApiMessage::error($validator->errors(), 400);
+        }
 
+        try {
+            $loan = Loan::create($validator->validated());
             $loan->load(['member', 'nonmember', 'payments']);
 
             return ApiMessage::success(
@@ -101,46 +93,45 @@ class LoanController extends Controller
 
     public function update(Request $request, string $id)
     {
+        $loan = Loan::find($id);
+
+        if (!$loan) {
+            return ApiMessage::error('Loan not found', 404);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'member_number' => 'sometimes|nullable|string|exists:members,member_number',
+            'non_member_number' => 'sometimes|nullable|string|exists:nonmembers,non_member_number',
+            'loan_date' => 'sometimes|required|date',
+            'loan_amount' => 'sometimes|required|numeric|gt:0',
+        ]);
+
+        $validator->after(function ($validator) use ($request, $loan) {
+            $memberNumber = $request->exists('member_number')
+                ? $request->input('member_number')
+                : $loan->member_number;
+
+            $nonmemberNumber = $request->exists('non_member_number')
+                ? $request->input('non_member_number')
+                : $loan->non_member_number;
+
+            $hasMember = filled($memberNumber);
+            $hasNonmember = filled($nonmemberNumber);
+
+            if ($hasMember === $hasNonmember) {
+                $validator->errors()->add(
+                    'member_number',
+                    'The loan must belong to exactly one member or nonmember.'
+                );
+            }
+        });
+
+        if ($validator->fails()) {
+            return ApiMessage::error($validator->errors(), 400);
+        }
+
         try {
-            $loan = Loan::find($id);
-
-            if (!$loan) {
-                return ApiMessage::error('Loan not found', 404);
-            }
-
-            $validator = Validator::make($request->all(), [
-                'member_id' => 'sometimes|nullable|integer|exists:members,id',
-                'non_member_id' => 'sometimes|nullable|integer|exists:nonmembers,id',
-                'loan_date' => 'sometimes|required|date',
-                'loan_amount' => 'sometimes|required|numeric|gt:0',
-            ]);
-
-            $validator->after(function ($validator) use ($request, $loan) {
-                $memberId = $request->exists('member_id')
-                    ? $request->input('member_id')
-                    : $loan->member_id;
-
-                $nonmemberId = $request->exists('non_member_id')
-                    ? $request->input('non_member_id')
-                    : $loan->non_member_id;
-
-                $hasMember = !empty($memberId);
-                $hasNonmember = !empty($nonmemberId);
-
-                if ($hasMember === $hasNonmember) {
-                    $validator->errors()->add(
-                        'member_id',
-                        'The loan must belong to exactly one member or nonmember.'
-                    );
-                }
-            });
-
-            if ($validator->fails()) {
-                return ApiMessage::error($validator->errors(), 400);
-            }
-
-            $loan->fill($validator->validated());
-            $loan->save();
+            $loan->update($validator->validated());
             $loan->load(['member', 'nonmember', 'payments']);
 
             return ApiMessage::success(

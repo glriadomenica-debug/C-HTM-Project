@@ -10,6 +10,7 @@ class Nonmember extends Model
     protected $table = 'nonmembers';
 
     protected $fillable = [
+        'non_member_number',
         'full_name',
         'gender',
         'id_card_number',

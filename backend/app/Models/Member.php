@@ -28,13 +28,22 @@ class Member extends Model
         ];
     }
 
+
     public function deposits(): HasMany
     {
-        return $this->hasMany(Deposit::class, 'member_id');
+        return $this->hasMany(
+            Deposit::class,
+            'member_number',
+            'member_number'
+        );
     }
 
     public function loans(): HasMany
     {
-        return $this->hasMany(Loan::class, 'member_id');
+        return $this->hasMany(
+            Loan::class,
+            'member_number',
+            'member_number'
+        );
     }
 }

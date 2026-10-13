@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Deposit extends Model
 {
     protected $fillable = [
-        'member_id',
+        'member_number',
         'amount',
         'deposit_date',
         'deposit_type',
@@ -18,7 +18,7 @@ class Deposit extends Model
     protected function casts(): array
     {
         return [
-            'member_id' => 'integer',
+            'member_number' => 'string',
             'amount' => 'decimal:2',
             'deposit_date' => 'date',
         ];
@@ -26,6 +26,10 @@ class Deposit extends Model
 
     public function member(): BelongsTo
     {
-        return $this->belongsTo(Member::class, 'member_id');
+        return $this->belongsTo(
+            Member::class,
+            'member_number',
+            'member_number'
+        );
     }
 }

@@ -9,8 +9,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Loan extends Model
 {
     protected $fillable = [
-        'member_id',
-        'non_member_id',
+        'member_number',
+        'non_member_number',
         'loan_date',
         'loan_amount',
     ];
@@ -18,8 +18,8 @@ class Loan extends Model
     protected function casts(): array
     {
         return [
-            'member_id' => 'integer',
-            'non_member_id' => 'integer',
+            'member_number' => 'string',
+            'non_member_number' => 'string',
             'loan_date' => 'date',
             'loan_amount' => 'decimal:2',
         ];
@@ -27,12 +27,20 @@ class Loan extends Model
 
     public function member(): BelongsTo
     {
-        return $this->belongsTo(Member::class, 'member_id');
+        return $this->belongsTo(
+            Member::class,
+            'member_number',
+            'member_number'
+        );
     }
 
     public function nonmember(): BelongsTo
     {
-        return $this->belongsTo(Nonmember::class, 'non_member_id');
+        return $this->belongsTo(
+            Nonmember::class,
+            'non_member_number',
+            'non_member_number'
+        );
     }
 
     public function payments(): HasMany
