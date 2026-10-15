@@ -8,14 +8,20 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
     public function index()
     {
         try {
-            $user = User::with('role')->get();
-            return ApiMessage::success('Success get all users data', $user, 200);
+            $users = User::with('role')->get();
+
+            return ApiMessage::success(
+                'Success get all users data',
+                $users,
+                200
+            );
         } catch (\Throwable $th) {
             return ApiMessage::error($th->getMessage(), 500);
         }
@@ -25,17 +31,21 @@ class UserController extends Controller
     {
         try {
             $rules = [
-                'role_id' => 'required|exists:roles,id',
+                'role_id' => 'required|integer|exists:roles,id',
                 'name' => 'required|string|max:255',
-                'email' => 'required|email',
+                'email' => 'required|email|unique:users,email',
                 'password' => 'required|string|min:8',
                 'password_confirmation' => 'required|string|same:password',
                 'phone_number' => 'required|string|max:15',
             ];
+
             $messages = [
+                'role_id.required' => 'Role is required',
+                'role_id.exists' => 'Selected role does not exist',
                 'name.required' => 'Name is required',
                 'email.required' => 'Email is required',
                 'email.email' => 'Email must be a valid email address',
+                'email.unique' => 'Email has already been taken',
                 'password.required' => 'Password is required',
                 'password.min' => 'Password must be at least 8 characters',
                 'password_confirmation.required' => 'Password confirmation is required',
@@ -44,7 +54,12 @@ class UserController extends Controller
                 'phone_number.max' => 'Phone number must not exceed 15 characters',
             ];
 
-            $validator = Validator::make($request->all(), $rules, $messages);
+            $validator = Validator::make(
+                $request->all(),
+                $rules,
+                $messages
+            );
+
             if ($validator->fails()) {
                 return ApiMessage::error($validator->errors(), 400);
             }
@@ -61,9 +76,15 @@ class UserController extends Controller
                 $user->save();
 
                 DB::commit();
-                return ApiMessage::success('Success', 'User created successfully', 201);
+
+                return ApiMessage::success(
+                    'Success',
+                    'User created successfully',
+                    201
+                );
             } catch (\Throwable $th) {
                 DB::rollBack();
+
                 return ApiMessage::error($th->getMessage(), 500);
             }
         } catch (\Throwable $th) {
@@ -75,59 +96,89 @@ class UserController extends Controller
     {
         try {
             $user = User::with('role')->find($id);
+
             if (!$user) {
-                return ApiMessage::error('Error', 'User not found', 400);
+                return ApiMessage::error('User not found', 404);
             }
+
             return ApiMessage::success('Success', $user, 200);
         } catch (\Throwable $th) {
-            return ApiMessage::error($th->getMessage(), 400);
+            return ApiMessage::error($th->getMessage(), 500);
         }
     }
 
     public function update(Request $request, string $id)
     {
         try {
+            $user = User::find($id);
+
+            if (!$user) {
+                return ApiMessage::error('User not found', 404);
+            }
+
             $rules = [
-                'name' => 'sometimes|string|max:255',
-                'email' => 'sometimes|email',
-                'password' => 'sometimes|string|min:8',
-                'password_confirmation' => 'sometimes|string|same:password',
-                'phone_number' => 'sometimes|string|max:15',
+                'role_id' => 'sometimes|required|integer|exists:roles,id',
+                'name' => 'sometimes|required|string|max:255',
+                'email' => [
+                    'sometimes',
+                    'required',
+                    'email',
+                    Rule::unique('users', 'email')->ignore($user->id),
+                ],
+                'password' => 'sometimes|required|string|min:8|confirmed',
+                'password_confirmation' => 'sometimes|required_with:password|string',
+                'phone_number' => 'sometimes|required|string|max:15',
             ];
+
             $messages = [
-                'name.string' => 'Name must be a string',
-                'name.max' => 'Name must not exceed 255 characters',
+                'role_id.exists' => 'Selected role does not exist',
+                'name.required' => 'Name cannot be empty',
                 'email.email' => 'Email must be a valid email address',
+                'email.unique' => 'Email has already been taken',
                 'password.min' => 'Password must be at least 8 characters',
-                'password_confirmation.same' => 'Password confirmation must match the password',
+                'password.confirmed' => 'Password confirmation must match the password',
                 'phone_number.max' => 'Phone number must not exceed 15 characters',
             ];
 
-            $validator = Validator::make($request->all(), $rules, $messages);
+            $validator = Validator::make(
+                $request->all(),
+                $rules,
+                $messages
+            );
+
             if ($validator->fails()) {
                 return ApiMessage::error($validator->errors(), 400);
             }
 
-            $user = User::find($id);
-            if (!$user) {
-                return ApiMessage::error('Error', 'User not found', 404);
+            if ($request->has('role_id')) {
+                $user->role_id = $request->role_id;
             }
+
             if ($request->has('name')) {
                 $user->name = $request->name;
             }
+
             if ($request->has('email')) {
                 $user->email = $request->email;
             }
-            if ($request->has('password')) {
+
+            if ($request->filled('password')) {
                 $user->password = bcrypt($request->password);
             }
+
             if ($request->has('phone_number')) {
                 $user->phone_number = $request->phone_number;
             }
+
             $user->save();
-            return ApiMessage::success('User successfully updated', $user, 200);
+
+            return ApiMessage::success(
+                'User successfully updated',
+                $user->load('role'),
+                200
+            );
         } catch (\Throwable $th) {
-            return ApiMessage::error('Error', $th->getMessage(), 400);
+            return ApiMessage::error($th->getMessage(), 500);
         }
     }
 
@@ -135,13 +186,20 @@ class UserController extends Controller
     {
         try {
             $user = User::find($id);
+
             if (!$user) {
-                return ApiMessage::error('Error', 'User not found', 404);
+                return ApiMessage::error('User not found', 404);
             }
+
             $user->delete();
-            return ApiMessage::success('User successfully deleted', null, 200);
+
+            return ApiMessage::success(
+                'User successfully deleted',
+                null,
+                200
+            );
         } catch (\Throwable $th) {
-            return ApiMessage::error('Error', $th->getMessage(), 400);
+            return ApiMessage::error($th->getMessage(), 500);
         }
     }
 }
