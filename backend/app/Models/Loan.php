@@ -13,6 +13,9 @@ class Loan extends Model
         'non_member_number',
         'loan_date',
         'loan_amount',
+        'interest_rate',
+        'interest_amount',
+        'total_amount',
     ];
 
     protected function casts(): array
@@ -22,6 +25,9 @@ class Loan extends Model
             'non_member_number' => 'string',
             'loan_date' => 'date',
             'loan_amount' => 'decimal:2',
+            'interest_rate' => 'decimal:2',
+            'interest_amount' => 'decimal:2',
+            'total_amount' => 'decimal:2',
         ];
     }
 

@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\LoanController;
 use App\Http\Controllers\Api\LoanpaymentController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\AuthenticatedUserSettingsController;
 
 // Authentication
 Route::post('auth/login', [AuthController::class, 'login']);
@@ -34,3 +35,21 @@ Route::apiResource('loans', LoanController::class);
 
 // Loan payments
 Route::apiResource('loanpayments', LoanpaymentController::class);
+
+// User Settings
+Route::middleware('auth:sanctum')->group(function () {
+  Route::get('profile', [
+    AuthenticatedUserSettingsController::class,
+    'show',
+  ]);
+
+  Route::put('profile', [
+    AuthenticatedUserSettingsController::class,
+    'updateProfile',
+  ]);
+
+  Route::put('change-password', [
+    AuthenticatedUserSettingsController::class,
+    'changePassword',
+  ]);
+});
