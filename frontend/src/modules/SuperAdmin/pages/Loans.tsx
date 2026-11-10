@@ -708,13 +708,9 @@ export default function Loan() {
           <div className="flex flex-col justify-between gap-3 border-b border-slate-200 bg-white px-5 py-5 sm:flex-row sm:items-center">
             <div>
               <h2 className="text-lg font-bold text-slate-800">Loan Records</h2>
-              <p className="mt-1 text-sm text-slate-500">
-                Manage loans and view payment records.
-              </p>
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-              {/* Loan Report Button */}
               <button
                 type="button"
                 onClick={() => {
