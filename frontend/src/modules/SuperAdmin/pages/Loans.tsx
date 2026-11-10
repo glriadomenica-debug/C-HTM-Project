@@ -587,18 +587,14 @@ export default function Loan() {
             <p className="mt-2 text-2xl font-bold text-gray-900">
               {loans.length}
             </p>
-            <p className="mt-1 text-xs text-gray-500">Loan records</p>
           </div>
 
           <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
             <p className="text-sm font-medium text-gray-500">
-              Subtotal Loans Amount
+              Total Loans Amount
             </p>
             <p className="mt-2 break-words text-2xl font-bold text-gray-900">
               {formatCurrency(totalPrincipal)}
-            </p>
-            <p className="mt-1 text-xs text-gray-500">
-              Amount borrowed before interest
             </p>
           </div>
 
@@ -607,20 +603,14 @@ export default function Loan() {
             <p className="mt-2 break-words text-2xl font-bold text-amber-700">
               {formatCurrency(totalInterest)}
             </p>
-            <p className="mt-1 text-xs text-gray-500">
-              Combined interest on loans
-            </p>
           </div>
 
           <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
             <p className="text-sm font-medium text-gray-500">
-              Grand Loans Amount
+              Total Loans (incl. Interest)
             </p>
             <p className="mt-2 break-words text-2xl font-bold text-blue-700">
               {formatCurrency(totalLoanAmount)}
-            </p>
-            <p className="mt-1 text-xs text-gray-500">
-              subtotal loans plus interest
             </p>
           </div>
         </div>
