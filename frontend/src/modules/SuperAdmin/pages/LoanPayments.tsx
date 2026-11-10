@@ -985,16 +985,40 @@ export default function LoanPayment() {
                           <button
                             type="button"
                             onClick={() => openEditForm(payment)}
-                            className="rounded-lg border border-gray-300 px-3 py-2 text-xs font-semibold text-gray-700 transition hover:bg-gray-100"
+                            className="px-3 py-2 text-xs font-semibold text-gray-700 transition hover:bg-gray-100"
                           >
-                            Edit
+                            <svg
+                              className="h-7 w-5"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2.8"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="m16.86 4.49 2.65 2.65M4 20l4.5-1 11-11a2.12 2.12 0 0 0-3-3l-11 11L4 20Z"
+                              />
+                            </svg>
                           </button>
                           <button
                             type="button"
                             onClick={() => openDeleteConfirmation(payment)}
-                            className="rounded-lg border border-red-200 px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-50"
+                            className="px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-50"
                           >
-                            Delete
+                            <svg
+                              className="h-7 w-5"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2.8"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M3 6h18m-2 0-1 14H6L5 6m3 0V4h8v2m-7 4v6m4-6v6"
+                              />
+                            </svg>
                           </button>
                         </div>
                       </td>

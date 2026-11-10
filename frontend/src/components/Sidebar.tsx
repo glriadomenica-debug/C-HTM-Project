@@ -52,6 +52,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         },
       ],
     },
+
     {
       title: "Financial Management",
       menus: [
@@ -69,6 +70,11 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           name: "Loan Payments",
           path: "/superadmin/loanpayments",
           icon: "🧾",
+        },
+        {
+          name: "Transactions",
+          path: "/superadmin/transactions",
+          icon: "🔄",
         },
       ],
     },

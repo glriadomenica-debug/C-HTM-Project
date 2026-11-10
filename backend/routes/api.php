@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\LoanpaymentController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\AuthenticatedUserSettingsController;
+use App\Http\Controllers\Api\TransactionController;
 
 // Authentication
 Route::post('auth/login', [AuthController::class, 'login']);
@@ -35,6 +36,16 @@ Route::apiResource('loans', LoanController::class);
 
 // Loan payments
 Route::apiResource('loanpayments', LoanpaymentController::class);
+
+// Cash Accounts
+Route::get('/cash-accounts', [TransactionController::class,  'accounts',]);
+
+// Transactions
+Route::get('/transactions', [TransactionController::class, 'index',]);
+
+Route::post('/transactions', [TransactionController::class,  'store',]);
+
+Route::delete('/transactions/{transaction}', [TransactionController::class,  'destroy',]);
 
 // User Settings
 Route::middleware('auth:sanctum')->group(function () {

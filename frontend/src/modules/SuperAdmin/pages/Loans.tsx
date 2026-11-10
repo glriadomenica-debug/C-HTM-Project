@@ -854,17 +854,41 @@ export default function Loan() {
                             <button
                               type="button"
                               onClick={() => openEditForm(loan)}
-                              className="rounded-lg border border-blue-200 px-3 py-1.5 text-sm font-medium text-blue-700 transition hover:bg-blue-50"
+                              className="px-3 py-1.5 text-sm font-medium text-blue-700 transition hover:bg-blue-50"
                             >
-                              Edit
+                              <svg
+                                className="h-7 w-5"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2.8"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  d="m16.86 4.49 2.65 2.65M4 20l4.5-1 11-11a2.12 2.12 0 0 0-3-3l-11 11L4 20Z"
+                                />
+                              </svg>
                             </button>
 
                             <button
                               type="button"
                               onClick={() => openDeleteConfirmation(loan)}
-                              className="rounded-lg border border-red-200 px-3 py-1.5 text-sm font-medium text-red-700 transition hover:bg-red-50"
+                              className="px-3 py-1.5 text-sm font-medium text-red-700 transition hover:bg-red-50"
                             >
-                              Delete
+                              <svg
+                                className="h-7 w-5"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2.8"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  d="M3 6h18m-2 0-1 14H6L5 6m3 0V4h8v2m-7 4v6m4-6v6"
+                                />
+                              </svg>
                             </button>
                           </div>
                         </td>
