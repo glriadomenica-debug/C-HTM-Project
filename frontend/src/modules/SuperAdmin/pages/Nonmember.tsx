@@ -365,7 +365,7 @@ export default function NonMember() {
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1050px] text-left text-sm">
             <thead className="bg-gray-50 text-xs uppercase tracking-wider text-gray-500">
-              <tr>
+              <tr className="bg-slate-800 text-white">
                 <th className="px-5 py-4 font-semibold">Non-Member No.</th>
                 <th className="px-5 py-4 font-semibold">Full Name</th>
                 <th className="px-5 py-4 font-semibold">ID Card Number</th>

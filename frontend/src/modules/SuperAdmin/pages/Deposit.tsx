@@ -331,7 +331,7 @@ export default function Deposit() {
         <button
           type="button"
           onClick={openCreateForm}
-          className="rounded-lg bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-800"
+          className="rounded-lg bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-800 cursor-pointer"
         >
           + Add Transaction
         </button>
@@ -402,7 +402,7 @@ export default function Deposit() {
           <div className="overflow-x-auto">
             <table className="w-full min-w-[950px] text-left text-sm">
               <thead className="bg-gray-50 text-xs uppercase text-gray-500">
-                <tr>
+                <tr className="bg-slate-800 text-white">
                   <th className="px-5 py-4">Date</th>
                   <th className="px-5 py-4">Member</th>
                   <th className="px-5 py-4">Type</th>

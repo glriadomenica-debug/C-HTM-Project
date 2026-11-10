@@ -314,9 +314,6 @@ export default function Member() {
         <div className="flex flex-col gap-3 border-b border-gray-200 p-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="font-semibold text-gray-900">Member List</h2>
-            <p className="mt-1 text-sm text-gray-500">
-              View, search, update, or delete member records.
-            </p>
           </div>
 
           <div className="relative w-full sm:max-w-xs">
@@ -348,7 +345,7 @@ export default function Member() {
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1100px] text-left text-sm">
             <thead className="bg-gray-50 text-xs uppercase tracking-wider text-gray-500">
-              <tr>
+              <tr className="bg-slate-800 text-white">
                 <th className="px-5 py-4 font-semibold">Member No.</th>
                 <th className="px-5 py-4 font-semibold">Full Name</th>
                 <th className="px-5 py-4 font-semibold">ID Card Number</th>

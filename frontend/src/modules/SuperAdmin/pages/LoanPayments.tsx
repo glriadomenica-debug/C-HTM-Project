@@ -887,7 +887,7 @@ export default function LoanPayment() {
           <div className="overflow-x-auto">
             <table className="min-w-[1050px] w-full text-left text-sm">
               <thead className="bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
-                <tr>
+                <tr className="bg-slate-800 text-white">
                   <th className="px-5 py-3.5 font-semibold">No.</th>
                   <th className="px-5 py-3.5 font-semibold">Borrower</th>
                   <th className="px-5 py-3.5 font-semibold">Payment Date</th>

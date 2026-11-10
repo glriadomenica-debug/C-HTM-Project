@@ -865,7 +865,7 @@ export default function TransactionManagement() {
               <div className="overflow-x-auto">
                 <table className="min-w-max border-collapse text-sm">
                   <thead>
-                    <tr className="bg-gray-100 text-left text-gray-700">
+                    <tr className="bg-slate-800 text-left text-white">
                       <th className="border border-gray-300 px-3 py-3">No</th>
                       <th className="border border-gray-300 px-3 py-3">Data</th>
                       <th className="border border-gray-300 px-3 py-3">
