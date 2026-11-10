@@ -1,0 +1,860 @@
+import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
+import api from "../../../services/api";
+
+interface Payment {
+  id: number;
+  loan_id?: number;
+  amount: number | string;
+  payment_date: string;
+  method?: string;
+  payment_method?: string;
+  description?: string;
+}
+
+interface Loan {
+  id: number;
+  member_number: string | null;
+  non_member_number: string | null;
+  loan_date: string;
+  loan_amount: number | string;
+  interest_rate?: number | string | null;
+  interest_amount?: number | string | null;
+  total_amount?: number | string | null;
+  member?: { full_name: string } | null;
+  nonmember?: { full_name: string } | null;
+  payments?: Payment[];
+}
+
+const number = (value: number | string | null | undefined) => {
+  const result = Number(value ?? 0);
+  return Number.isFinite(result) ? result : 0;
+};
+
+const money = (value: number) =>
+  new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(value);
+
+const date = (value?: string) => {
+  if (!value) return "-";
+
+  const parsed = new Date(`${value.slice(0, 10)}T00:00:00`);
+
+  return Number.isNaN(parsed.getTime())
+    ? value
+    : parsed.toLocaleDateString("en-GB", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      });
+};
+
+const round = (value: number) =>
+  Math.round((value + Number.EPSILON) * 100) / 100;
+
+const getRate = (loan: Loan) => {
+  if (loan.interest_rate != null) {
+    return number(loan.interest_rate);
+  }
+
+  const amount = number(loan.loan_amount);
+
+  if (loan.member_number) {
+    if (amount < 1000) return 4;
+    if (amount < 3000) return 3.5;
+    if (amount < 5000) return 2.75;
+    if (amount < 7500) return 2;
+    if (amount < 10000) return 1.5;
+    return 1;
+  }
+
+  if (amount < 5000) return 5;
+  if (amount < 10000) return 4;
+  return 3.5;
+};
+
+const getInterest = (loan: Loan) => {
+  if (loan.interest_amount != null) {
+    return number(loan.interest_amount);
+  }
+
+  return round((number(loan.loan_amount) * getRate(loan)) / 100);
+};
+
+const getTotal = (loan: Loan) => {
+  if (loan.total_amount != null) {
+    return number(loan.total_amount);
+  }
+
+  return round(number(loan.loan_amount) + getInterest(loan));
+};
+
+const getPaid = (loan: Loan) =>
+  round(
+    (loan.payments ?? []).reduce(
+      (sum, payment) => sum + number(payment.amount),
+      0,
+    ),
+  );
+
+const getBalance = (loan: Loan) =>
+  round(Math.max(0, getTotal(loan) - getPaid(loan)));
+
+const MONTHS = [
+  { value: "01", label: "January" },
+  { value: "02", label: "February" },
+  { value: "03", label: "March" },
+  { value: "04", label: "April" },
+  { value: "05", label: "May" },
+  { value: "06", label: "June" },
+  { value: "07", label: "July" },
+  { value: "08", label: "August" },
+  { value: "09", label: "September" },
+  { value: "10", label: "October" },
+  { value: "11", label: "November" },
+  { value: "12", label: "December" },
+];
+
+export default function LoanReport() {
+  const currentYear = new Date().getFullYear();
+
+  const [loans, setLoans] = useState<Loan[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState("all");
+  const [owner, setOwner] = useState("all");
+
+  // Default to the current month and year.
+  const [selectedMonth, setSelectedMonth] = useState(
+    String(new Date().getMonth() + 1).padStart(2, "0"),
+  );
+  const [selectedYear, setSelectedYear] = useState(String(currentYear));
+
+  const [expanded, setExpanded] = useState<number[]>([]);
+
+  const fetchLoans = useCallback(async () => {
+    setLoading(true);
+    setError("");
+
+    try {
+      const response = await api.get("/loans");
+      const body = response.data;
+      const data = body?.data ?? body;
+
+      if (!Array.isArray(data)) {
+        throw new Error("Invalid loan data");
+      }
+
+      setLoans(data as Loan[]);
+    } catch {
+      setError("Unable to load the loan report. Please try again.");
+      setLoans([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void fetchLoans();
+  }, [fetchLoans]);
+
+  // Available years come from loan records and the current year.
+  const availableYears = useMemo(() => {
+    const years = loans
+      .map((loan) => Number(loan.loan_date?.slice(0, 4)))
+      .filter((year) => Number.isFinite(year) && year > 0);
+
+    return [...new Set([currentYear, ...years])].sort((a, b) => b - a);
+  }, [loans, currentYear]);
+
+  // Filter loans by month, year, borrower, status, and search.
+  const filteredLoans = useMemo(() => {
+    const keyword = search.trim().toLowerCase();
+
+    return loans.filter((loan) => {
+      const name =
+        loan.member?.full_name ??
+        loan.nonmember?.full_name ??
+        "Unknown borrower";
+
+      const borrowerNumber = loan.member_number ?? loan.non_member_number ?? "";
+
+      const isMember = Boolean(loan.member_number);
+      const paid = getPaid(loan);
+      const balance = getBalance(loan);
+      const total = getTotal(loan);
+
+      // Uses loan_date, not payment_date.
+      const loanDate = loan.loan_date?.slice(0, 10) ?? "";
+      const [loanYear, loanMonth] = loanDate.split("-");
+
+      const matchesMonth =
+        selectedMonth === "all" || loanMonth === selectedMonth;
+
+      const matchesYear = selectedYear === "all" || loanYear === selectedYear;
+
+      const matchesSearch =
+        name.toLowerCase().includes(keyword) ||
+        borrowerNumber.toLowerCase().includes(keyword) ||
+        String(loan.id).includes(keyword);
+
+      const matchesOwner =
+        owner === "all" ||
+        (owner === "member" && isMember) ||
+        (owner === "nonmember" && !isMember);
+
+      const matchesStatus =
+        status === "all" ||
+        (status === "paid" && total > 0 && balance <= 0) ||
+        (status === "partial" && paid > 0 && balance > 0) ||
+        (status === "unpaid" && paid <= 0 && balance > 0);
+
+      return (
+        matchesMonth &&
+        matchesYear &&
+        matchesSearch &&
+        matchesOwner &&
+        matchesStatus
+      );
+    });
+  }, [loans, search, owner, status, selectedMonth, selectedYear]);
+
+  // Summary cards follow the filtered loan records.
+  const summary = useMemo(
+    () =>
+      filteredLoans.reduce(
+        (result, loan) => {
+          result.principal += number(loan.loan_amount);
+          result.interest += getInterest(loan);
+          result.total += getTotal(loan);
+          result.paid += getPaid(loan);
+          result.balance += getBalance(loan);
+          result.payments += (loan.payments ?? []).length;
+
+          return result;
+        },
+        {
+          principal: 0,
+          interest: 0,
+          total: 0,
+          paid: 0,
+          balance: 0,
+          payments: 0,
+        },
+      ),
+    [filteredLoans],
+  );
+
+  const toggleExpanded = (id: number) => {
+    setExpanded((current) =>
+      current.includes(id)
+        ? current.filter((item) => item !== id)
+        : [...current, id],
+    );
+  };
+
+  const resetFilters = () => {
+    setSearch("");
+    setSelectedMonth("all");
+    setSelectedYear("all");
+    setOwner("all");
+    setStatus("all");
+  };
+
+  const exportCSV = () => {
+    const rows: (string | number)[][] = [
+      [
+        "Loan ID",
+        "Borrower",
+        "Borrower Number",
+        "Loan Date",
+        "Principal",
+        "Interest Rate (%)",
+        "Interest",
+        "Total Loan",
+        "Total Paid",
+        "Outstanding",
+        "Payment Date",
+        "Payment Amount",
+        "Payment Method",
+        "Description",
+      ],
+    ];
+
+    filteredLoans.forEach((loan) => {
+      const name =
+        loan.member?.full_name ??
+        loan.nonmember?.full_name ??
+        "Unknown borrower";
+
+      const borrowerNumber = loan.member_number ?? loan.non_member_number ?? "";
+
+      const payments = loan.payments ?? [];
+
+      if (payments.length === 0) {
+        rows.push([
+          loan.id,
+          name,
+          borrowerNumber,
+          loan.loan_date,
+          number(loan.loan_amount),
+          getRate(loan),
+          getInterest(loan),
+          getTotal(loan),
+          0,
+          getBalance(loan),
+          "",
+          "",
+          "",
+          "",
+        ]);
+      } else {
+        payments.forEach((payment) => {
+          rows.push([
+            loan.id,
+            name,
+            borrowerNumber,
+            loan.loan_date,
+            number(loan.loan_amount),
+            getRate(loan),
+            getInterest(loan),
+            getTotal(loan),
+            getPaid(loan),
+            getBalance(loan),
+            payment.payment_date,
+            number(payment.amount),
+            payment.method ?? payment.payment_method ?? "",
+            payment.description ?? "",
+          ]);
+        });
+      }
+    });
+
+    const csv = rows
+      .map((row) =>
+        row
+          .map((value) => {
+            const text = String(value ?? "");
+            return `"${text.replace(/"/g, '""')}"`;
+          })
+          .join(","),
+      )
+      .join("\r\n");
+
+    const blob = new Blob(["\uFEFF" + csv], {
+      type: "text/csv;charset=utf-8;",
+    });
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = `chtm-loan-report-${selectedYear}-${selectedMonth}.csv`;
+
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    URL.revokeObjectURL(url);
+  };
+
+  const selectedMonthLabel =
+    selectedMonth === "all"
+      ? "All Months"
+      : (MONTHS.find((month) => month.value === selectedMonth)?.label ??
+        "All Months");
+
+  const reportPeriod =
+    selectedMonth === "all" && selectedYear === "all"
+      ? "All periods"
+      : `${selectedMonthLabel} ${selectedYear === "all" ? "" : selectedYear}`.trim();
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
+      <div className="mx-auto max-w-[1600px] space-y-6">
+        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center print:hidden">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">
+              Loan Payment Report
+            </h1>
+
+            <p className="mt-1 text-sm text-gray-500">
+              Report in {reportPeriod}
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => void fetchLoans()}
+              disabled={loading}
+              className="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:opacity-50 cursor-pointer"
+            >
+              {loading ? "Refreshing..." : "Refresh"}
+            </button>
+
+            <button
+              type="button"
+              onClick={exportCSV}
+              disabled={loading || filteredLoans.length === 0}
+              className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-50 cursor-pointer"
+            >
+              Export CSV
+            </button>
+
+            <button
+              type="button"
+              onClick={() => window.print()}
+              disabled={loading || filteredLoans.length === 0}
+              className="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:opacity-50 cursor-pointer"
+            >
+              Print Report
+            </button>
+          </div>
+        </div>
+
+        <div className="hidden print:block">
+          <h1 className="text-2xl font-bold text-gray-900">
+            C-HTM Loan Payment Report
+          </h1>
+          <p className="mt-1 text-sm text-gray-600">
+            Reporting period: {reportPeriod}
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
+          {[
+            {
+              label: "Loan Records",
+              value: String(filteredLoans.length),
+              color: "text-gray-900",
+            },
+            {
+              label: "Total Principal",
+              value: money(summary.principal),
+              color: "text-gray-900",
+            },
+            {
+              label: "Total Loan Amount",
+              value: money(summary.total),
+              color: "text-blue-700",
+            },
+            {
+              label: "Total Payments",
+              value: money(summary.paid),
+              color: "text-emerald-700",
+            },
+            {
+              label: "Outstanding",
+              value: money(summary.balance),
+              color: "text-rose-600",
+            },
+          ].map((item) => (
+            <div
+              key={item.label}
+              className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm"
+            >
+              <p className="text-sm font-medium text-gray-500">{item.label}</p>
+              <p className={`mt-2 break-words text-xl font-bold ${item.color}`}>
+                {item.value}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        {/* Filters */}
+        <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm print:hidden">
+          <div className="mb-3">
+            <h2 className="font-semibold text-gray-800">Filter Report</h2>
+            <p className="mt-1 text-xs text-gray-500">
+              Filter by loan date, borrower type and payment status.
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-3 md:flex-row md:flex-wrap">
+            {/* Search */}
+            <input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Search borrower, number, or loan ID..."
+              className="min-w-0 flex-1 rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+            />
+
+            {/* Month */}
+            <select
+              aria-label="Filter by month"
+              value={selectedMonth}
+              onChange={(event) => setSelectedMonth(event.target.value)}
+              className="rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm"
+            >
+              <option value="all">All Months</option>
+
+              {MONTHS.map((month) => (
+                <option key={month.value} value={month.value}>
+                  {month.label}
+                </option>
+              ))}
+            </select>
+
+            {/* Year */}
+            <select
+              aria-label="Filter by year"
+              value={selectedYear}
+              onChange={(event) => setSelectedYear(event.target.value)}
+              className="rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm"
+            >
+              <option value="all">All Years</option>
+
+              {availableYears.map((year) => (
+                <option key={year} value={String(year)}>
+                  {year}
+                </option>
+              ))}
+            </select>
+
+            {/* Borrower Type */}
+            <select
+              aria-label="Filter by borrower type"
+              value={owner}
+              onChange={(event) => setOwner(event.target.value)}
+              className="rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm"
+            >
+              <option value="all">All Borrowers</option>
+              <option value="member">Members</option>
+              <option value="nonmember">Non-Members</option>
+            </select>
+
+            {/* Payment Status */}
+            <select
+              aria-label="Filter by payment status"
+              value={status}
+              onChange={(event) => setStatus(event.target.value)}
+              className="rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm"
+            >
+              <option value="all">All Loan Statuses</option>
+              <option value="paid">Fully Paid</option>
+              <option value="partial">Partially Paid</option>
+              <option value="unpaid">Unpaid</option>
+            </select>
+
+            <button
+              type="button"
+              onClick={resetFilters}
+              className="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 cursor-pointer"
+            >
+              Reset Filters
+            </button>
+          </div>
+        </div>
+
+        {/* Report Table */}
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          {loading ? (
+            <div className="py-16 text-center text-sm text-gray-500">
+              Loading loan payment report...
+            </div>
+          ) : error ? (
+            <div className="p-6 text-sm text-rose-700">
+              <p>{error}</p>
+              <button
+                type="button"
+                onClick={() => void fetchLoans()}
+                className="mt-3 rounded-lg bg-rose-600 px-4 py-2 text-white hover:bg-rose-700"
+              >
+                Try Again
+              </button>
+            </div>
+          ) : filteredLoans.length === 0 ? (
+            <div className="p-12 text-center">
+              <h3 className="font-semibold text-gray-800">
+                No Loan Records Found
+              </h3>
+
+              <p className="mt-2 text-sm text-gray-500">
+                No loans match {reportPeriod} and your current filters.
+              </p>
+
+              <button
+                type="button"
+                onClick={resetFilters}
+                className="mt-4 rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 print:hidden"
+              >
+                Reset Filters
+              </button>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[1150px] text-left">
+                <thead>
+                  <tr className="bg-slate-800 text-xs uppercase tracking-wide text-white">
+                    {[
+                      "",
+                      "No.",
+                      "Loan Date",
+                      "Borrower",
+                      "Principal",
+                      "Interest",
+                      "Total Loan",
+                      "Total Paid",
+                      "Outstanding",
+                      "Status",
+                    ].map((heading, index) => (
+                      <th
+                        key={`${heading}-${index}`}
+                        className="whitespace-nowrap px-4 py-4"
+                      >
+                        {heading}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+
+                <tbody className="divide-y divide-slate-100">
+                  {filteredLoans.map((loan, index) => {
+                    const name =
+                      loan.member?.full_name ??
+                      loan.nonmember?.full_name ??
+                      "Unknown borrower";
+
+                    const borrowerNumber =
+                      loan.member_number ?? loan.non_member_number ?? "-";
+
+                    const paid = getPaid(loan);
+                    const total = getTotal(loan);
+                    const balance = getBalance(loan);
+                    const isExpanded = expanded.includes(loan.id);
+                    const fullyPaid = total > 0 && balance <= 0;
+                    const payments = loan.payments ?? [];
+
+                    return (
+                      <Fragment key={loan.id}>
+                        <tr className="transition-colors hover:bg-blue-50/60">
+                          <td className="px-4 py-4">
+                            <button
+                              type="button"
+                              onClick={() => toggleExpanded(loan.id)}
+                              aria-expanded={isExpanded}
+                              aria-label={
+                                isExpanded
+                                  ? `Hide payments for ${name}`
+                                  : `Show payments for ${name}`
+                              }
+                              className="rounded-lg border border-gray-200 px-2.5 py-1.5 text-sm font-bold text-blue-700 hover:bg-blue-50 print:hidden"
+                            >
+                              {isExpanded ? "−" : "+"}
+                            </button>
+                          </td>
+
+                          <td className="px-4 py-4 text-sm text-gray-500">
+                            {index + 1}
+                          </td>
+
+                          <td className="whitespace-nowrap px-4 py-4 text-sm text-gray-700">
+                            {date(loan.loan_date)}
+                          </td>
+
+                          <td className="px-4 py-4">
+                            <p className="font-semibold text-gray-800">
+                              {name}
+                            </p>
+
+                            <p className="mt-1 text-xs text-gray-500">
+                              {borrowerNumber}
+                            </p>
+
+                            <span className="mt-1 inline-block rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">
+                              {loan.member_number ? "MEMBER" : "NON-MEMBER"}
+                            </span>
+                          </td>
+
+                          <td className="whitespace-nowrap px-4 py-4 text-sm tabular-nums">
+                            {money(number(loan.loan_amount))}
+                          </td>
+
+                          <td className="whitespace-nowrap px-4 py-4 text-sm tabular-nums text-amber-700">
+                            {money(getInterest(loan))}
+                            <p className="mt-1 text-xs text-gray-500">
+                              {getRate(loan).toFixed(2)}%
+                            </p>
+                          </td>
+
+                          <td className="whitespace-nowrap px-4 py-4 text-sm font-bold tabular-nums text-blue-700">
+                            {money(total)}
+                          </td>
+
+                          <td className="whitespace-nowrap px-4 py-4 text-sm font-semibold tabular-nums text-emerald-700">
+                            {money(paid)}
+                          </td>
+
+                          <td className="whitespace-nowrap px-4 py-4 text-sm font-bold tabular-nums text-rose-600">
+                            {money(balance)}
+                          </td>
+
+                          <td className="px-4 py-4">
+                            <span
+                              className={`whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold ${
+                                fullyPaid
+                                  ? "bg-emerald-50 text-emerald-700"
+                                  : paid > 0
+                                    ? "bg-blue-50 text-blue-700"
+                                    : "bg-amber-50 text-amber-700"
+                              }`}
+                            >
+                              {fullyPaid
+                                ? "Paid"
+                                : paid > 0
+                                  ? "Partial"
+                                  : "Unpaid"}
+                            </span>
+                          </td>
+                        </tr>
+
+                        {isExpanded && (
+                          <tr>
+                            <td colSpan={10} className="bg-slate-50 px-5 py-5">
+                              <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+                                <div className="border-b border-slate-200 px-4 py-3">
+                                  <h3 className="font-semibold text-slate-800">
+                                    Payment History — {name}
+                                  </h3>
+
+                                  <p className="mt-1 text-xs text-slate-500">
+                                    {payments.length} payment transaction
+                                    {payments.length === 1 ? "" : "s"}
+                                  </p>
+                                </div>
+
+                                {payments.length === 0 ? (
+                                  <p className="p-5 text-sm text-gray-500">
+                                    No payments have been recorded for this
+                                    loan.
+                                  </p>
+                                ) : (
+                                  <div className="overflow-x-auto">
+                                    <table className="w-full min-w-[650px] text-left">
+                                      <thead>
+                                        <tr className="bg-slate-100 text-xs uppercase text-slate-600">
+                                          <th className="px-4 py-3">No.</th>
+                                          <th className="px-4 py-3">
+                                            Payment Date
+                                          </th>
+                                          <th className="px-4 py-3">Method</th>
+                                          <th className="px-4 py-3 text-right">
+                                            Amount
+                                          </th>
+                                          <th className="px-4 py-3">
+                                            Description
+                                          </th>
+                                        </tr>
+                                      </thead>
+
+                                      <tbody className="divide-y divide-slate-100">
+                                        {[...payments]
+                                          .sort((a, b) =>
+                                            (
+                                              a.payment_date ?? ""
+                                            ).localeCompare(
+                                              b.payment_date ?? "",
+                                            ),
+                                          )
+                                          .map((payment, paymentIndex) => (
+                                            <tr key={payment.id}>
+                                              <td className="px-4 py-3 text-sm text-gray-500">
+                                                {paymentIndex + 1}
+                                              </td>
+
+                                              <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-700">
+                                                {date(payment.payment_date)}
+                                              </td>
+
+                                              <td className="px-4 py-3 text-sm text-gray-700">
+                                                {payment.method ??
+                                                  payment.payment_method ??
+                                                  "-"}
+                                              </td>
+
+                                              <td className="whitespace-nowrap px-4 py-3 text-right text-sm font-semibold tabular-nums text-emerald-700">
+                                                {money(number(payment.amount))}
+                                              </td>
+
+                                              <td className="px-4 py-3 text-sm text-gray-600">
+                                                {payment.description || "-"}
+                                              </td>
+                                            </tr>
+                                          ))}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </Fragment>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* Table Footer */}
+          <div className="flex flex-col justify-between gap-2 border-t border-slate-200 bg-slate-50 px-5 py-4 sm:flex-row">
+            <p className="text-sm text-slate-500">
+              Showing{" "}
+              <span className="font-semibold text-slate-700">
+                {filteredLoans.length}
+              </span>{" "}
+              loan record{filteredLoans.length === 1 ? "" : "s"}
+            </p>
+
+            <p className="text-xs text-slate-400">{reportPeriod}</p>
+          </div>
+        </div>
+      </div>
+
+      <style>{`
+        @media print {
+          body {
+            background: white !important;
+          }
+
+          button,
+          input,
+          select {
+            display: none !important;
+          }
+
+          .min-h-screen {
+            min-height: auto !important;
+          }
+
+          .shadow-sm {
+            box-shadow: none !important;
+          }
+
+          .overflow-x-auto {
+            overflow: visible !important;
+          }
+
+          table {
+            width: 100% !important;
+            min-width: 0 !important;
+          }
+
+          th,
+          td {
+            padding: 6px !important;
+            font-size: 10px !important;
+          }
+
+          tr {
+            break-inside: avoid;
+          }
+        }
+      `}</style>
+    </div>
+  );
+}
