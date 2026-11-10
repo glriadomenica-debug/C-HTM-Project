@@ -1037,7 +1037,7 @@ export default function LoanPayment() {
                           <button
                             type="button"
                             onClick={() => openEditForm(payment)}
-                            className="px-3 py-2 text-xs font-semibold text-gray-700 transition hover:bg-gray-100"
+                            className="px-3 py-2 text-xs font-semibold text-gray-700 transition hover:bg-gray-100 cursor-pointer"
                           >
                             <svg
                               className="h-7 w-5"
@@ -1056,7 +1056,7 @@ export default function LoanPayment() {
                           <button
                             type="button"
                             onClick={() => openDeleteConfirmation(payment)}
-                            className="px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-50"
+                            className="px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-50 cursor-pointer"
                           >
                             <svg
                               className="h-7 w-5"
