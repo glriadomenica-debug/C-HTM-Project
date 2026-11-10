@@ -699,12 +699,19 @@ export default function Loan() {
         </div>
 
         {/* Loans Table */}
-        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-          <div className="flex flex-col justify-between gap-2 border-b border-gray-200 px-5 py-4 sm:flex-row sm:items-center">
+
+        {/* Loans Table — Clean Financial Dashboard */}
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          {/* Table Header */}
+          <div className="flex flex-col justify-between gap-3 border-b border-slate-200 bg-white px-5 py-5 sm:flex-row sm:items-center">
             <div>
-              <h2 className="font-semibold text-gray-900">Loan Records</h2>
-              <p className="mt-1 text-xs text-gray-500">
-                Showing {filteredLoans.length} of {loans.length} records
+              <h2 className="text-lg font-bold text-slate-800">Loan Records</h2>
+              <p className="mt-1 text-sm text-slate-500">
+                Showing{" "}
+                <span className="font-semibold text-slate-700">
+                  {filteredLoans.length}
+                </span>{" "}
+                of {loans.length} loan records
               </p>
             </div>
 
@@ -712,192 +719,364 @@ export default function Loan() {
               type="button"
               onClick={() => void fetchLoans()}
               disabled={loading}
-              className="self-start rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-50 sm:self-auto cursor-pointer"
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {loading ? "Loading..." : "Refresh"}
+              <svg
+                className={`h-4 w-4 ${loading ? "animate-spin" : ""}`}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                aria-hidden="true"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M20 7v5h-5M4 17v-5h5"
+                />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M5.6 9a7 7 0 0 1 11.7-2L20 12M4 12l2.7 5a7 7 0 0 0 11.7-2"
+                />
+              </svg>
+              {loading ? "Refreshing..." : "Refresh"}
             </button>
           </div>
 
+          {/* Loading State */}
           {loading ? (
             <div className="flex flex-col items-center justify-center px-4 py-16">
-              <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-100 border-t-blue-600" />
-              <p className="mt-3 text-sm text-gray-500">
+              <div className="h-9 w-9 animate-spin rounded-full border-4 border-blue-100 border-t-blue-600" />
+              <p className="mt-4 text-sm font-medium text-slate-600">
                 Loading loan records...
+              </p>
+              <p className="mt-1 text-xs text-slate-400">
+                Please wait a moment.
               </p>
             </div>
           ) : filteredLoans.length === 0 ? (
-            <div className="px-4 py-16 text-center">
-              <h3 className="text-sm font-semibold text-gray-900">
+            /* Empty State */
+            <div className="flex flex-col items-center justify-center px-4 py-16 text-center">
+              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
+                <svg
+                  className="h-8 w-8"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  aria-hidden="true"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M7 3.75h7l4.25 4.5v12H7a2 2 0 0 1-2-2v-12a2.5 2.5 0 0 1 2-2.5Z"
+                  />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M14 4v5h4M8.5 13h6M8.5 16.5h6"
+                  />
+                </svg>
+              </div>
+
+              <h3 className="mt-4 text-base font-bold text-slate-800">
                 No Loan Records Found
               </h3>
-              <p className="mt-1 text-sm text-gray-500">
+
+              <p className="mt-2 max-w-sm text-sm leading-6 text-slate-500">
                 {search || ownerFilter !== "all"
-                  ? "Try changing your search keyword or filter."
-                  : "Click Add Loan to create your first loan record."}
+                  ? "No loans match your current search or filter. Try changing your criteria."
+                  : "There are no loan records yet. Add a loan to get started."}
               </p>
+
+              {!search && ownerFilter === "all" && (
+                <button
+                  type="button"
+                  onClick={openCreateForm}
+                  disabled={loadingOwners}
+                  className="mt-5 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-50"
+                >
+                  + Add First Loan
+                </button>
+              )}
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[1200px] divide-y divide-gray-200 text-left">
-                <thead className="bg-gray-50">
-                  <tr>
-                    {[
-                      "No.",
-                      "Loan Date",
-                      "Type",
-                      "Borrower",
-                      "Total loan",
-                      "Interest Rate",
-                      "Interest Amount",
-                      "Grand Total Loans",
-                      "Payments",
-                      "Actions",
-                    ].map((heading) => (
-                      <th
-                        key={heading}
-                        className={`px-4 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500 ${
-                          heading === "Actions" ? "text-right" : ""
-                        }`}
-                      >
-                        {heading}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
+            <>
+              {/* Responsive Table */}
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[1250px] border-collapse text-left">
+                  <thead>
+                    <tr className="bg-slate-800 text-white">
+                      {[
+                        "No.",
+                        "Loan Date",
+                        "Borrower",
+                        "Principal",
+                        "Interest Rate",
+                        "Interest",
+                        "Total Loan",
+                        "Payments",
+                        "Outstanding",
+                        "Actions",
+                      ].map((heading) => (
+                        <th
+                          key={heading}
+                          className={`whitespace-nowrap px-4 py-4 text-xs font-semibold uppercase tracking-wider ${
+                            heading === "Actions" ? "text-center" : ""
+                          }`}
+                        >
+                          {heading}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
 
-                <tbody className="divide-y divide-gray-100">
-                  {filteredLoans.map((loan, index) => {
-                    const isMember = Boolean(loan.member_number);
+                  <tbody className="divide-y divide-slate-100">
+                    {filteredLoans.map((loan, index) => {
+                      const isMember = Boolean(loan.member_number);
 
-                    const borrowerName =
-                      loan.member?.full_name ||
-                      loan.nonmember?.full_name ||
-                      "Name unavailable";
+                      const borrowerName =
+                        loan.member?.full_name ||
+                        loan.nonmember?.full_name ||
+                        "Name unavailable";
 
-                    const borrowerNumber =
-                      loan.member_number || loan.non_member_number || "-";
+                      const borrowerNumber =
+                        loan.member_number || loan.non_member_number || "-";
 
-                    const paymentCount = (loan.payments || []).length;
-                    const paidAmount = getPaidAmount(loan);
-                    const principal = toNumber(loan.loan_amount);
-                    const rate = getLoanRate(loan);
-                    const interest = getLoanInterest(loan);
-                    const total = getLoanTotal(loan);
-                    const balance = getLoanBalance(loan);
+                      const paymentCount = (loan.payments || []).length;
+                      const paidAmount = getPaidAmount(loan);
+                      const principal = toNumber(loan.loan_amount);
+                      const rate = getLoanRate(loan);
+                      const interest = getLoanInterest(loan);
+                      const total = getLoanTotal(loan);
+                      const balance = getLoanBalance(loan);
 
-                    return (
-                      <tr key={loan.id} className="transition hover:bg-gray-50">
-                        <td className="px-5 py-4">
-                          <div className="font-semibold text-gray-900">
-                            {index + 1}
-                          </div>
-                        </td>
-                        <td className="whitespace-nowrap px-4 py-4 text-sm text-gray-600">
-                          {formatDate(loan.loan_date)}
-                        </td>
-                        <td className="px-4 py-4">
-                          <span
-                            className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${
-                              isMember
-                                ? "bg-blue-50 text-blue-700"
-                                : "bg-purple-50 text-purple-700"
-                            }`}
-                          >
-                            {isMember ? "Member" : "Non-Member"}
-                          </span>
-                        </td>
-                        <td className="px-4 py-4">
-                          <div className="font-medium text-gray-900">
-                            {borrowerName}
-                          </div>
-                          <div className="mt-1 text-xs text-gray-500">
-                            {borrowerNumber}
-                          </div>
-                          {/* <div className="mt-1 text-xs text-gray-400">
-                            Loan #{loan.id}
-                          </div> */}
-                        </td>
+                      const isPaid = balance <= 0 && total > 0;
+                      const hasPayments = paymentCount > 0;
 
-                        <td className="whitespace-nowrap px-4 py-4 text-sm font-medium text-gray-900">
-                          {formatCurrency(principal)}
-                        </td>
+                      return (
+                        <tr
+                          key={loan.id}
+                          className={`transition-colors duration-150 hover:bg-blue-50/70 ${
+                            index % 2 === 0 ? "bg-white" : "bg-slate-50/70"
+                          }`}
+                        >
+                          {/* Row Number */}
+                          <td className="whitespace-nowrap px-4 py-4">
+                            <span className="inline-flex h-8 min-w-8 items-center justify-center rounded-lg bg-slate-100 px-2 text-sm font-semibold text-slate-600">
+                              {index + 1}
+                            </span>
+                          </td>
 
-                        <td className="whitespace-nowrap px-4 py-4 text-sm text-gray-700">
-                          {rate.toFixed(2)}%
-                        </td>
+                          {/* Loan Date */}
+                          <td className="whitespace-nowrap px-4 py-4">
+                            <div className="text-sm font-medium text-slate-700">
+                              {formatDate(loan.loan_date)}
+                            </div>
+                          </td>
 
-                        <td className="whitespace-nowrap px-4 py-4 text-sm font-medium text-amber-700">
-                          {formatCurrency(interest)}
-                        </td>
-
-                        <td className="whitespace-nowrap px-4 py-4">
-                          <div className="font-semibold text-gray-900">
-                            {formatCurrency(total)}
-                          </div>
-                          <div className="mt-1 text-xs text-gray-500">
-                            Balance: {formatCurrency(balance)}
-                          </div>
-                        </td>
-
-                        <td className="px-4 py-4">
-                          <div className="text-sm font-medium text-gray-800">
-                            {paymentCount}{" "}
-                            {paymentCount === 1 ? "payment" : "payments"}
-                          </div>
-                          <div className="mt-1 whitespace-nowrap text-xs text-green-700">
-                            Paid: {formatCurrency(paidAmount)}
-                          </div>
-                        </td>
-
-                        <td className="px-4 py-4">
-                          <div className="flex items-center justify-end gap-2">
-                            <button
-                              type="button"
-                              onClick={() => openEditForm(loan)}
-                              className="px-3 py-1.5 text-sm font-medium text-blue-700 transition hover:bg-blue-50 cursor-pointer"
-                            >
-                              <svg
-                                className="h-7 w-5"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2.8"
-                                viewBox="0 0 24 24"
+                          {/* Borrower */}
+                          <td className="px-4 py-4">
+                            <div className="flex min-w-[190px] items-center gap-3">
+                              <div
+                                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-bold ${
+                                  isMember
+                                    ? "bg-blue-100 text-blue-700"
+                                    : "bg-violet-100 text-violet-700"
+                                }`}
                               >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  d="m16.86 4.49 2.65 2.65M4 20l4.5-1 11-11a2.12 2.12 0 0 0-3-3l-11 11L4 20Z"
-                                />
-                              </svg>
-                            </button>
+                                {borrowerName
+                                  .split(/\s+/)
+                                  .filter(Boolean)
+                                  .slice(0, 2)
+                                  .map((part) => part[0])
+                                  .join("")
+                                  .toUpperCase()}
+                              </div>
 
-                            <button
-                              type="button"
-                              onClick={() => openDeleteConfirmation(loan)}
-                              className="px-3 py-1.5 text-sm font-medium text-red-700 transition hover:bg-red-50 cursor-pointer"
-                            >
-                              <svg
-                                className="h-7 w-5"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2.8"
-                                viewBox="0 0 24 24"
+                              <div className="min-w-0">
+                                <p className="truncate text-sm font-semibold text-slate-800">
+                                  {borrowerName}
+                                </p>
+                                <p className="mt-1 text-xs text-slate-500">
+                                  {borrowerNumber}
+                                </p>
+                                <span
+                                  className={`mt-1.5 inline-flex rounded-md px-2 py-0.5 text-[10px] font-semibold ${
+                                    isMember
+                                      ? "bg-blue-100 text-blue-700"
+                                      : "bg-violet-100 text-violet-700"
+                                  }`}
+                                >
+                                  {isMember ? "MEMBER" : "NON-MEMBER"}
+                                </span>
+                              </div>
+                            </div>
+                          </td>
+
+                          {/* Principal */}
+                          <td className="whitespace-nowrap px-4 py-4">
+                            <span className="text-sm font-semibold tabular-nums text-slate-800">
+                              {formatCurrency(principal)}
+                            </span>
+                          </td>
+
+                          {/* Interest Rate */}
+                          <td className="whitespace-nowrap px-4 py-4">
+                            <span className="inline-flex rounded-lg bg-amber-50 px-2.5 py-1.5 text-sm font-semibold text-amber-700">
+                              {rate.toFixed(2)}%
+                            </span>
+                          </td>
+
+                          {/* Interest */}
+                          <td className="whitespace-nowrap px-4 py-4">
+                            <span className="text-sm font-medium tabular-nums text-amber-700">
+                              {formatCurrency(interest)}
+                            </span>
+                          </td>
+
+                          {/* Total Loan */}
+                          <td className="whitespace-nowrap px-4 py-4">
+                            <span className="text-sm font-bold tabular-nums text-blue-700">
+                              {formatCurrency(total)}
+                            </span>
+                          </td>
+
+                          {/* Payments */}
+                          <td className="whitespace-nowrap px-4 py-4">
+                            <div className="flex flex-col items-start gap-1.5">
+                              <span
+                                className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold ${
+                                  hasPayments
+                                    ? "bg-emerald-50 text-emerald-700"
+                                    : "bg-slate-100 text-slate-500"
+                                }`}
                               >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  d="M3 6h18m-2 0-1 14H6L5 6m3 0V4h8v2m-7 4v6m4-6v6"
+                                <span
+                                  className={`h-1.5 w-1.5 rounded-full ${
+                                    hasPayments
+                                      ? "bg-emerald-500"
+                                      : "bg-slate-400"
+                                  }`}
                                 />
-                              </svg>
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                                {paymentCount}{" "}
+                                {paymentCount === 1 ? "payment" : "payments"}
+                              </span>
+
+                              <span className="text-xs font-medium tabular-nums text-emerald-700">
+                                Paid: {formatCurrency(paidAmount)}
+                              </span>
+                            </div>
+                          </td>
+
+                          {/* Outstanding Balance */}
+                          <td className="whitespace-nowrap px-4 py-4">
+                            <div className="flex flex-col items-start gap-1.5">
+                              <span
+                                className={`text-sm font-bold tabular-nums ${
+                                  isPaid
+                                    ? "text-emerald-700"
+                                    : balance > 0
+                                      ? "text-rose-600"
+                                      : "text-slate-500"
+                                }`}
+                              >
+                                {formatCurrency(balance)}
+                              </span>
+
+                              <span
+                                className={`inline-flex rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
+                                  isPaid
+                                    ? "bg-emerald-100 text-emerald-700"
+                                    : "bg-rose-50 text-rose-600"
+                                }`}
+                              >
+                                {isPaid ? "Paid" : "Outstanding"}
+                              </span>
+                            </div>
+                          </td>
+
+                          {/* Actions */}
+                          <td className="whitespace-nowrap px-4 py-4">
+                            <div className="flex items-center justify-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => openEditForm(loan)}
+                                title="Edit loan"
+                                aria-label={`Edit loan for ${borrowerName}`}
+                                className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-blue-200 bg-white text-blue-600 transition hover:border-blue-600 hover:bg-blue-600 hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-200"
+                              >
+                                <svg
+                                  className="h-4 w-4"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="1.8"
+                                  aria-hidden="true"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="m16.86 4.49 2.65 2.65M4 20l4.5-1 11-11a2.12 2.12 0 0 0-3-3l-11 11L4 20Z"
+                                  />
+                                </svg>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => openDeleteConfirmation(loan)}
+                                title={
+                                  hasPayments
+                                    ? "Loan has payments"
+                                    : "Delete loan"
+                                }
+                                aria-label={`Delete loan for ${borrowerName}`}
+                                className={`inline-flex h-9 w-9 items-center justify-center rounded-lg border transition focus:outline-none focus:ring-2 ${
+                                  hasPayments
+                                    ? "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400"
+                                    : "border-rose-200 bg-white text-rose-600 hover:border-rose-600 hover:bg-rose-600 hover:text-white focus:ring-rose-200"
+                                }`}
+                              >
+                                <svg
+                                  className="h-4 w-4"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="1.8"
+                                  aria-hidden="true"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M3 6h18m-2 0-1 14H6L5 6m3 0V4h8v2m-7 4v6m4-6v6"
+                                  />
+                                </svg>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Table Footer */}
+              <div className="flex flex-col justify-between gap-2 border-t border-slate-200 bg-slate-50 px-5 py-4 sm:flex-row sm:items-center">
+                <p className="text-sm text-slate-500">
+                  Showing{" "}
+                  <span className="font-semibold text-slate-700">
+                    {filteredLoans.length}
+                  </span>{" "}
+                  {filteredLoans.length === 1 ? "record" : "records"}
+                </p>
+
+                <p className="text-xs text-slate-400">
+                  All amounts are displayed in USD
+                </p>
+              </div>
+            </>
           )}
         </div>
       </div>
@@ -1194,7 +1373,7 @@ export default function Loan() {
                   type="button"
                   onClick={closeForm}
                   disabled={submitting}
-                  className="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
+                  className="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-50 cursor-pointer"
                 >
                   Cancel
                 </button>
@@ -1202,7 +1381,7 @@ export default function Loan() {
                 <button
                   type="submit"
                   disabled={submitting || loadingOwners}
-                  className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
                 >
                   {submitting
                     ? "Saving..."
@@ -1274,7 +1453,7 @@ export default function Loan() {
                     type="button"
                     onClick={closeMessageModal}
                     disabled={deleting}
-                    className="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
+                    className="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-50 cursor-pointer"
                   >
                     Cancel
                   </button>
@@ -1292,7 +1471,7 @@ export default function Loan() {
                 <button
                   type="button"
                   onClick={closeMessageModal}
-                  className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
+                  className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 cursor-pointer"
                 >
                   Close
                 </button>
