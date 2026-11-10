@@ -380,7 +380,7 @@ export default function LoanReport() {
             <h1 className="text-2xl font-bold text-gray-900">Loan Report</h1>
 
             <p className="mt-1 text-sm text-gray-500">
-              Loan records and payment history for {reportPeriod}.
+              Report in {reportPeriod}
             </p>
           </div>
 
