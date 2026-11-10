@@ -730,7 +730,7 @@ export default function TransactionManagement() {
         <button
           type="button"
           onClick={openAddForm}
-          className="rounded-lg bg-blue-600 px-4 py-2.5 font-medium text-white hover:bg-blue-700"
+          className="rounded-lg bg-blue-600 px-4 py-2.5 font-medium text-white hover:bg-blue-700 cursor-pointer"
         >
           + Add Transaction
         </button>
@@ -768,7 +768,7 @@ export default function TransactionManagement() {
           <select
             value={typeFilter}
             onChange={(event) => setTypeFilter(event.target.value)}
-            className="rounded-lg border border-gray-300 px-3 py-2"
+            className="rounded-lg border border-gray-300 px-3 py-2 cursor-pointer"
           >
             <option value="all">All types</option>
             <option value="income">Income</option>
@@ -845,7 +845,7 @@ export default function TransactionManagement() {
               <button
                 type="button"
                 onClick={() => void loadTransactions()}
-                className="rounded-lg border border-gray-300 px-3 py-2 text-sm hover:bg-gray-50"
+                className="rounded-lg border border-gray-300 px-3 py-2 text-sm hover:bg-gray-50 cursor-pointer"
               >
                 Refresh
               </button>

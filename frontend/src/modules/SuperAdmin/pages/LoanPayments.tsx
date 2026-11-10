@@ -735,7 +735,11 @@ export default function LoanPayment() {
           </p> */}
         </div>
 
-        <button type="button" onClick={openCreateForm} className={buttonClass}>
+        <button
+          type="button"
+          onClick={openCreateForm}
+          className={`${buttonClass} cursor-pointer`}
+        >
           + Add Payment
         </button>
       </div>
@@ -794,7 +798,7 @@ export default function LoanPayment() {
               type="button"
               onClick={() => void refreshData()}
               disabled={loading}
-              className={secondaryButtonClass}
+              className={`${secondaryButtonClass} cursor-pointer`}
             >
               {loading ? "Refreshing..." : "Refresh"}
             </button>
@@ -829,7 +833,7 @@ export default function LoanPayment() {
                 id="payment-method-filter"
                 value={methodFilter}
                 onChange={(event) => setMethodFilter(event.target.value)}
-                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 cursor-pointer"
               >
                 <option value="All">All Methods</option>
                 <option value="Cash">Cash</option>
@@ -848,7 +852,7 @@ export default function LoanPayment() {
                 id="payment-status-filter"
                 value={statusFilter}
                 onChange={(event) => setStatusFilter(event.target.value)}
-                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 cursor-pointer"
               >
                 <option value="All">All Loan Statuses</option>
                 <option value="Outstanding">Outstanding</option>

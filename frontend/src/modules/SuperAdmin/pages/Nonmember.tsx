@@ -264,7 +264,7 @@ export default function NonMember() {
         <button
           type="button"
           onClick={openCreateForm}
-          className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700"
+          className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700 cursor-pointer"
         >
           <span className="text-lg leading-none">+</span>
           Add Non-Member
@@ -437,7 +437,7 @@ export default function NonMember() {
                           type="button"
                           onClick={() => openEditForm(item)}
                           title="Edit non-member"
-                          className="rounded-lg p-2 text-blue-600 transition hover:bg-blue-50"
+                          className="rounded-lg p-2 text-blue-600 transition hover:bg-blue-50 cursor-pointer"
                         >
                           <svg
                             className="h-7 w-5"
@@ -458,7 +458,7 @@ export default function NonMember() {
                           type="button"
                           onClick={() => askDelete(item)}
                           title="Delete non-member"
-                          className="rounded-lg p-2 text-red-600 transition hover:bg-red-50"
+                          className="rounded-lg p-2 text-red-600 transition hover:bg-red-50 cursor-pointer"
                         >
                           <svg
                             className="h-7 w-5"
@@ -679,7 +679,7 @@ export default function NonMember() {
                   type="button"
                   onClick={closeForm}
                   disabled={submitting}
-                  className="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
+                  className="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-50 cursor-pointer"
                 >
                   Cancel
                 </button>
@@ -690,7 +690,7 @@ export default function NonMember() {
                   className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {submitting && (
-                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white cursor-pointer" />
                   )}
                   {submitting
                     ? "Saving..."
@@ -785,7 +785,7 @@ export default function NonMember() {
                     type="button"
                     onClick={closeMessageModal}
                     disabled={deleting}
-                    className="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
+                    className="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-50 cursor-pointer"
                   >
                     Cancel
                   </button>
@@ -806,7 +806,7 @@ export default function NonMember() {
                 <button
                   type="button"
                   onClick={closeMessageModal}
-                  className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700"
+                  className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700 cursor-pointer"
                 >
                   OK
                 </button>

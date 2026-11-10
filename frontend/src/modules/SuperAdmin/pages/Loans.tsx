@@ -573,7 +573,7 @@ export default function Loan() {
             type="button"
             onClick={openCreateForm}
             disabled={loadingOwners}
-            className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
           >
             <span className="text-lg leading-none">+</span>
             Add Loan
@@ -691,7 +691,7 @@ export default function Loan() {
                 setOwnerFilter("all");
                 void fetchLoans();
               }}
-              className="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+              className="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 cursor-pointer"
             >
               Reset
             </button>
@@ -712,7 +712,7 @@ export default function Loan() {
               type="button"
               onClick={() => void fetchLoans()}
               disabled={loading}
-              className="self-start rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-50 sm:self-auto"
+              className="self-start rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-50 sm:self-auto cursor-pointer"
             >
               {loading ? "Loading..." : "Refresh"}
             </button>
@@ -854,7 +854,7 @@ export default function Loan() {
                             <button
                               type="button"
                               onClick={() => openEditForm(loan)}
-                              className="px-3 py-1.5 text-sm font-medium text-blue-700 transition hover:bg-blue-50"
+                              className="px-3 py-1.5 text-sm font-medium text-blue-700 transition hover:bg-blue-50 cursor-pointer"
                             >
                               <svg
                                 className="h-7 w-5"
@@ -874,7 +874,7 @@ export default function Loan() {
                             <button
                               type="button"
                               onClick={() => openDeleteConfirmation(loan)}
-                              className="px-3 py-1.5 text-sm font-medium text-red-700 transition hover:bg-red-50"
+                              className="px-3 py-1.5 text-sm font-medium text-red-700 transition hover:bg-red-50 cursor-pointer"
                             >
                               <svg
                                 className="h-7 w-5"

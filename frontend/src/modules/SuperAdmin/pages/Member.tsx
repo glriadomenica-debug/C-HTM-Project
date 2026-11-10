@@ -278,7 +278,7 @@ export default function Member() {
         <button
           type="button"
           onClick={openCreateForm}
-          className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700"
+          className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700 cursor-pointer"
         >
           <span className="text-lg leading-none">+</span>
           Add Member
@@ -437,7 +437,7 @@ export default function Member() {
                           type="button"
                           onClick={() => openEditForm(member)}
                           title="Edit member"
-                          className="rounded-lg p-2 text-blue-600 transition hover:bg-blue-50"
+                          className="rounded-lg p-2 text-blue-600 transition hover:bg-blue-50 cursor-pointer"
                         >
                           <svg
                             className="h-7 w-5"
@@ -458,7 +458,7 @@ export default function Member() {
                           type="button"
                           onClick={() => confirmDelete(member)}
                           title="Delete member"
-                          className="rounded-lg p-2 text-red-600 transition hover:bg-red-50"
+                          className="rounded-lg p-2 text-red-600 transition hover:bg-red-50 cursor-pointer"
                         >
                           <svg
                             className="h-7 w-5"
@@ -699,7 +699,7 @@ export default function Member() {
                   className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {saving && (
-                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white cursor-pointer" />
                   )}
                   {saving
                     ? "Saving..."
@@ -784,7 +784,7 @@ export default function Member() {
                     type="button"
                     onClick={closeModal}
                     disabled={deleting}
-                    className="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
+                    className="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-50 cursor-pointer"
                   >
                     Cancel
                   </button>
@@ -793,7 +793,7 @@ export default function Member() {
                     type="button"
                     onClick={() => void handleDelete()}
                     disabled={deleting}
-                    className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
                   >
                     {deleting && (
                       <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
@@ -805,7 +805,7 @@ export default function Member() {
                 <button
                   type="button"
                   onClick={closeModal}
-                  className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700"
+                  className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700 cursor-pointer"
                 >
                   OK
                 </button>
