@@ -1,14 +1,24 @@
-import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import api from "../../../services/api";
 
-interface Payment {
+type PaymentMethod = "Cash" | "Bank Transfer";
+
+interface Borrower {
   id: number;
-  loan_id?: number;
+  full_name: string;
+  member_number?: string | null;
+  non_member_number?: string | null;
+}
+
+interface LoanPayment {
+  id: number;
+  loan_id: number;
   amount: number | string;
   payment_date: string;
-  method?: string;
-  payment_method?: string;
-  description?: string;
+  payment_method?: PaymentMethod;
+  method?: PaymentMethod;
+  description?: string | null;
+  loan?: Loan | null;
 }
 
 interface Loan {
@@ -18,843 +28,660 @@ interface Loan {
   loan_date: string;
   loan_amount: number | string;
   interest_rate?: number | string | null;
+  interest_percentage?: number | string | null;
+  interest?: number | string | null;
   interest_amount?: number | string | null;
   total_amount?: number | string | null;
-  member?: { full_name: string } | null;
-  nonmember?: { full_name: string } | null;
-  payments?: Payment[];
+  total_loan_amount?: number | string | null;
+  member?: Borrower | null;
+  nonmember?: Borrower | null;
+  payments?: LoanPayment[];
 }
 
-const number = (value: number | string | null | undefined) => {
-  const result = Number(value ?? 0);
-  return Number.isFinite(result) ? result : 0;
+interface ReportLoan extends Loan {
+  reportPayments: LoanPayment[];
+}
+
+const getResponseData = <T,>(response: unknown): T => {
+  const result = response as {
+    data?: { data?: T } & T;
+  };
+
+  const body = result?.data;
+
+  if (body && typeof body === "object" && "data" in body) {
+    return body.data as T;
+  }
+
+  return body as T;
 };
 
-const money = (value: number) =>
+const toNumber = (value: number | string | null | undefined): number => {
+  const parsed = Number(value ?? 0);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const roundMoney = (value: number) =>
+  Math.round((value + Number.EPSILON) * 100) / 100;
+
+const formatCurrency = (value: number) =>
   new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
   }).format(value);
 
-const date = (value?: string) => {
+const formatDate = (value?: string | null) => {
   if (!value) return "-";
 
-  const parsed = new Date(`${value.slice(0, 10)}T00:00:00`);
+  const date = new Date(`${value.slice(0, 10)}T00:00:00`);
 
-  return Number.isNaN(parsed.getTime())
-    ? value
-    : parsed.toLocaleDateString("en-GB", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-      });
+  if (Number.isNaN(date.getTime())) return value;
+
+  return date.toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
 };
 
-const round = (value: number) =>
-  Math.round((value + Number.EPSILON) * 100) / 100;
+const getBorrowerName = (loan: Loan) =>
+  loan.member?.full_name ||
+  loan.nonmember?.full_name ||
+  (loan.member_number
+    ? `Member ${loan.member_number}`
+    : loan.non_member_number
+      ? `Non-Member ${loan.non_member_number}`
+      : "Unknown borrower");
 
-const getRate = (loan: Loan) => {
-  if (loan.interest_rate != null) {
-    return number(loan.interest_rate);
+const getBorrowerNumber = (loan: Loan) =>
+  loan.member_number || loan.non_member_number || "-";
+
+const getBorrowerType = (loan: Loan): "Member" | "Non-Member" =>
+  loan.member_number ? "Member" : "Non-Member";
+
+const getLoanTotal = (loan: Loan): number => {
+  const principal = toNumber(loan.loan_amount);
+  const storedTotal = toNumber(loan.total_amount ?? loan.total_loan_amount);
+
+  // Prefer the saved total when it includes interest.
+  if (storedTotal >= principal && storedTotal > 0) {
+    return roundMoney(storedTotal);
   }
 
-  const amount = number(loan.loan_amount);
+  const savedRate = toNumber(loan.interest_rate ?? loan.interest_percentage);
 
-  if (loan.member_number) {
-    if (amount < 1000) return 4;
-    if (amount < 3000) return 3.5;
-    if (amount < 5000) return 2.75;
-    if (amount < 7500) return 2;
-    if (amount < 10000) return 1.5;
-    return 1;
+  let rate = savedRate;
+
+  if (rate <= 0) {
+    if (loan.member_number) {
+      if (principal < 1000) rate = 4;
+      else if (principal < 3000) rate = 3.5;
+      else if (principal < 5000) rate = 2.75;
+      else if (principal < 7500) rate = 2;
+      else if (principal < 10000) rate = 1.5;
+      else rate = 1;
+    } else {
+      if (principal < 5000) rate = 5;
+      else if (principal < 10000) rate = 4;
+      else rate = 3.5;
+    }
   }
 
-  if (amount < 5000) return 5;
-  if (amount < 10000) return 4;
-  return 3.5;
+  const savedInterest = toNumber(loan.interest_amount ?? loan.interest);
+
+  const interest =
+    savedInterest > 0 ? savedInterest : roundMoney((principal * rate) / 100);
+
+  return roundMoney(principal + interest);
 };
 
-const getInterest = (loan: Loan) => {
-  if (loan.interest_amount != null) {
-    return number(loan.interest_amount);
-  }
-
-  return round((number(loan.loan_amount) * getRate(loan)) / 100);
-};
-
-const getTotal = (loan: Loan) => {
-  if (loan.total_amount != null) {
-    return number(loan.total_amount);
-  }
-
-  return round(number(loan.loan_amount) + getInterest(loan));
-};
-
-const getPaid = (loan: Loan) =>
-  round(
-    (loan.payments ?? []).reduce(
-      (sum, payment) => sum + number(payment.amount),
+const getLoanPaid = (loan: Loan): number =>
+  roundMoney(
+    loan.reportPayments.reduce(
+      (sum, payment) => sum + toNumber(payment.amount),
       0,
     ),
   );
 
-const getBalance = (loan: Loan) =>
-  round(Math.max(0, getTotal(loan) - getPaid(loan)));
+const getLoanBalance = (loan: Loan) =>
+  roundMoney(Math.max(0, getLoanTotal(loan) - getLoanPaid(loan)));
 
-const MONTHS = [
-  { value: "01", label: "January" },
-  { value: "02", label: "February" },
-  { value: "03", label: "March" },
-  { value: "04", label: "April" },
-  { value: "05", label: "May" },
-  { value: "06", label: "June" },
-  { value: "07", label: "July" },
-  { value: "08", label: "August" },
-  { value: "09", label: "September" },
-  { value: "10", label: "October" },
-  { value: "11", label: "November" },
-  { value: "12", label: "December" },
-];
+const isFullyPaid = (loan: Loan) => getLoanBalance(loan) <= 0.009;
 
-export default function LoanReport() {
-  const currentYear = new Date().getFullYear();
+const getPaymentMethod = (payment: LoanPayment) =>
+  payment.payment_method || payment.method || "-";
 
-  const [loans, setLoans] = useState<Loan[]>([]);
+export default function LoanPayReport() {
+  const [loans, setLoans] = useState<ReportLoan[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
   const [search, setSearch] = useState("");
-  const [status, setStatus] = useState("all");
-  const [owner, setOwner] = useState("all");
-
-  // Default to the current month and year.
-  const [selectedMonth, setSelectedMonth] = useState(
-    String(new Date().getMonth() + 1).padStart(2, "0"),
+  const [borrowerFilter, setBorrowerFilter] = useState("All");
+  const [statusFilter, setStatusFilter] = useState("All");
+  const [expandedLoans, setExpandedLoans] = useState<Record<number, boolean>>(
+    {},
   );
-  const [selectedYear, setSelectedYear] = useState(String(currentYear));
 
-  const [expanded, setExpanded] = useState<number[]>([]);
-
-  const fetchLoans = useCallback(async () => {
+  const fetchReport = useCallback(async () => {
     setLoading(true);
-    setError("");
+    setErrorMessage("");
 
     try {
-      const response = await api.get("/loans");
-      const body = response.data;
-      const data = body?.data ?? body;
+      const [loanResult, paymentResult] = await Promise.allSettled([
+        api.get("/loans"),
+        api.get("/loanpayments"),
+      ]);
 
-      if (!Array.isArray(data)) {
-        throw new Error("Invalid loan data");
+      if (loanResult.status === "rejected") {
+        throw loanResult.reason;
       }
 
-      setLoans(data as Loan[]);
-    } catch {
-      setError("Unable to load the loan report. Please try again.");
-      setLoans([]);
+      const loanData = getResponseData<Loan[]>(loanResult.value);
+      const paymentData =
+        paymentResult.status === "fulfilled"
+          ? getResponseData<LoanPayment[]>(paymentResult.value)
+          : [];
+
+      const loanList = Array.isArray(loanData) ? loanData : [];
+      const paymentList = Array.isArray(paymentData) ? paymentData : [];
+
+      const reportLoans: ReportLoan[] = loanList.map((loan) => {
+        // Use /loanpayments as the primary source of payment records.
+        const listedPayments = paymentList.filter(
+          (payment) => Number(payment.loan_id) === Number(loan.id),
+        );
+
+        // Use nested payments only when /loanpayments did not return
+        // payments for this loan. This avoids double-counting.
+        const loanPayments =
+          listedPayments.length > 0 ? listedPayments : loan.payments || [];
+
+        return {
+          ...loan,
+          reportPayments: [...loanPayments].sort(
+            (a, b) =>
+              new Date(b.payment_date).getTime() -
+              new Date(a.payment_date).getTime(),
+          ),
+        };
+      });
+
+      setLoans(reportLoans);
+
+      if (paymentResult.status === "rejected") {
+        setErrorMessage(
+          "Payment records could not be loaded. The report may show only payments included in the loan records.",
+        );
+      }
+    } catch (error) {
+      const err = error as {
+        response?: { data?: { message?: string } };
+        message?: string;
+      };
+
+      setErrorMessage(
+        err.response?.data?.message ||
+          err.message ||
+          "Unable to load the loan report.",
+      );
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    void fetchLoans();
-  }, [fetchLoans]);
+    void fetchReport();
+  }, [fetchReport]);
 
-  // Available years come from loan records and the current year.
-  const availableYears = useMemo(() => {
-    const years = loans
-      .map((loan) => Number(loan.loan_date?.slice(0, 4)))
-      .filter((year) => Number.isFinite(year) && year > 0);
-
-    return [...new Set([currentYear, ...years])].sort((a, b) => b - a);
-  }, [loans, currentYear]);
-
-  // Filter loans by month, year, borrower, status, and search.
   const filteredLoans = useMemo(() => {
     const keyword = search.trim().toLowerCase();
 
     return loans.filter((loan) => {
-      const name =
-        loan.member?.full_name ??
-        loan.nonmember?.full_name ??
-        "Unknown borrower";
-
-      const borrowerNumber = loan.member_number ?? loan.non_member_number ?? "";
-
-      const isMember = Boolean(loan.member_number);
-      const paid = getPaid(loan);
-      const balance = getBalance(loan);
-      const total = getTotal(loan);
-
-      // Uses loan_date, not payment_date.
-      const loanDate = loan.loan_date?.slice(0, 10) ?? "";
-      const [loanYear, loanMonth] = loanDate.split("-");
-
-      const matchesMonth =
-        selectedMonth === "all" || loanMonth === selectedMonth;
-
-      const matchesYear = selectedYear === "all" || loanYear === selectedYear;
-
       const matchesSearch =
-        name.toLowerCase().includes(keyword) ||
-        borrowerNumber.toLowerCase().includes(keyword) ||
+        !keyword ||
+        getBorrowerName(loan).toLowerCase().includes(keyword) ||
+        getBorrowerNumber(loan).toLowerCase().includes(keyword) ||
         String(loan.id).includes(keyword);
 
-      const matchesOwner =
-        owner === "all" ||
-        (owner === "member" && isMember) ||
-        (owner === "nonmember" && !isMember);
+      const matchesBorrower =
+        borrowerFilter === "All" || getBorrowerType(loan) === borrowerFilter;
+
+      const fullyPaid = isFullyPaid(loan);
 
       const matchesStatus =
-        status === "all" ||
-        (status === "paid" && total > 0 && balance <= 0) ||
-        (status === "partial" && paid > 0 && balance > 0) ||
-        (status === "unpaid" && paid <= 0 && balance > 0);
+        statusFilter === "All" ||
+        (statusFilter === "Fully Paid" && fullyPaid) ||
+        (statusFilter === "Outstanding" && !fullyPaid);
 
-      return (
-        matchesMonth &&
-        matchesYear &&
-        matchesSearch &&
-        matchesOwner &&
-        matchesStatus
-      );
+      return matchesSearch && matchesBorrower && matchesStatus;
     });
-  }, [loans, search, owner, status, selectedMonth, selectedYear]);
+  }, [loans, search, borrowerFilter, statusFilter]);
 
-  // Summary cards follow the filtered loan records.
   const summary = useMemo(
     () =>
       filteredLoans.reduce(
         (result, loan) => {
-          result.principal += number(loan.loan_amount);
-          result.interest += getInterest(loan);
-          result.total += getTotal(loan);
-          result.paid += getPaid(loan);
-          result.balance += getBalance(loan);
-          result.payments += (loan.payments ?? []).length;
-
+          result.principal += toNumber(loan.loan_amount);
+          result.totalLoan += getLoanTotal(loan);
+          result.totalPaid += getLoanPaid(loan);
+          result.balance += getLoanBalance(loan);
+          result.paymentCount += loan.reportPayments.length;
           return result;
         },
         {
           principal: 0,
-          interest: 0,
-          total: 0,
-          paid: 0,
+          totalLoan: 0,
+          totalPaid: 0,
           balance: 0,
-          payments: 0,
+          paymentCount: 0,
         },
       ),
     [filteredLoans],
   );
 
-  const toggleExpanded = (id: number) => {
-    setExpanded((current) =>
-      current.includes(id)
-        ? current.filter((item) => item !== id)
-        : [...current, id],
-    );
+  const toggleLoan = (loanId: number) => {
+    setExpandedLoans((previous) => ({
+      ...previous,
+      [loanId]: !previous[loanId],
+    }));
   };
 
-  const resetFilters = () => {
-    setSearch("");
-    setSelectedMonth("all");
-    setSelectedYear("all");
-    setOwner("all");
-    setStatus("all");
-  };
-
-  const exportCSV = () => {
-    const rows: (string | number)[][] = [
-      [
-        "Loan ID",
-        "Borrower",
-        "Borrower Number",
-        "Loan Date",
-        "Principal",
-        "Interest Rate (%)",
-        "Interest",
-        "Total Loan",
-        "Total Paid",
-        "Outstanding",
-        "Payment Date",
-        "Payment Amount",
-        "Payment Method",
-        "Description",
-      ],
-    ];
-
-    filteredLoans.forEach((loan) => {
-      const name =
-        loan.member?.full_name ??
-        loan.nonmember?.full_name ??
-        "Unknown borrower";
-
-      const borrowerNumber = loan.member_number ?? loan.non_member_number ?? "";
-
-      const payments = loan.payments ?? [];
-
-      if (payments.length === 0) {
-        rows.push([
-          loan.id,
-          name,
-          borrowerNumber,
-          loan.loan_date,
-          number(loan.loan_amount),
-          getRate(loan),
-          getInterest(loan),
-          getTotal(loan),
-          0,
-          getBalance(loan),
-          "",
-          "",
-          "",
-          "",
-        ]);
-      } else {
-        payments.forEach((payment) => {
-          rows.push([
-            loan.id,
-            name,
-            borrowerNumber,
-            loan.loan_date,
-            number(loan.loan_amount),
-            getRate(loan),
-            getInterest(loan),
-            getTotal(loan),
-            getPaid(loan),
-            getBalance(loan),
-            payment.payment_date,
-            number(payment.amount),
-            payment.method ?? payment.payment_method ?? "",
-            payment.description ?? "",
-          ]);
-        });
-      }
-    });
-
-    const csv = rows
-      .map((row) =>
-        row
-          .map((value) => {
-            const text = String(value ?? "");
-            return `"${text.replace(/"/g, '""')}"`;
-          })
-          .join(","),
-      )
-      .join("\r\n");
-
-    const blob = new Blob(["\uFEFF" + csv], {
-      type: "text/csv;charset=utf-8;",
-    });
-
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-
-    link.href = url;
-    link.download = `chtm-loan-report-${selectedYear}-${selectedMonth}.csv`;
-
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-
-    URL.revokeObjectURL(url);
-  };
-
-  const selectedMonthLabel =
-    selectedMonth === "all"
-      ? "All Months"
-      : (MONTHS.find((month) => month.value === selectedMonth)?.label ??
-        "All Months");
-
-  const reportPeriod =
-    selectedMonth === "all" && selectedYear === "all"
-      ? "All periods"
-      : `${selectedMonthLabel} ${selectedYear === "all" ? "" : selectedYear}`.trim();
+  const buttonClass =
+    "rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:opacity-50";
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
-      <div className="mx-auto max-w-[1600px] space-y-6">
-        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center print:hidden">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              Loan Payment Report
-            </h1>
-
-            <p className="mt-1 text-sm text-gray-500">
-              Report in {reportPeriod}
-            </p>
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => void fetchLoans()}
-              disabled={loading}
-              className="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:opacity-50 cursor-pointer"
-            >
-              {loading ? "Refreshing..." : "Refresh"}
-            </button>
-
-            <button
-              type="button"
-              onClick={exportCSV}
-              disabled={loading || filteredLoans.length === 0}
-              className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-50 cursor-pointer"
-            >
-              Export CSV
-            </button>
-
-            <button
-              type="button"
-              onClick={() => window.print()}
-              disabled={loading || filteredLoans.length === 0}
-              className="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:opacity-50 cursor-pointer"
-            >
-              Print Report
-            </button>
-          </div>
-        </div>
-
-        <div className="hidden print:block">
-          <h1 className="text-2xl font-bold text-gray-900">
-            C-HTM Loan Payment Report
+    <div className="space-y-6 p-4 sm:p-6">
+      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-gray-900">
+            Loan Payment Report
           </h1>
-          <p className="mt-1 text-sm text-gray-600">
-            Reporting period: {reportPeriod}
+          <p className="mt-1 text-sm text-gray-500">
+            View all loans, payments received, and outstanding balances.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
-          {[
-            {
-              label: "Loan Records",
-              value: String(filteredLoans.length),
-              color: "text-gray-900",
-            },
-            {
-              label: "Total Principal",
-              value: money(summary.principal),
-              color: "text-gray-900",
-            },
-            {
-              label: "Total Loan Amount",
-              value: money(summary.total),
-              color: "text-blue-700",
-            },
-            {
-              label: "Total Payments",
-              value: money(summary.paid),
-              color: "text-emerald-700",
-            },
-            {
-              label: "Outstanding",
-              value: money(summary.balance),
-              color: "text-rose-600",
-            },
-          ].map((item) => (
-            <div
-              key={item.label}
-              className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm"
-            >
-              <p className="text-sm font-medium text-gray-500">{item.label}</p>
-              <p className={`mt-2 break-words text-xl font-bold ${item.color}`}>
-                {item.value}
-              </p>
-            </div>
-          ))}
-        </div>
+        <div className="flex flex-wrap gap-2 print:hidden">
+          <button
+            type="button"
+            onClick={() => void fetchReport()}
+            disabled={loading}
+            className={buttonClass}
+          >
+            {loading ? "Refreshing..." : "Refresh"}
+          </button>
 
-        {/* Filters */}
-        <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm print:hidden">
-          <div className="mb-3">
-            <h2 className="font-semibold text-gray-800">Filter Report</h2>
-            <p className="mt-1 text-xs text-gray-500">
-              Filter by loan date, borrower type and payment status.
-            </p>
-          </div>
-
-          <div className="flex flex-col gap-3 md:flex-row md:flex-wrap">
-            {/* Search */}
-            <input
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search borrower, number, or loan ID..."
-              className="min-w-0 flex-1 rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-            />
-
-            {/* Month */}
-            <select
-              aria-label="Filter by month"
-              value={selectedMonth}
-              onChange={(event) => setSelectedMonth(event.target.value)}
-              className="rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm"
-            >
-              <option value="all">All Months</option>
-
-              {MONTHS.map((month) => (
-                <option key={month.value} value={month.value}>
-                  {month.label}
-                </option>
-              ))}
-            </select>
-
-            {/* Year */}
-            <select
-              aria-label="Filter by year"
-              value={selectedYear}
-              onChange={(event) => setSelectedYear(event.target.value)}
-              className="rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm"
-            >
-              <option value="all">All Years</option>
-
-              {availableYears.map((year) => (
-                <option key={year} value={String(year)}>
-                  {year}
-                </option>
-              ))}
-            </select>
-
-            {/* Borrower Type */}
-            <select
-              aria-label="Filter by borrower type"
-              value={owner}
-              onChange={(event) => setOwner(event.target.value)}
-              className="rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm"
-            >
-              <option value="all">All Borrowers</option>
-              <option value="member">Members</option>
-              <option value="nonmember">Non-Members</option>
-            </select>
-
-            {/* Payment Status */}
-            <select
-              aria-label="Filter by payment status"
-              value={status}
-              onChange={(event) => setStatus(event.target.value)}
-              className="rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm"
-            >
-              <option value="all">All Loan Statuses</option>
-              <option value="paid">Fully Paid</option>
-              <option value="partial">Partially Paid</option>
-              <option value="unpaid">Unpaid</option>
-            </select>
-
-            <button
-              type="button"
-              onClick={resetFilters}
-              className="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 cursor-pointer"
-            >
-              Reset Filters
-            </button>
-          </div>
-        </div>
-
-        {/* Report Table */}
-        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-          {loading ? (
-            <div className="py-16 text-center text-sm text-gray-500">
-              Loading loan payment report...
-            </div>
-          ) : error ? (
-            <div className="p-6 text-sm text-rose-700">
-              <p>{error}</p>
-              <button
-                type="button"
-                onClick={() => void fetchLoans()}
-                className="mt-3 rounded-lg bg-rose-600 px-4 py-2 text-white hover:bg-rose-700"
-              >
-                Try Again
-              </button>
-            </div>
-          ) : filteredLoans.length === 0 ? (
-            <div className="p-12 text-center">
-              <h3 className="font-semibold text-gray-800">
-                No Loan Records Found
-              </h3>
-
-              <p className="mt-2 text-sm text-gray-500">
-                No loans match {reportPeriod} and your current filters.
-              </p>
-
-              <button
-                type="button"
-                onClick={resetFilters}
-                className="mt-4 rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 print:hidden"
-              >
-                Reset Filters
-              </button>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[1150px] text-left">
-                <thead>
-                  <tr className="bg-slate-800 text-xs uppercase tracking-wide text-white">
-                    {[
-                      "",
-                      "No.",
-                      "Loan Date",
-                      "Borrower",
-                      "Principal",
-                      "Interest",
-                      "Total Loan",
-                      "Total Paid",
-                      "Outstanding",
-                      "Status",
-                    ].map((heading, index) => (
-                      <th
-                        key={`${heading}-${index}`}
-                        className="whitespace-nowrap px-4 py-4"
-                      >
-                        {heading}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-
-                <tbody className="divide-y divide-slate-100">
-                  {filteredLoans.map((loan, index) => {
-                    const name =
-                      loan.member?.full_name ??
-                      loan.nonmember?.full_name ??
-                      "Unknown borrower";
-
-                    const borrowerNumber =
-                      loan.member_number ?? loan.non_member_number ?? "-";
-
-                    const paid = getPaid(loan);
-                    const total = getTotal(loan);
-                    const balance = getBalance(loan);
-                    const isExpanded = expanded.includes(loan.id);
-                    const fullyPaid = total > 0 && balance <= 0;
-                    const payments = loan.payments ?? [];
-
-                    return (
-                      <Fragment key={loan.id}>
-                        <tr className="transition-colors hover:bg-blue-50/60">
-                          <td className="px-4 py-4">
-                            <button
-                              type="button"
-                              onClick={() => toggleExpanded(loan.id)}
-                              aria-expanded={isExpanded}
-                              aria-label={
-                                isExpanded
-                                  ? `Hide payments for ${name}`
-                                  : `Show payments for ${name}`
-                              }
-                              className="rounded-lg border border-gray-200 px-2.5 py-1.5 text-sm font-bold text-blue-700 hover:bg-blue-50 print:hidden"
-                            >
-                              {isExpanded ? "−" : "+"}
-                            </button>
-                          </td>
-
-                          <td className="px-4 py-4 text-sm text-gray-500">
-                            {index + 1}
-                          </td>
-
-                          <td className="whitespace-nowrap px-4 py-4 text-sm text-gray-700">
-                            {date(loan.loan_date)}
-                          </td>
-
-                          <td className="px-4 py-4">
-                            <p className="font-semibold text-gray-800">
-                              {name}
-                            </p>
-
-                            <p className="mt-1 text-xs text-gray-500">
-                              {borrowerNumber}
-                            </p>
-
-                            <span className="mt-1 inline-block rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">
-                              {loan.member_number ? "MEMBER" : "NON-MEMBER"}
-                            </span>
-                          </td>
-
-                          <td className="whitespace-nowrap px-4 py-4 text-sm tabular-nums">
-                            {money(number(loan.loan_amount))}
-                          </td>
-
-                          <td className="whitespace-nowrap px-4 py-4 text-sm tabular-nums text-amber-700">
-                            {money(getInterest(loan))}
-                            <p className="mt-1 text-xs text-gray-500">
-                              {getRate(loan).toFixed(2)}%
-                            </p>
-                          </td>
-
-                          <td className="whitespace-nowrap px-4 py-4 text-sm font-bold tabular-nums text-blue-700">
-                            {money(total)}
-                          </td>
-
-                          <td className="whitespace-nowrap px-4 py-4 text-sm font-semibold tabular-nums text-emerald-700">
-                            {money(paid)}
-                          </td>
-
-                          <td className="whitespace-nowrap px-4 py-4 text-sm font-bold tabular-nums text-rose-600">
-                            {money(balance)}
-                          </td>
-
-                          <td className="px-4 py-4">
-                            <span
-                              className={`whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold ${
-                                fullyPaid
-                                  ? "bg-emerald-50 text-emerald-700"
-                                  : paid > 0
-                                    ? "bg-blue-50 text-blue-700"
-                                    : "bg-amber-50 text-amber-700"
-                              }`}
-                            >
-                              {fullyPaid
-                                ? "Paid"
-                                : paid > 0
-                                  ? "Partial"
-                                  : "Unpaid"}
-                            </span>
-                          </td>
-                        </tr>
-
-                        {isExpanded && (
-                          <tr>
-                            <td colSpan={10} className="bg-slate-50 px-5 py-5">
-                              <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
-                                <div className="border-b border-slate-200 px-4 py-3">
-                                  <h3 className="font-semibold text-slate-800">
-                                    Payment History — {name}
-                                  </h3>
-
-                                  <p className="mt-1 text-xs text-slate-500">
-                                    {payments.length} payment transaction
-                                    {payments.length === 1 ? "" : "s"}
-                                  </p>
-                                </div>
-
-                                {payments.length === 0 ? (
-                                  <p className="p-5 text-sm text-gray-500">
-                                    No payments have been recorded for this
-                                    loan.
-                                  </p>
-                                ) : (
-                                  <div className="overflow-x-auto">
-                                    <table className="w-full min-w-[650px] text-left">
-                                      <thead>
-                                        <tr className="bg-slate-100 text-xs uppercase text-slate-600">
-                                          <th className="px-4 py-3">No.</th>
-                                          <th className="px-4 py-3">
-                                            Payment Date
-                                          </th>
-                                          <th className="px-4 py-3">Method</th>
-                                          <th className="px-4 py-3 text-right">
-                                            Amount
-                                          </th>
-                                          <th className="px-4 py-3">
-                                            Description
-                                          </th>
-                                        </tr>
-                                      </thead>
-
-                                      <tbody className="divide-y divide-slate-100">
-                                        {[...payments]
-                                          .sort((a, b) =>
-                                            (
-                                              a.payment_date ?? ""
-                                            ).localeCompare(
-                                              b.payment_date ?? "",
-                                            ),
-                                          )
-                                          .map((payment, paymentIndex) => (
-                                            <tr key={payment.id}>
-                                              <td className="px-4 py-3 text-sm text-gray-500">
-                                                {paymentIndex + 1}
-                                              </td>
-
-                                              <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-700">
-                                                {date(payment.payment_date)}
-                                              </td>
-
-                                              <td className="px-4 py-3 text-sm text-gray-700">
-                                                {payment.method ??
-                                                  payment.payment_method ??
-                                                  "-"}
-                                              </td>
-
-                                              <td className="whitespace-nowrap px-4 py-3 text-right text-sm font-semibold tabular-nums text-emerald-700">
-                                                {money(number(payment.amount))}
-                                              </td>
-
-                                              <td className="px-4 py-3 text-sm text-gray-600">
-                                                {payment.description || "-"}
-                                              </td>
-                                            </tr>
-                                          ))}
-                                      </tbody>
-                                    </table>
-                                  </div>
-                                )}
-                              </div>
-                            </td>
-                          </tr>
-                        )}
-                      </Fragment>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          {/* Table Footer */}
-          <div className="flex flex-col justify-between gap-2 border-t border-slate-200 bg-slate-50 px-5 py-4 sm:flex-row">
-            <p className="text-sm text-slate-500">
-              Showing{" "}
-              <span className="font-semibold text-slate-700">
-                {filteredLoans.length}
-              </span>{" "}
-              loan record{filteredLoans.length === 1 ? "" : "s"}
-            </p>
-
-            <p className="text-xs text-slate-400">{reportPeriod}</p>
-          </div>
+          <button
+            type="button"
+            onClick={() => window.print()}
+            className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
+          >
+            Print Report
+          </button>
         </div>
       </div>
+
+      {errorMessage && (
+        <div
+          role="alert"
+          className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
+        >
+          {errorMessage}
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
+        <SummaryCard title="Total Loans" value={String(filteredLoans.length)} />
+        <SummaryCard
+          title="Total Principal"
+          value={formatCurrency(summary.principal)}
+        />
+        <SummaryCard
+          title="Total Loan Amount"
+          value={formatCurrency(summary.totalLoan)}
+        />
+        <SummaryCard
+          title="Total Payments"
+          value={formatCurrency(summary.totalPaid)}
+        />
+        <SummaryCard
+          title="Outstanding Balance"
+          value={formatCurrency(summary.balance)}
+        />
+      </div>
+
+      <section className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+        <div className="border-b border-gray-200 p-4 sm:p-5 print:hidden">
+          <h2 className="text-lg font-semibold text-gray-900">
+            All Loan Records
+          </h2>
+
+          <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
+            <div>
+              <label
+                htmlFor="loan-report-search"
+                className="mb-1.5 block text-sm font-medium text-gray-700"
+              >
+                Search
+              </label>
+              <input
+                id="loan-report-search"
+                type="search"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Borrower, number, or loan ID..."
+                className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="loan-report-borrower"
+                className="mb-1.5 block text-sm font-medium text-gray-700"
+              >
+                Borrower Type
+              </label>
+              <select
+                id="loan-report-borrower"
+                value={borrowerFilter}
+                onChange={(event) => setBorrowerFilter(event.target.value)}
+                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm"
+              >
+                <option value="All">All Borrowers</option>
+                <option value="Member">Members</option>
+                <option value="Non-Member">Non-Members</option>
+              </select>
+            </div>
+
+            <div>
+              <label
+                htmlFor="loan-report-status"
+                className="mb-1.5 block text-sm font-medium text-gray-700"
+              >
+                Loan Status
+              </label>
+              <select
+                id="loan-report-status"
+                value={statusFilter}
+                onChange={(event) => setStatusFilter(event.target.value)}
+                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm"
+              >
+                <option value="All">All Statuses</option>
+                <option value="Outstanding">Outstanding</option>
+                <option value="Fully Paid">Fully Paid</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {loading ? (
+          <div className="px-6 py-16 text-center text-sm text-gray-500">
+            Loading loan report...
+          </div>
+        ) : filteredLoans.length === 0 ? (
+          <div className="px-6 py-16 text-center">
+            <h3 className="font-semibold text-gray-900">
+              No loan records found
+            </h3>
+            <p className="mt-1 text-sm text-gray-500">
+              Try changing the search or filters.
+            </p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[1200px] text-left text-sm">
+              <thead className="bg-slate-800 text-xs uppercase tracking-wide text-white">
+                <tr>
+                  <th className="px-4 py-3.5">No.</th>
+                  <th className="px-4 py-3.5">Loan Date</th>
+                  <th className="px-4 py-3.5">Borrower</th>
+                  <th className="px-4 py-3.5 text-right">Principal</th>
+                  <th className="px-4 py-3.5 text-right">
+                    Total Loan (incl. Interest)
+                  </th>
+                  <th className="px-4 py-3.5 text-right">Total Paid</th>
+                  <th className="px-4 py-3.5 text-right">Balance</th>
+                  <th className="px-4 py-3.5">Status</th>
+                  <th className="px-4 py-3.5 text-center">Payments</th>
+                  <th className="px-4 py-3.5 print:hidden">Details</th>
+                </tr>
+              </thead>
+
+              <tbody className="divide-y divide-gray-100">
+                {filteredLoans.map((loan, index) => {
+                  const paid = getLoanPaid(loan);
+                  const total = getLoanTotal(loan);
+                  const balance = getLoanBalance(loan);
+                  const fullyPaid = isFullyPaid(loan);
+                  const expanded = Boolean(expandedLoans[loan.id]);
+
+                  return (
+                    <>
+                      <tr
+                        key={`loan-${loan.id}`}
+                        className="transition hover:bg-gray-50"
+                      >
+                        <td className="px-4 py-4 font-semibold text-gray-900">
+                          {index + 1}
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-4 text-gray-600">
+                          {formatDate(loan.loan_date)}
+                        </td>
+                        <td className="px-4 py-4">
+                          <p className="font-semibold text-gray-900">
+                            {getBorrowerName(loan)}
+                          </p>
+                          <p className="mt-1 text-xs text-gray-500">
+                            {getBorrowerType(loan)} · {getBorrowerNumber(loan)}
+                          </p>
+                          <p className="mt-1 text-xs text-gray-400">
+                            Loan #{loan.id}
+                          </p>
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-4 text-right">
+                          {formatCurrency(toNumber(loan.loan_amount))}
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-4 text-right font-semibold text-gray-900">
+                          {formatCurrency(total)}
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-4 text-right font-semibold text-green-700">
+                          {formatCurrency(paid)}
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-4 text-right font-semibold text-amber-700">
+                          {formatCurrency(balance)}
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-4">
+                          <span
+                            className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+                              fullyPaid
+                                ? "bg-green-100 text-green-700"
+                                : "bg-amber-100 text-amber-700"
+                            }`}
+                          >
+                            {fullyPaid ? "Fully Paid" : "Outstanding"}
+                          </span>
+                        </td>
+                        <td className="px-4 py-4 text-center">
+                          <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-700">
+                            {loan.reportPayments.length}
+                          </span>
+                        </td>
+                        <td className="px-4 py-4 print:hidden">
+                          <button
+                            type="button"
+                            onClick={() => toggleLoan(loan.id)}
+                            aria-expanded={expanded}
+                            className="whitespace-nowrap rounded-lg border border-blue-200 px-3 py-2 text-xs font-semibold text-blue-700 transition hover:bg-blue-50 cursor-pointer"
+                          >
+                            {expanded ? "Hide Payments ↑" : "View Payments ↓"}
+                          </button>
+                        </td>
+                      </tr>
+
+                      {expanded && (
+                        <tr key={`payments-${loan.id}`}>
+                          <td colSpan={10} className="bg-gray-50 px-4 py-5">
+                            <div className="mb-3 flex flex-col justify-between gap-2 sm:flex-row sm:items-center">
+                              <div>
+                                <h3 className="font-semibold text-gray-900">
+                                  Payment History — Loan #{loan.id}
+                                </h3>
+                                <p className="mt-1 text-xs text-gray-500">
+                                  {getBorrowerName(loan)} ·{" "}
+                                  {loan.reportPayments.length} payment(s)
+                                </p>
+                              </div>
+                              <p className="text-sm font-semibold text-green-700">
+                                Total received: {formatCurrency(paid)}
+                              </p>
+                            </div>
+
+                            {loan.reportPayments.length === 0 ? (
+                              <div className="rounded-lg border border-dashed border-gray-300 bg-white px-4 py-8 text-center text-sm text-gray-500">
+                                No payments recorded for this loan yet.
+                              </div>
+                            ) : (
+                              <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
+                                <table className="w-full min-w-[700px] text-left text-sm">
+                                  <thead className="bg-gray-100 text-xs uppercase text-gray-500">
+                                    <tr className="border-b border-gray-200">
+                                      <th className="px-4 py-3 ">No.</th>
+                                      <th className="px-4 py-3">
+                                        Payment Date
+                                      </th>
+                                      <th className="px-4 py-3 text-right">
+                                        Amount
+                                      </th>
+                                      <th className="px-4 py-3">Method</th>
+                                      <th className="px-4 py-3">Description</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="divide-y divide-gray-100">
+                                    {loan.reportPayments.map(
+                                      (payment, paymentIndex) => (
+                                        <tr key={payment.id}> 
+                                          <td className="px-4 py-3 text-gray-500">
+                                            {paymentIndex + 1}
+                                          </td>
+                                          <td className="whitespace-nowrap px-4 py-3">
+                                            {formatDate(payment.payment_date)}
+                                          </td>
+                                          <td className="whitespace-nowrap px-4 py-3 text-right font-semibold text-green-700">
+                                            {formatCurrency(
+                                              toNumber(payment.amount),
+                                            )}
+                                          </td>
+                                          <td className="px-4 py-3">
+                                            {getPaymentMethod(payment)}
+                                          </td>
+                                          <td className="px-4 py-3 text-gray-600">
+                                            {payment.description || "-"}
+                                          </td>
+                                        </tr>
+                                      ),
+                                    )}
+                                  </tbody>
+                                  <tfoot className="border-t-2 border-gray-200 bg-gray-50">
+                                    <tr>
+                                      <td
+                                        colSpan={2}
+                                        className="px-4 py-3 font-semibold text-gray-800"
+                                      >
+                                        Total Payments
+                                      </td>
+                                      <td className="px-4 py-3 text-right font-bold text-green-700">
+                                        {formatCurrency(paid)}
+                                      </td>
+                                      <td colSpan={2} />
+                                    </tr>
+                                  </tfoot>
+                                </table>
+                              </div>
+                            )}
+
+                            <div className="mt-3 flex flex-wrap justify-end gap-4 text-sm">
+                              <span className="text-gray-600">
+                                Total loan:{" "}
+                                <strong>{formatCurrency(total)}</strong>
+                              </span>
+                              <span className="text-amber-700">
+                                Remaining:{" "}
+                                <strong>{formatCurrency(balance)}</strong>
+                              </span>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </>
+                  );
+                })}
+              </tbody>
+
+              <tfoot className="border-t-2 border-gray-200 bg-gray-100 font-bold text-gray-900">
+                <tr>
+                  <td colSpan={3} className="px-4 py-4">
+                    TOTAL
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-4 text-right">
+                    {formatCurrency(summary.principal)}
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-4 text-right">
+                    {formatCurrency(summary.totalLoan)}
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-4 text-right text-green-700">
+                    {formatCurrency(summary.totalPaid)}
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-4 text-right text-amber-700">
+                    {formatCurrency(summary.balance)}
+                  </td>
+                  <td colSpan={3} className="px-4 py-4" />
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        )}
+
+        {!loading && (
+          <div className="border-t border-gray-200 px-5 py-3 text-xs text-gray-500">
+            Showing {filteredLoans.length} of {loans.length} loan records ·{" "}
+            {summary.paymentCount} payment transactions
+          </div>
+        )}
+      </section>
 
       <style>{`
         @media print {
           body {
             background: white !important;
           }
-
-          button,
-          input,
-          select {
+          .print\\:hidden {
             display: none !important;
           }
-
-          .min-h-screen {
-            min-height: auto !important;
-          }
-
-          .shadow-sm {
+          section {
             box-shadow: none !important;
-          }
-
-          .overflow-x-auto {
             overflow: visible !important;
           }
-
           table {
-            width: 100% !important;
-            min-width: 0 !important;
-          }
-
-          th,
-          td {
-            padding: 6px !important;
             font-size: 10px !important;
           }
-
           tr {
             break-inside: avoid;
           }
         }
       `}</style>
+    </div>
+  );
+}
+
+function SummaryCard({ title, value }: { title: string; value: string }) {
+  return (
+    <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+      <p className="text-sm font-medium text-gray-500">{title}</p>
+      <p className="mt-2 break-words text-xl font-bold tracking-tight text-gray-900">
+        {value}
+      </p>
     </div>
   );
 }
