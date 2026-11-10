@@ -762,22 +762,22 @@ export default function LoanPayment() {
         <SummaryCard
           title="Payment Transactions"
           value={String(paymentTotals.count)}
-          description="Total recorded payments"
+          description=""
         />
         <SummaryCard
           title="Total Collected"
           value={formatCurrency(paymentTotals.total)}
-          description="All payment methods"
+          description=""
         />
         <SummaryCard
           title="Cash Payments"
           value={formatCurrency(paymentTotals.cash)}
-          description="Collected in cash"
+          description=""
         />
         <SummaryCard
           title="Bank Transfers"
           value={formatCurrency(paymentTotals.bankTransfer)}
-          description="Collected by bank transfer"
+          description=""
         />
       </div>
 
@@ -788,20 +788,68 @@ export default function LoanPayment() {
               <h2 className="text-lg font-semibold text-gray-900">
                 Payment Records
               </h2>
-              {/* <p className="mt-1 text-sm text-gray-500">
-                View payments, amounts collected, and the remaining loan
-                balance.
-              </p> */}
             </div>
 
-            <button
-              type="button"
-              onClick={() => void refreshData()}
-              disabled={loading}
-              className={`${secondaryButtonClass} cursor-pointer`}
-            >
-              {loading ? "Refreshing..." : "Refresh"}
-            </button>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  window.location.href = "/superadmin/loanpayreport";
+                }}
+                className="inline-flex items-center justify-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-4 py-2.5 text-sm font-semibold text-blue-700 transition hover:border-blue-600 hover:bg-blue-600 hover:text-white cursor-pointer"
+              >
+                <svg
+                  className="h-4 w-4"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  aria-hidden="true"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M8 3h7l4 4v14H5V3h3Z"
+                  />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M15 3v5h4M8 13h8M8 17h8"
+                  />
+                </svg>
+                Loan Payment Report
+              </button>
+
+              {/* Refresh Button */}
+              <button
+                type="button"
+                onClick={() => void fetchLoans()}
+                disabled={loading}
+                className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <svg
+                  className={`h-4 w-4 ${loading ? "animate-spin" : ""}`}
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  aria-hidden="true"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M20 7v5h-5M4 17v-5h5"
+                  />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M5.6 9a7 7 0 0 1 11.7-2L20 12M4 12l2.7 5a7 7 0 0 0 11.7-2"
+                  />
+                </svg>
+
+                {loading ? "Refreshing..." : "Refresh"}
+              </button>
+            </div>
           </div>
 
           <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
