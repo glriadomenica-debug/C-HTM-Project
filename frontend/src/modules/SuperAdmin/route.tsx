@@ -11,6 +11,7 @@ import Deposits from "./pages/Deposit";
 import Loans from "./pages/Loans";
 import LoanPayments from "./pages/LoanPayments";
 import TransactionManagement from "./pages/TransactionManagement";
+import LoanReport from "./pages/LoanReport";
 
 const SuperAdminRoutes: RouteObject[] = [
   {
@@ -59,6 +60,10 @@ const SuperAdminRoutes: RouteObject[] = [
           {
             path: "transactions",
             element: <TransactionManagement />,
+          },
+          {
+            path: "loanreport",
+            element: <LoanReport />,
           },
         ],
       },
