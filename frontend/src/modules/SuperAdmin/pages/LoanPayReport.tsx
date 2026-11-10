@@ -335,11 +335,11 @@ export default function LoanPayReport() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
         <SummaryCard title="Total Loans" value={String(filteredLoans.length)} />
         <SummaryCard
-          title="Total Principal"
+          title="Total Loan Amount"
           value={formatCurrency(summary.principal)}
         />
         <SummaryCard
-          title="Total Loan Amount"
+          title="Total Loan Amount (incl. Interest)"
           value={formatCurrency(summary.totalLoan)}
         />
         <SummaryCard
@@ -561,7 +561,7 @@ export default function LoanPayReport() {
                                   <tbody className="divide-y divide-gray-100">
                                     {loan.reportPayments.map(
                                       (payment, paymentIndex) => (
-                                        <tr key={payment.id}> 
+                                        <tr key={payment.id}>
                                           <td className="px-4 py-3 text-gray-500">
                                             {paymentIndex + 1}
                                           </td>
