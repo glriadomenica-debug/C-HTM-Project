@@ -941,6 +941,7 @@ export default function LoanPayment() {
                   <th className="px-5 py-3.5 font-semibold">Payment Date</th>
                   <th className="px-5 py-3.5 text-right font-semibold">
                     Loan Amount
+                    <p>(incl. interest)</p>
                   </th>
                   <th className="px-5 py-3.5 text-right font-semibold">
                     Total Paid
