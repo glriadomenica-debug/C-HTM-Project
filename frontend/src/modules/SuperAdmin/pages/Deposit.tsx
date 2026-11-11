@@ -370,12 +370,41 @@ export default function Deposit() {
           <h2 className="font-semibold text-gray-900">Transaction History</h2>
 
           <div className="flex flex-col gap-3 sm:flex-row">
+            <button
+              type="button"
+              onClick={() => {
+                window.location.href = "/superadmin/depositreport";
+              }}
+              className="inline-flex items-center justify-center rounded-lg border border-blue-200 bg-blue-50 px-5 py-2.5 text-sm font-semibold text-blue-700 transition hover:border-blue-600 hover:bg-blue-600 hover:text-white cursor-pointer"
+            >
+              <svg
+                className="h-4 w-4"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                aria-hidden="true"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M8 3h7l4 4v14H5V3h3Z"
+                />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M15 3v5h4M8 13h8M8 17h8"
+                />
+              </svg>
+              Deposit Report
+            </button>
+
             <input
               type="search"
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Search transactions..."
-              className={`${inputClass} sm:w-64`}
+              className={`${inputClass} sm:w-50`}
             />
 
             <select
