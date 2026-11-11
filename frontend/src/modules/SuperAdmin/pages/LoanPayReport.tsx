@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import api from "../../../services/api";
 
 type PaymentMethod = "Cash" | "Bank Transfer";
@@ -105,7 +105,7 @@ const getLoanTotal = (loan: Loan): number => {
   const principal = toNumber(loan.loan_amount);
   const storedTotal = toNumber(loan.total_amount ?? loan.total_loan_amount);
 
-  // Prefer the saved total when it includes interest.
+  // Use the saved total when it includes interest.
   if (storedTotal >= principal && storedTotal > 0) {
     return roundMoney(storedTotal);
   }
@@ -137,7 +137,7 @@ const getLoanTotal = (loan: Loan): number => {
   return roundMoney(principal + interest);
 };
 
-const getLoanPaid = (loan: Loan): number =>
+const getLoanPaid = (loan: ReportLoan): number =>
   roundMoney(
     loan.reportPayments.reduce(
       (sum, payment) => sum + toNumber(payment.amount),
@@ -145,10 +145,10 @@ const getLoanPaid = (loan: Loan): number =>
     ),
   );
 
-const getLoanBalance = (loan: Loan) =>
+const getLoanBalance = (loan: ReportLoan) =>
   roundMoney(Math.max(0, getLoanTotal(loan) - getLoanPaid(loan)));
 
-const isFullyPaid = (loan: Loan) => getLoanBalance(loan) <= 0.009;
+const isFullyPaid = (loan: ReportLoan) => getLoanBalance(loan) <= 0.009;
 
 const getPaymentMethod = (payment: LoanPayment) =>
   payment.payment_method || payment.method || "-";
@@ -179,6 +179,7 @@ export default function LoanPayReport() {
       }
 
       const loanData = getResponseData<Loan[]>(loanResult.value);
+
       const paymentData =
         paymentResult.status === "fulfilled"
           ? getResponseData<LoanPayment[]>(paymentResult.value)
@@ -188,13 +189,12 @@ export default function LoanPayReport() {
       const paymentList = Array.isArray(paymentData) ? paymentData : [];
 
       const reportLoans: ReportLoan[] = loanList.map((loan) => {
-        // Use /loanpayments as the primary source of payment records.
         const listedPayments = paymentList.filter(
           (payment) => Number(payment.loan_id) === Number(loan.id),
         );
 
-        // Use nested payments only when /loanpayments did not return
-        // payments for this loan. This avoids double-counting.
+        // Prefer the payment endpoint. Fall back to nested payments
+        // only when the endpoint has no records for this loan.
         const loanPayments =
           listedPayments.length > 0 ? listedPayments : loan.payments || [];
 
@@ -268,6 +268,7 @@ export default function LoanPayReport() {
           result.totalPaid += getLoanPaid(loan);
           result.balance += getLoanBalance(loan);
           result.paymentCount += loan.reportPayments.length;
+
           return result;
         },
         {
@@ -289,18 +290,16 @@ export default function LoanPayReport() {
   };
 
   const buttonClass =
-    "rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:opacity-50";
+    "rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50";
 
   return (
     <div className="space-y-6 p-4 sm:p-6">
+      {/* Page Header */}
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-gray-900">
             Loan Payment Report
           </h1>
-          <p className="mt-1 text-sm text-gray-500">
-            View all loans, payments received, and outstanding balances.
-          </p>
         </div>
 
         <div className="flex flex-wrap gap-2 print:hidden">
@@ -308,55 +307,139 @@ export default function LoanPayReport() {
             type="button"
             onClick={() => void fetchReport()}
             disabled={loading}
-            className={buttonClass}
+            className={buttonClass} 
           >
-            {loading ? "Refreshing..." : "Refresh"}
+            <span className="inline-flex items-center gap-2">
+              <svg
+                className={`h-4 w-4 ${loading ? "animate-spin" : ""}`}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                aria-hidden="true"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M20 7v5h-5M4 17v-5h5"
+                />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M5.6 9a7 7 0 0 1 11.7-2L20 12M4 12l2.7 5a7 7 0 0 0 11.7-2"
+                />
+              </svg>
+              {loading ? "Refreshing..." : "Refresh"}
+            </span>
           </button>
 
           <button
             type="button"
             onClick={() => window.print()}
-            className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
+            className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
           >
+            <svg
+              className="h-4 w-4"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              aria-hidden="true"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"
+              />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M6 14h12v7H6z"
+              />
+            </svg>
             Print Report
           </button>
         </div>
       </div>
 
+      {/* Error Message */}
       {errorMessage && (
         <div
           role="alert"
-          className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
+          className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
         >
-          {errorMessage}
+          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-amber-100 font-bold">
+            !
+          </span>
+          <p>{errorMessage}</p>
         </div>
       )}
 
+      {/* Summary Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
-        <SummaryCard title="Total Loans" value={String(filteredLoans.length)} />
         <SummaryCard
-          title="Total Loan Amount"
+          title="Total Loans"
+          value={String(filteredLoans.length)}
+          description=""
+          icon="▤"
+          accent="bg-blue-500"
+          iconBg="bg-blue-50"
+          iconColor="text-blue-600"
+          valueColor="text-gray-900"
+        />
+
+        <SummaryCard
+          title="Total Loan Amount (excl. interest)"
           value={formatCurrency(summary.principal)}
+          description=""
+          icon="$"
+          accent="bg-indigo-500"
+          iconBg="bg-indigo-50"
+          iconColor="text-indigo-600"
+          valueColor="text-indigo-700"
         />
+
         <SummaryCard
-          title="Total Loan Amount (incl. Interest)"
+          title="Total Loan Amount (incl. interest)"
           value={formatCurrency(summary.totalLoan)}
+          description=""
+          icon="↗"
+          accent="bg-violet-500"
+          iconBg="bg-violet-50"
+          iconColor="text-violet-600"
+          valueColor="text-violet-700"
         />
+
         <SummaryCard
           title="Total Payments"
           value={formatCurrency(summary.totalPaid)}
+          description=""
+          icon="✓"
+          accent="bg-emerald-500"
+          iconBg="bg-emerald-50"
+          iconColor="text-emerald-600"
+          valueColor="text-emerald-700"
         />
+
         <SummaryCard
           title="Outstanding Balance"
           value={formatCurrency(summary.balance)}
+          description=""
+          icon="◷"
+          accent="bg-amber-500"
+          iconBg="bg-amber-50"
+          iconColor="text-amber-600"
+          valueColor="text-amber-700"
         />
       </div>
 
       <section className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
         <div className="border-b border-gray-200 p-4 sm:p-5 print:hidden">
-          <h2 className="text-lg font-semibold text-gray-900">
-            All Loan Records
-          </h2>
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">
+              All Loan Records
+            </h2>
+          </div>
 
           <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
             <div>
@@ -366,14 +449,31 @@ export default function LoanPayReport() {
               >
                 Search
               </label>
-              <input
-                id="loan-report-search"
-                type="search"
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Borrower, number, or loan ID..."
-                className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-              />
+              <div className="relative">
+                <svg
+                  className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  aria-hidden="true"
+                >
+                  <circle cx="11" cy="11" r="7" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="m20 20-4-4"
+                  />
+                </svg>
+                <input
+                  id="loan-report-search"
+                  type="search"
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  placeholder="Borrower, number, or loan ID..."
+                  className="w-full cursor-pointer rounded-lg border border-gray-300 py-2.5 pl-9 pr-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                />
+              </div>
             </div>
 
             <div>
@@ -387,7 +487,7 @@ export default function LoanPayReport() {
                 id="loan-report-borrower"
                 value={borrowerFilter}
                 onChange={(event) => setBorrowerFilter(event.target.value)}
-                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm"
+                className="w-full cursor-pointer rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
               >
                 <option value="All">All Borrowers</option>
                 <option value="Member">Members</option>
@@ -406,7 +506,7 @@ export default function LoanPayReport() {
                 id="loan-report-status"
                 value={statusFilter}
                 onChange={(event) => setStatusFilter(event.target.value)}
-                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm"
+                className="w-full cursor-pointer rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
               >
                 <option value="All">All Statuses</option>
                 <option value="Outstanding">Outstanding</option>
@@ -417,12 +517,16 @@ export default function LoanPayReport() {
         </div>
 
         {loading ? (
-          <div className="px-6 py-16 text-center text-sm text-gray-500">
-            Loading loan report...
+          <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600" />
+            <p className="mt-3 text-sm text-gray-500">Loading loan report...</p>
           </div>
         ) : filteredLoans.length === 0 ? (
           <div className="px-6 py-16 text-center">
-            <h3 className="font-semibold text-gray-900">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 text-xl text-gray-500">
+              $
+            </div>
+            <h3 className="mt-3 font-semibold text-gray-900">
               No loan records found
             </h3>
             <p className="mt-1 text-sm text-gray-500">
@@ -434,18 +538,31 @@ export default function LoanPayReport() {
             <table className="w-full min-w-[1200px] text-left text-sm">
               <thead className="bg-slate-800 text-xs uppercase tracking-wide text-white">
                 <tr>
-                  <th className="px-4 py-3.5">No.</th>
-                  <th className="px-4 py-3.5">Loan Date</th>
-                  <th className="px-4 py-3.5">Borrower</th>
-                  <th className="px-4 py-3.5 text-right">Loan Amount</th>
-                  <th className="px-4 py-3.5 text-right">
-                    Loan Amount (incl. Interest)
+                  <th className="px-4 py-3.5 font-semibold">No.</th>
+                  <th className="px-4 py-3.5 font-semibold">Loan Date</th>
+                  <th className="px-4 py-3.5 font-semibold">Borrower</th>
+                  <th className="px-4 py-3.5 text-right font-semibold">
+                    Loan Amount
                   </th>
-                  <th className="px-4 py-3.5 text-right">Total Paid</th>
-                  <th className="px-4 py-3.5 text-right">Balance</th>
-                  <th className="px-4 py-3.5">Status</th>
-                  <th className="px-4 py-3.5 text-center">Payments</th>
-                  <th className="px-4 py-3.5 print:hidden">Details</th>
+                  <th className="px-4 py-3.5 text-right font-semibold">
+                    Loan Amount
+                    <span className="mt-1 block text-[10px] font-normal normal-case tracking-normal text-slate-300">
+                      Incl. interest
+                    </span>
+                  </th>
+                  <th className="px-4 py-3.5 text-right font-semibold">
+                    Total Paid
+                  </th>
+                  <th className="px-4 py-3.5 text-right font-semibold">
+                    Balance
+                  </th>
+                  <th className="px-4 py-3.5 font-semibold">Status</th>
+                  <th className="px-4 py-3.5 text-center font-semibold">
+                    Payments
+                  </th>
+                  <th className="px-4 py-3.5 font-semibold print:hidden">
+                    Details
+                  </th>
                 </tr>
               </thead>
 
@@ -458,17 +575,16 @@ export default function LoanPayReport() {
                   const expanded = Boolean(expandedLoans[loan.id]);
 
                   return (
-                    <>
-                      <tr
-                        key={`loan-${loan.id}`}
-                        className="transition hover:bg-gray-50"
-                      >
+                    <Fragment key={loan.id}>
+                      <tr className="transition hover:bg-blue-50/40">
                         <td className="px-4 py-4 font-semibold text-gray-900">
                           {index + 1}
                         </td>
+
                         <td className="whitespace-nowrap px-4 py-4 text-gray-600">
                           {formatDate(loan.loan_date)}
                         </td>
+
                         <td className="px-4 py-4">
                           <p className="font-semibold text-gray-900">
                             {getBorrowerName(loan)}
@@ -480,40 +596,52 @@ export default function LoanPayReport() {
                             Loan #{loan.id}
                           </p>
                         </td>
-                        <td className="whitespace-nowrap px-4 py-4 text-right">
+
+                        <td className="whitespace-nowrap px-4 py-4 text-right text-gray-700">
                           {formatCurrency(toNumber(loan.loan_amount))}
                         </td>
+
                         <td className="whitespace-nowrap px-4 py-4 text-right font-semibold text-gray-900">
                           {formatCurrency(total)}
                         </td>
-                        <td className="whitespace-nowrap px-4 py-4 text-right font-semibold text-green-700">
+
+                        <td className="whitespace-nowrap px-4 py-4 text-right font-semibold text-emerald-700">
                           {formatCurrency(paid)}
                         </td>
+
                         <td className="whitespace-nowrap px-4 py-4 text-right font-semibold text-amber-700">
                           {formatCurrency(balance)}
                         </td>
+
                         <td className="whitespace-nowrap px-4 py-4">
                           <span
-                            className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+                            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${
                               fullyPaid
-                                ? "bg-green-100 text-green-700"
+                                ? "bg-emerald-100 text-emerald-700"
                                 : "bg-amber-100 text-amber-700"
                             }`}
                           >
+                            <span
+                              className={`h-1.5 w-1.5 rounded-full ${
+                                fullyPaid ? "bg-emerald-500" : "bg-amber-500"
+                              }`}
+                            />
                             {fullyPaid ? "Fully Paid" : "Outstanding"}
                           </span>
                         </td>
+
                         <td className="px-4 py-4 text-center">
-                          <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-700">
+                          <span className="inline-flex min-w-8 items-center justify-center rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-700">
                             {loan.reportPayments.length}
                           </span>
                         </td>
+
                         <td className="px-4 py-4 print:hidden">
                           <button
                             type="button"
                             onClick={() => toggleLoan(loan.id)}
                             aria-expanded={expanded}
-                            className="whitespace-nowrap rounded-lg border border-blue-200 px-3 py-2 text-xs font-semibold text-blue-700 transition hover:bg-blue-50 cursor-pointer"
+                            className="whitespace-nowrap rounded-lg border border-blue-200 bg-white px-3 py-2 text-xs font-semibold text-blue-700 transition hover:border-blue-500 hover:bg-blue-50 cursor-pointer"
                           >
                             {expanded ? "Hide Payments ↑" : "View Payments ↓"}
                           </button>
@@ -521,7 +649,7 @@ export default function LoanPayReport() {
                       </tr>
 
                       {expanded && (
-                        <tr key={`payments-${loan.id}`}>
+                        <tr>
                           <td colSpan={10} className="bg-gray-50 px-4 py-5">
                             <div className="mb-3 flex flex-col justify-between gap-2 sm:flex-row sm:items-center">
                               <div>
@@ -533,7 +661,8 @@ export default function LoanPayReport() {
                                   {loan.reportPayments.length} payment(s)
                                 </p>
                               </div>
-                              <p className="text-sm font-semibold text-green-700">
+
+                              <p className="text-sm font-semibold text-emerald-700">
                                 Total received: {formatCurrency(paid)}
                               </p>
                             </div>
@@ -547,7 +676,7 @@ export default function LoanPayReport() {
                                 <table className="w-full min-w-[700px] text-left text-sm">
                                   <thead className="bg-gray-100 text-xs uppercase text-gray-500">
                                     <tr className="border-b border-gray-200">
-                                      <th className="px-4 py-3 ">No.</th>
+                                      <th className="px-4 py-3">No.</th>
                                       <th className="px-4 py-3">
                                         Payment Date
                                       </th>
@@ -558,24 +687,34 @@ export default function LoanPayReport() {
                                       <th className="px-4 py-3">Description</th>
                                     </tr>
                                   </thead>
+
                                   <tbody className="divide-y divide-gray-100">
                                     {loan.reportPayments.map(
                                       (payment, paymentIndex) => (
-                                        <tr key={payment.id}>
+                                        <tr
+                                          key={`${loan.id}-${payment.id}`}
+                                          className="transition hover:bg-gray-50"
+                                        >
                                           <td className="px-4 py-3 text-gray-500">
                                             {paymentIndex + 1}
                                           </td>
-                                          <td className="whitespace-nowrap px-4 py-3">
+
+                                          <td className="whitespace-nowrap px-4 py-3 text-gray-700">
                                             {formatDate(payment.payment_date)}
                                           </td>
-                                          <td className="whitespace-nowrap px-4 py-3 text-right font-semibold text-green-700">
+
+                                          <td className="whitespace-nowrap px-4 py-3 text-right font-semibold text-emerald-700">
                                             {formatCurrency(
                                               toNumber(payment.amount),
                                             )}
                                           </td>
+
                                           <td className="px-4 py-3">
-                                            {getPaymentMethod(payment)}
+                                            <span className="inline-flex rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-700">
+                                              {getPaymentMethod(payment)}
+                                            </span>
                                           </td>
+
                                           <td className="px-4 py-3 text-gray-600">
                                             {payment.description || "-"}
                                           </td>
@@ -583,6 +722,7 @@ export default function LoanPayReport() {
                                       ),
                                     )}
                                   </tbody>
+
                                   <tfoot className="border-t-2 border-gray-200 bg-gray-50">
                                     <tr>
                                       <td
@@ -591,7 +731,7 @@ export default function LoanPayReport() {
                                       >
                                         Total Payments
                                       </td>
-                                      <td className="px-4 py-3 text-right font-bold text-green-700">
+                                      <td className="px-4 py-3 text-right font-bold text-emerald-700">
                                         {formatCurrency(paid)}
                                       </td>
                                       <td colSpan={2} />
@@ -614,7 +754,7 @@ export default function LoanPayReport() {
                           </td>
                         </tr>
                       )}
-                    </>
+                    </Fragment>
                   );
                 })}
               </tbody>
@@ -624,18 +764,23 @@ export default function LoanPayReport() {
                   <td colSpan={3} className="px-4 py-4">
                     TOTAL
                   </td>
+
                   <td className="whitespace-nowrap px-4 py-4 text-right">
                     {formatCurrency(summary.principal)}
                   </td>
+
                   <td className="whitespace-nowrap px-4 py-4 text-right">
                     {formatCurrency(summary.totalLoan)}
                   </td>
-                  <td className="whitespace-nowrap px-4 py-4 text-right text-green-700">
+
+                  <td className="whitespace-nowrap px-4 py-4 text-right text-emerald-700">
                     {formatCurrency(summary.totalPaid)}
                   </td>
+
                   <td className="whitespace-nowrap px-4 py-4 text-right text-amber-700">
                     {formatCurrency(summary.balance)}
                   </td>
+
                   <td colSpan={3} className="px-4 py-4" />
                 </tr>
               </tfoot>
@@ -651,21 +796,41 @@ export default function LoanPayReport() {
         )}
       </section>
 
+      {/* Print Styling */}
       <style>{`
         @media print {
+          @page {
+            size: landscape;
+            margin: 10mm;
+          }
+
           body {
             background: white !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
           }
+
           .print\\:hidden {
             display: none !important;
           }
+
           section {
             box-shadow: none !important;
             overflow: visible !important;
           }
+
           table {
             font-size: 10px !important;
           }
+
+          thead {
+            display: table-header-group;
+          }
+
+          tfoot {
+            display: table-row-group;
+          }
+
           tr {
             break-inside: avoid;
           }
@@ -675,13 +840,53 @@ export default function LoanPayReport() {
   );
 }
 
-function SummaryCard({ title, value }: { title: string; value: string }) {
+interface SummaryCardProps {
+  title: string;
+  value: string;
+  description: string;
+  icon: string;
+  accent: string;
+  iconBg: string;
+  iconColor: string;
+  valueColor: string;
+}
+
+function SummaryCard({
+  title,
+  value,
+  description,
+  icon,
+  accent,
+  iconBg,
+  iconColor,
+  valueColor,
+}: SummaryCardProps) {
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-      <p className="text-sm font-medium text-gray-500">{title}</p>
-      <p className="mt-2 break-words text-xl font-bold tracking-tight text-gray-900">
-        {value}
-      </p>
+    <div className="group relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md">
+      <div className={`absolute inset-x-0 top-0 h-1 ${accent}`} />
+
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-medium text-gray-500">{title}</p>
+
+          <p
+            className={`mt-3 break-words text-xl font-bold tracking-tight sm:text-2xl ${valueColor}`}
+          >
+            {value}
+          </p>
+        </div>
+
+        <div
+          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-xl font-bold ${iconBg} ${iconColor}`}
+          aria-hidden="true"
+        >
+          {icon}
+        </div>
+      </div>
+
+      <div className="mt-4 border-t border-gray-100 pt-3">
+        <p className="text-xs leading-5 text-gray-500">{description}</p>
+      </div>
     </div>
   );
 }

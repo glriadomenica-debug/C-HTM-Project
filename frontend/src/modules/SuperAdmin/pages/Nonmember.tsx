@@ -1,4 +1,12 @@
-import { useCallback, useEffect, useState, type FormEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type FormEvent,
+  type ReactNode,
+} from "react";
+import * as XLSX from "xlsx";
 import api from "../../../services/api";
 
 type Gender = "Male" | "Female";
@@ -40,58 +48,172 @@ const emptyForm: NonMemberForm = {
   work_location: "",
 };
 
-function getErrorMessage(error: any): string {
-  const response = error?.response?.data;
+const inputClass =
+  "mt-1 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-100";
+
+const labelClass = "block text-sm font-semibold text-slate-700";
+
+const reportHeaders = [
+  "No.",
+  "Non-Member Number",
+  "Full Name",
+  "Gender",
+  "ID Card Number",
+  "Phone Number",
+  "Address",
+  "Employer",
+  "Work Location",
+  "Total Loans",
+] as const;
+
+type ReportHeader = (typeof reportHeaders)[number];
+
+interface ReportRow {
+  "No.": number;
+  "Non-Member Number": string;
+  "Full Name": string;
+  Gender: string;
+  "ID Card Number": string;
+  "Phone Number": string;
+  Address: string;
+  Employer: string;
+  "Work Location": string;
+  "Total Loans": number;
+}
+
+function getErrorMessage(error: unknown): string {
+  const err = error as {
+    response?: {
+      data?: {
+        message?: string;
+        errors?: Record<string, unknown>;
+        data?: Record<string, unknown>;
+      };
+    };
+    message?: string;
+  };
+
+  const response = err?.response?.data;
   const errors = response?.errors ?? response?.data;
 
-  if (errors && typeof errors === "object") {
-    const firstError = Object.values(errors).flat()[0];
-
-    if (typeof firstError === "string") {
-      return firstError;
+  if (errors && typeof errors === "object" && !Array.isArray(errors)) {
+    for (const value of Object.values(errors)) {
+      const first = Array.isArray(value) ? value[0] : value;
+      if (typeof first === "string") return first;
     }
   }
 
   return (
     response?.message ||
-    error?.message ||
+    err?.message ||
     "An unexpected error occurred. Please try again."
   );
 }
 
-function getResponseData<T>(response: any): T {
-  return response?.data?.data ?? response?.data ?? [];
+function getResponseData<T>(response: unknown): T[] | null {
+  const payload = (response as { data?: unknown })?.data;
+
+  if (Array.isArray(payload)) return payload as T[];
+
+  if (payload && typeof payload === "object") {
+    const data = (payload as { data?: unknown }).data;
+
+    if (Array.isArray(data)) return data as T[];
+
+    if (data && typeof data === "object") {
+      const nested = (data as { data?: unknown }).data;
+      if (Array.isArray(nested)) return nested as T[];
+    }
+  }
+
+  return null;
+}
+
+function dateStamp(): string {
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
+function getLoanCount(nonMember: NonMember): number {
+  return nonMember.loans_count ?? nonMember.loans?.length ?? 0;
+}
+
+function reportRows(nonMembers: NonMember[]): ReportRow[] {
+  return nonMembers.map((nonMember, index) => ({
+    "No.": index + 1,
+    "Non-Member Number": nonMember.non_member_number || "",
+    "Full Name": nonMember.full_name || "",
+    Gender: nonMember.gender || "",
+    "ID Card Number": nonMember.id_card_number || "",
+    "Phone Number": nonMember.phone_number || "",
+    Address: nonMember.address || "",
+    Employer: nonMember.employer || "",
+    "Work Location": nonMember.work_location || "",
+    "Total Loans": getLoanCount(nonMember),
+  }));
+}
+
+function escapeHtml(value: unknown): string {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function downloadBlob(blob: Blob, filename: string): void {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 export default function NonMember() {
   const [nonMembers, setNonMembers] = useState<NonMember[]>([]);
-  const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
-  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const [showForm, setShowForm] = useState(false);
   const [editingNonMember, setEditingNonMember] = useState<NonMember | null>(
     null,
   );
-  const [form, setForm] = useState<NonMemberForm>(emptyForm);
+  const [form, setForm] = useState<NonMemberForm>({ ...emptyForm });
 
-  const [modalType, setModalType] = useState<ModalType | null>(null);
-  const [modalMessage, setModalMessage] = useState("");
+  const [modal, setModal] = useState<ModalType | null>(null);
+  const [message, setMessage] = useState("");
   const [selectedNonMember, setSelectedNonMember] = useState<NonMember | null>(
     null,
   );
-  const [deleting, setDeleting] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
 
   const fetchNonMembers = useCallback(async () => {
     setLoading(true);
 
     try {
       const response = await api.get("/nonmembers");
-      const data = getResponseData<NonMember[]>(response);
-      setNonMembers(Array.isArray(data) ? data : []);
+      const rows = getResponseData<NonMember>(response);
+
+      if (!rows) {
+        throw new Error("Invalid non-member data received from the server.");
+      }
+
+      setNonMembers(rows);
     } catch (error) {
-      setModalType("error");
-      setModalMessage(getErrorMessage(error));
+      setMessage(getErrorMessage(error));
+      setModal("error");
     } finally {
       setLoading(false);
     }
@@ -101,58 +223,71 @@ export default function NonMember() {
     void fetchNonMembers();
   }, [fetchNonMembers]);
 
-  const filteredNonMembers = nonMembers.filter((item) => {
+  const filteredNonMembers = useMemo(() => {
     const keyword = search.toLowerCase().trim();
 
-    if (!keyword) return true;
+    if (!keyword) return nonMembers;
 
-    return [
-      item.non_member_number,
-      item.full_name,
-      item.id_card_number,
-      item.phone_number,
-      item.employer,
-      item.work_location,
-      item.address,
-    ].some((value) =>
-      String(value ?? "")
-        .toLowerCase()
-        .includes(keyword),
+    return nonMembers.filter((nonMember) =>
+      [
+        nonMember.non_member_number,
+        nonMember.full_name,
+        nonMember.gender,
+        nonMember.id_card_number,
+        nonMember.phone_number,
+        nonMember.employer,
+        nonMember.work_location,
+        nonMember.address,
+      ].some((value) =>
+        String(value ?? "")
+          .toLowerCase()
+          .includes(keyword),
+      ),
     );
-  });
+  }, [nonMembers, search]);
+
+  const nonMembersWithLoans = useMemo(
+    () => nonMembers.filter((nonMember) => getLoanCount(nonMember) > 0).length,
+    [nonMembers],
+  );
+
+  const nonMembersWithoutLoans = nonMembers.length - nonMembersWithLoans;
 
   const openCreateForm = () => {
     setEditingNonMember(null);
     setForm({ ...emptyForm });
-    setIsFormOpen(true);
+    setShowForm(true);
   };
 
-  const openEditForm = (item: NonMember) => {
-    setEditingNonMember(item);
+  const openEditForm = (nonMember: NonMember) => {
+    setEditingNonMember(nonMember);
 
     setForm({
-      non_member_number: item.non_member_number ?? "",
-      full_name: item.full_name ?? "",
-      gender: item.gender ?? "Male",
-      id_card_number: item.id_card_number ?? "",
-      phone_number: item.phone_number ?? "",
-      address: item.address ?? "",
-      employer: item.employer ?? "",
-      work_location: item.work_location ?? "",
+      non_member_number: nonMember.non_member_number ?? "",
+      full_name: nonMember.full_name ?? "",
+      gender: nonMember.gender ?? "Male",
+      id_card_number: nonMember.id_card_number ?? "",
+      phone_number: nonMember.phone_number ?? "",
+      address: nonMember.address ?? "",
+      employer: nonMember.employer ?? "",
+      work_location: nonMember.work_location ?? "",
     });
 
-    setIsFormOpen(true);
+    setShowForm(true);
   };
 
   const closeForm = () => {
-    if (submitting) return;
+    if (saving) return;
 
-    setIsFormOpen(false);
+    setShowForm(false);
     setEditingNonMember(null);
     setForm({ ...emptyForm });
   };
 
-  const handleChange = (field: keyof NonMemberForm, value: string) => {
+  const updateField = <K extends keyof NonMemberForm>(
+    field: K,
+    value: NonMemberForm[K],
+  ) => {
     setForm((previous) => ({
       ...previous,
       [field]: value,
@@ -161,60 +296,42 @@ export default function NonMember() {
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (saving) return;
 
-    if (submitting) return;
-
-    setSubmitting(true);
+    setSaving(true);
 
     try {
-      if (editingNonMember) {
-        await api.put(`/nonmembers/${editingNonMember.id}`, {
-          full_name: form.full_name.trim(),
-          gender: form.gender,
-          id_card_number: form.id_card_number.trim(),
-          phone_number: form.phone_number.trim(),
-          address: form.address.trim(),
-          employer: form.employer.trim(),
-          work_location: form.work_location.trim(),
-        });
+      const response = editingNonMember
+        ? await api.put(`/nonmembers/${editingNonMember.id}`, form)
+        : await api.post("/nonmembers", form);
 
-        setModalType("success");
-        setModalMessage("Non-Member updated successfully.");
-      } else {
-        await api.post("/nonmembers", {
-          non_member_number: form.non_member_number.trim(),
-          full_name: form.full_name.trim(),
-          gender: form.gender,
-          id_card_number: form.id_card_number.trim(),
-          phone_number: form.phone_number.trim(),
-          address: form.address.trim(),
-          employer: form.employer.trim(),
-          work_location: form.work_location.trim(),
-        });
+      setMessage(
+        response.data?.message ||
+          (editingNonMember
+            ? "Non-member updated successfully."
+            : "Non-member created successfully."),
+      );
 
-        setModalType("success");
-        setModalMessage("Non-Member created successfully.");
-      }
-
-      setIsFormOpen(false);
+      setShowForm(false);
       setEditingNonMember(null);
       setForm({ ...emptyForm });
+      setModal("success");
 
       await fetchNonMembers();
     } catch (error) {
-      setModalType("error");
-      setModalMessage(getErrorMessage(error));
+      setMessage(getErrorMessage(error));
+      setModal("error");
     } finally {
-      setSubmitting(false);
+      setSaving(false);
     }
   };
 
-  const askDelete = (item: NonMember) => {
-    setSelectedNonMember(item);
-    setModalType("confirm");
-    setModalMessage(
-      `Are you sure you want to delete "${item.full_name}"? This action cannot be undone.`,
+  const confirmDelete = (nonMember: NonMember) => {
+    setSelectedNonMember(nonMember);
+    setMessage(
+      `Are you sure you want to delete "${nonMember.full_name}"? This action cannot be undone.`,
     );
+    setModal("confirm");
   };
 
   const handleDelete = async () => {
@@ -223,439 +340,694 @@ export default function NonMember() {
     setDeleting(true);
 
     try {
-      await api.delete(`/nonmembers/${selectedNonMember.id}`);
+      const response = await api.delete(`/nonmembers/${selectedNonMember.id}`);
 
-      setModalType("success");
-      setModalMessage("Non-Member deleted successfully.");
+      setMessage(response.data?.message || "Non-member deleted successfully.");
+      setModal("success");
       setSelectedNonMember(null);
 
       await fetchNonMembers();
     } catch (error) {
-      setModalType("error");
-      setModalMessage(getErrorMessage(error));
+      setMessage(getErrorMessage(error));
+      setModal("error");
       setSelectedNonMember(null);
     } finally {
       setDeleting(false);
     }
   };
 
-  const closeMessageModal = () => {
-    setModalType(null);
-    setModalMessage("");
+  const closeModal = () => {
+    if (deleting) return;
+
+    setModal(null);
+    setMessage("");
     setSelectedNonMember(null);
   };
 
-  const inputClass =
-    "mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100";
+  const closeExportMenu = () => setExportOpen(false);
 
-  const labelClass = "block text-sm font-medium text-gray-700";
+  const exportExcel = () => {
+    if (!filteredNonMembers.length) return;
+
+    const worksheet = XLSX.utils.json_to_sheet(reportRows(filteredNonMembers));
+
+    worksheet["!cols"] = [
+      { wch: 7 },
+      { wch: 20 },
+      { wch: 28 },
+      { wch: 12 },
+      { wch: 20 },
+      { wch: 18 },
+      { wch: 32 },
+      { wch: 24 },
+      { wch: 24 },
+      { wch: 12 },
+    ];
+
+    worksheet["!autofilter"] = {
+      ref: XLSX.utils.encode_range({
+        s: { r: 0, c: 0 },
+        e: { r: filteredNonMembers.length, c: reportHeaders.length - 1 },
+      }),
+    };
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Non-Members");
+    XLSX.writeFile(workbook, `CHTM_NonMember_Report_${dateStamp()}.xlsx`);
+
+    closeExportMenu();
+  };
+
+  const exportCSV = () => {
+    if (!filteredNonMembers.length) return;
+
+    const worksheet = XLSX.utils.json_to_sheet(reportRows(filteredNonMembers));
+    const csv = XLSX.utils.sheet_to_csv(worksheet);
+
+    downloadBlob(
+      new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8;" }),
+      `CHTM_NonMember_Report_${dateStamp()}.csv`,
+    );
+
+    closeExportMenu();
+  };
+
+  const exportWord = () => {
+    if (!filteredNonMembers.length) return;
+
+    const rows = reportRows(filteredNonMembers);
+
+    const tableHeader = reportHeaders
+      .map((header) => `<th>${escapeHtml(header)}</th>`)
+      .join("");
+
+    const tableRows = rows
+      .map(
+        (row) =>
+          `<tr>${reportHeaders
+            .map(
+              (header: ReportHeader) => `<td>${escapeHtml(row[header])}</td>`,
+            )
+            .join("")}</tr>`,
+      )
+      .join("");
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>CHTM Non-Member Report</title>
+        <style>
+          body { font-family: Arial, sans-serif; color: #1e293b; }
+          h1 { color: #1e3a8a; margin-bottom: 5px; }
+          p { color: #64748b; font-size: 10pt; }
+          table { width: 100%; border-collapse: collapse; font-size: 8pt; }
+          th { background: #1e293b; color: white; }
+          th, td { border: 1px solid #cbd5e1; padding: 6px; text-align: left; }
+          tr:nth-child(even) { background: #f1f5f9; }
+          @page { size: landscape; margin: 1.2cm; }
+        </style>
+      </head>
+      <body>
+        <h1>C-HTM Non-Member Report</h1>
+        <p>Generated on: ${escapeHtml(dateStamp())}</p>
+        <p>Total non-members in this report: ${filteredNonMembers.length}</p>
+        <table>
+          <thead><tr>${tableHeader}</tr></thead>
+          <tbody>${tableRows}</tbody>
+        </table>
+      </body>
+      </html>
+    `;
+
+    downloadBlob(
+      new Blob(["\uFEFF", html], {
+        type: "application/msword;charset=utf-8;",
+      }),
+      `CHTM_NonMember_Report_${dateStamp()}.doc`,
+    );
+
+    closeExportMenu();
+  };
+
+  const printReport = () => {
+    closeExportMenu();
+    window.print();
+  };
 
   return (
-    <div className="space-y-6 p-4 sm:p-6">
-      {/* Page heading */}
-      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+    <div className="nonmember-report-print min-h-full space-y-5 bg-slate-50/80 p-3 sm:space-y-6 sm:p-5 lg:p-6">
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between print:hidden">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Non-Members</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Manage non-member records and their information.
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-700">
+            C-HTM / Member Management
           </p>
+          <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+            Non-Members
+          </h1>
         </div>
 
         <button
           type="button"
           onClick={openCreateForm}
-          className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700 cursor-pointer"
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 hover:shadow-md focus:outline-none focus:ring-4 focus:ring-blue-200 active:scale-[0.98] cursor-pointer"
         >
-          <span className="text-lg leading-none">+</span>
+          <Icon name="plus" />
           Add Non-Member
         </button>
+      </header>
+
+      {/* Summary cards */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 print:hidden">
+        <SummaryCard
+          title="Total Non-Members"
+          value={nonMembers.length}
+          color="blue"
+          icon="users"
+        />
+        <SummaryCard
+          title="With Loans"
+          value={nonMembersWithLoans}
+          color="green"
+          icon="loan"
+        />
+        <SummaryCard
+          title="Without Loans"
+          value={nonMembersWithoutLoans}
+          color="gray"
+          icon="users"
+        />
       </div>
 
-      {/* Summary */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between">
+      {/* Registry table */}
+      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div className="border-b border-slate-200 bg-white p-4 sm:p-5 print:hidden">
+          <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
             <div>
-              <p className="text-sm text-gray-500">Total Non-Members</p>
-              <p className="mt-2 text-3xl font-bold text-gray-900">
-                {nonMembers.length}
-              </p>
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="text-lg font-bold tracking-tight text-slate-900">
+                  Non-Member List
+                </h2>
+                <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-700 ring-1 ring-inset ring-blue-100">
+                  {filteredNonMembers.length}
+                </span>
+              </div>
             </div>
 
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-              <svg
-                className="h-6 w-6"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2m6-10a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm10 10v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <div className="relative w-full sm:w-72">
+                <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-400">
+                  <Icon name="search" />
+                </span>
+                <input
+                  type="search"
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  placeholder="Search non-members..."
+                  aria-label="Search non-members"
+                  className="w-full rounded-xl border border-slate-300 bg-slate-50 py-2.5 pl-10 pr-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-100 cursor-pointer"
                 />
-              </svg>
-            </div>
-          </div>
-        </div>
+              </div>
 
-        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-500">Filtered Results</p>
-              <p className="mt-2 text-3xl font-bold text-gray-900">
-                {filteredNonMembers.length}
-              </p>
-            </div>
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setExportOpen((open) => !open)}
+                  disabled={loading || filteredNonMembers.length === 0}
+                  aria-expanded={exportOpen}
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto cursor-pointer"
+                >
+                  <Icon name="download" />
+                  Export
+                  <Icon name="chevron" />
+                </button>
 
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-purple-50 text-purple-600">
-              <svg
-                className="h-6 w-6"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                viewBox="0 0 24 24"
-              >
-                <circle cx="10.5" cy="10.5" r="6.5" />
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="m16 16 4 4"
-                />
-              </svg>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Table */}
-      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-        <div className="flex flex-col gap-3 border-b border-gray-200 p-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h2 className="font-semibold text-gray-900">Non-Member List</h2>
-          </div>
-
-          <div className="relative w-full sm:max-w-xs">
-            <svg
-              className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              viewBox="0 0 24 24"
-            >
-              <circle cx="10.5" cy="10.5" r="6.5" />
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="m16 16 4 4"
-              />
-            </svg>
-
-            <input
-              type="text"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search non-members..."
-              className="w-full rounded-lg border border-gray-300 py-2.5 pl-9 pr-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-            />
-          </div>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[1050px] text-left text-sm">
-            <thead className="bg-gray-50 text-xs uppercase tracking-wider text-gray-500">
-              <tr className="bg-slate-800 text-white">
-                <th className="px-5 py-4 font-semibold">Non-Member No.</th>
-                <th className="px-5 py-4 font-semibold">Full Name</th>
-                <th className="px-5 py-4 font-semibold">ID Card Number</th>
-                <th className="px-5 py-4 font-semibold">Phone</th>
-                <th className="px-5 py-4 font-semibold">Employer</th>
-                <th className="px-5 py-4 font-semibold">Work Location</th>
-                <th className="px-5 py-4 text-center font-semibold">Loans</th>
-                <th className="px-5 py-4 text-center font-semibold">Actions</th>
-              </tr>
-            </thead>
-
-            <tbody className="divide-y divide-gray-100">
-              {loading ? (
-                <tr>
-                  <td colSpan={8} className="px-5 py-12 text-center">
-                    <div className="flex items-center justify-center gap-3 text-gray-500">
-                      <span className="h-5 w-5 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600" />
-                      Loading non-members...
+                {exportOpen && (
+                  <>
+                    <button
+                      type="button"
+                      aria-label="Close export menu"
+                      className="fixed inset-0 z-10 cursor-default"
+                      onClick={closeExportMenu}
+                    />
+                    <div className="absolute right-0 z-20 mt-2 w-60 overflow-hidden rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl">
+                      <ExportOption
+                        icon="print"
+                        title="Print"
+                        description="Print-ready report"
+                        color="slate"
+                        onClick={printReport}
+                      />
+                      <ExportOption
+                        icon="excel"
+                        title="Excel"
+                        description="Download .xlsx file"
+                        color="green"
+                        onClick={exportExcel}
+                      />
+                      <ExportOption
+                        icon="word"
+                        title="Word"
+                        description="Download .doc file"
+                        color="blue"
+                        onClick={exportWord}
+                      />
+                      <ExportOption
+                        icon="csv"
+                        title="CSV"
+                        description="Download .csv file"
+                        color="purple"
+                        onClick={exportCSV}
+                      />
                     </div>
-                  </td>
-                </tr>
-              ) : filteredNonMembers.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={8}
-                    className="px-5 py-12 text-center text-gray-500"
-                  >
-                    {search
-                      ? "No non-members match your search."
-                      : "No non-member records found."}
-                  </td>
-                </tr>
-              ) : (
-                filteredNonMembers.map((item) => (
-                  <tr key={item.id} className="transition hover:bg-gray-50">
-                    <td className="whitespace-nowrap px-5 py-4 font-medium text-gray-900">
-                      {item.non_member_number || "-"}
-                    </td>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
 
-                    <td className="whitespace-nowrap px-5 py-4 text-gray-700">
-                      {item.full_name || "-"}
-                    </td>
-
-                    <td className="whitespace-nowrap px-5 py-4 text-gray-700">
-                      {item.id_card_number || "-"}
-                    </td>
-
-                    <td className="whitespace-nowrap px-5 py-4 text-gray-600">
-                      {item.phone_number || "-"}
-                    </td>
-
-                    <td className="px-5 py-4 text-gray-600">
-                      {item.employer || "-"}
-                    </td>
-
-                    <td className="px-5 py-4 text-gray-600">
-                      {item.work_location || "-"}
-                    </td>
-
-                    <td className="px-5 py-4 text-center">
-                      <span className="inline-flex min-w-8 items-center justify-center rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">
-                        {item.loans_count ?? item.loans?.length ?? 0}
-                      </span>
-                    </td>
-
-                    <td className="px-5 py-4">
-                      <div className="flex items-center justify-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => openEditForm(item)}
-                          title="Edit non-member"
-                          className="rounded-lg p-2 text-blue-600 transition hover:bg-blue-50 cursor-pointer"
-                        >
-                          <svg
-                            className="h-7 w-5"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2.8"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="m16.86 4.49 2.65 2.65M4 20l4.5-1 11-11a2.12 2.12 0 0 0-3-3l-11 11L4 20Z"
-                            />
-                          </svg>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => askDelete(item)}
-                          title="Delete non-member"
-                          className="rounded-lg p-2 text-red-600 transition hover:bg-red-50 cursor-pointer"
-                        >
-                          <svg
-                            className="h-7 w-5"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2.8"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M3 6h18m-2 0-1 14H6L5 6m3 0V4h8v2m-7 4v6m4-6v6"
-                            />
-                          </svg>
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+          <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-slate-100 pt-3 text-xs text-slate-500">
+            <span className="inline-flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-green-500" />
+              With loans:{" "}
+              <strong className="text-slate-800">{nonMembersWithLoans}</strong>
+            </span>
+            <span className="inline-flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-slate-400" />
+              Without loans:{" "}
+              <strong className="text-slate-800">
+                {nonMembersWithoutLoans}
+              </strong>
+            </span>
+            <span className="inline-flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-blue-500" />
+              Showing:{" "}
+              <strong className="text-slate-800">
+                {filteredNonMembers.length}
+              </strong>{" "}
+              of {nonMembers.length}
+            </span>
+          </div>
         </div>
 
-        <div className="flex flex-col gap-2 border-t border-gray-200 px-5 py-3 text-xs text-gray-500 sm:flex-row sm:items-center sm:justify-between">
-          <span>
-            Showing {filteredNonMembers.length} of {nonMembers.length} records
-          </span>
+        {/* Print heading */}
+        <div className="hidden px-5 py-4 print:block">
+          <h1 className="text-xl font-bold text-slate-900">
+            C-HTM Non-Member Report
+          </h1>
+          <p className="mt-1 text-sm text-slate-600">
+            Generated on {dateStamp()} · {filteredNonMembers.length} non-members
+          </p>
+          {search.trim() && (
+            <p className="mt-1 text-sm text-slate-600">
+              Search filter: {search}
+            </p>
+          )}
+        </div>
+
+        {/* Loading and empty states */}
+        {loading ? (
+          <div className="flex flex-col items-center justify-center px-4 py-16 text-center">
+            <span className="h-9 w-9 animate-spin rounded-full border-4 border-blue-100 border-t-blue-600" />
+            <p className="mt-3 text-sm font-medium text-slate-700">
+              Loading non-members...
+            </p>
+          </div>
+        ) : filteredNonMembers.length === 0 ? (
+          <div className="px-4 py-16 text-center">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-500">
+              <Icon name="users" />
+            </div>
+            <h3 className="mt-4 font-semibold text-slate-900">
+              {search.trim()
+                ? "No matching non-members"
+                : "No non-members registered"}
+            </h3>
+            <p className="mx-auto mt-1 max-w-sm text-sm leading-6 text-slate-500">
+              {search.trim()
+                ? "No records match your search. Try a different name, number, or phone number."
+                : "Add a non-member to start building your registry."}
+            </p>
+            {search.trim() && (
+              <button
+                type="button"
+                onClick={() => setSearch("")}
+                className="mt-4 rounded-lg px-3 py-2 text-sm font-semibold text-blue-700 transition hover:bg-blue-50"
+              >
+                Clear search
+              </button>
+            )}
+          </div>
+        ) : (
+          <>
+            {/* Mobile cards */}
+            <div className="divide-y divide-slate-100 md:hidden print:hidden">
+              {filteredNonMembers.map((nonMember, index) => (
+                <article
+                  key={nonMember.id}
+                  className="p-4 transition hover:bg-blue-50/40"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-100 text-base font-bold text-blue-700">
+                      {nonMember.full_name?.trim().charAt(0).toUpperCase() ||
+                        "N"}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="mb-1 text-xs text-slate-400">
+                            No. {index + 1}
+                          </p>
+                          <h3 className="break-words font-semibold text-slate-900">
+                            {nonMember.full_name || "-"}
+                          </h3>
+                          <p className="mt-1 text-xs font-medium text-blue-700">
+                            {nonMember.non_member_number || "-"}
+                          </p>
+                        </div>
+                        <span className="rounded-lg bg-blue-50 px-2.5 py-1.5 text-xs font-bold text-blue-700">
+                          Loans: {getLoanCount(nonMember)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-4 rounded-xl bg-slate-50 p-3">
+                    <MobileField
+                      label="Phone number"
+                      value={nonMember.phone_number}
+                    />
+                    <MobileField label="Gender" value={nonMember.gender} />
+                    <MobileField
+                      label="ID card number"
+                      value={nonMember.id_card_number}
+                    />
+                    <MobileField label="Employer" value={nonMember.employer} />
+                    <MobileField
+                      label="Work location"
+                      value={nonMember.work_location}
+                    />
+                    <MobileField label="Address" value={nonMember.address} />
+                  </div>
+
+                  <div className="mt-3 flex justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => openEditForm(nonMember)}
+                      aria-label={`Edit ${nonMember.full_name}`}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-white px-3 py-2 text-xs font-semibold text-blue-700 transition hover:bg-blue-50 cursor-pointer"
+                    >
+                      <Icon name="edit" />
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => confirmDelete(nonMember)}
+                      aria-label={`Delete ${nonMember.full_name}`}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-50 cursor-pointer"
+                    >
+                      <Icon name="trash" />
+                      Delete
+                    </button>
+                  </div>
+                </article>
+              ))}
+            </div>
+
+            {/* Desktop table */}
+            <div className="hidden w-full overflow-x-auto md:block">
+              <table className="w-full min-w-[1150px] border-collapse text-left text-sm">
+                <thead className="bg-slate-800 text-xs uppercase tracking-wider text-slate-100">
+                  <tr>
+                    <th className="w-16 whitespace-nowrap px-4 py-4 text-center font-semibold">
+                      No.
+                    </th>
+                    <th className="whitespace-nowrap px-4 py-4 font-semibold">
+                      Non-Member Number
+                    </th>
+                    <th className="min-w-52 px-4 py-4 font-semibold">
+                      Non-Member Details
+                    </th>
+                    <th className="whitespace-nowrap px-4 py-4 font-semibold">
+                      ID Card Number
+                    </th>
+                    <th className="whitespace-nowrap px-4 py-4 font-semibold">
+                      Phone Number
+                    </th>
+                    <th className="min-w-40 px-4 py-4 font-semibold">
+                      Address
+                    </th>
+                    <th className="min-w-36 px-4 py-4 font-semibold">
+                      Employer
+                    </th>
+                    <th className="min-w-36 px-4 py-4 font-semibold">
+                      Work Location
+                    </th>
+                    <th className="whitespace-nowrap px-4 py-4 text-center font-semibold">
+                      Loans
+                    </th>
+                    <th className="sticky right-0 z-10 whitespace-nowrap bg-slate-800 px-4 py-4 text-center font-semibold print:hidden">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+
+                <tbody className="divide-y divide-slate-100">
+                  {filteredNonMembers.map((nonMember, index) => (
+                    <tr
+                      key={nonMember.id}
+                      className="group transition-colors odd:bg-white even:bg-slate-50/70 hover:bg-blue-50"
+                    >
+                      <td className="px-4 py-4 text-center tabular-nums text-slate-400">
+                        {index + 1}
+                      </td>
+
+                      <td className="whitespace-nowrap px-4 py-4">
+                        <span className="inline-flex rounded-lg bg-blue-50 px-2.5 py-1.5 text-xs font-bold text-blue-800 ring-1 ring-inset ring-blue-100">
+                          {nonMember.non_member_number || "-"}
+                        </span>
+                      </td>
+
+                      <td className="px-4 py-4">
+                        <div className="flex min-w-0 items-center gap-3">
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 font-bold text-slate-600 transition group-hover:bg-blue-100 group-hover:text-blue-700">
+                            {nonMember.full_name
+                              ?.trim()
+                              .charAt(0)
+                              .toUpperCase() || "N"}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="break-words font-semibold text-slate-900">
+                              {nonMember.full_name || "-"}
+                            </p>
+                            <p className="mt-1 text-xs text-slate-500">
+                              {nonMember.gender || "-"}
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+
+                      <td className="whitespace-nowrap px-4 py-4 text-slate-600">
+                        {nonMember.id_card_number || "-"}
+                      </td>
+
+                      <td className="whitespace-nowrap px-4 py-4 text-slate-600">
+                        {nonMember.phone_number || "-"}
+                      </td>
+
+                      <td className="max-w-56 whitespace-normal break-words px-4 py-4 text-slate-600">
+                        {nonMember.address || "-"}
+                      </td>
+
+                      <td className="max-w-48 whitespace-normal break-words px-4 py-4 text-slate-600">
+                        {nonMember.employer || "-"}
+                      </td>
+
+                      <td className="max-w-48 whitespace-normal break-words px-4 py-4 text-slate-600">
+                        {nonMember.work_location || "-"}
+                      </td>
+
+                      <td className="px-4 py-4 text-center">
+                        <span className="inline-flex min-w-9 items-center justify-center rounded-lg bg-blue-50 px-2.5 py-1.5 text-xs font-bold tabular-nums text-blue-700">
+                          {getLoanCount(nonMember)}
+                        </span>
+                      </td>
+
+                      <td className="sticky right-0 bg-white/95 px-3 py-4 text-center shadow-[-8px_0_12px_-12px_rgba(15,23,42,0.5)] group-hover:bg-blue-50 print:hidden">
+                        <div className="flex items-center justify-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => openEditForm(nonMember)}
+                            title="Edit non-member"
+                            aria-label={`Edit ${nonMember.full_name}`}
+                            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-blue-100 bg-white text-blue-700 transition hover:border-blue-300 hover:bg-blue-600 hover:text-white focus:outline-none focus:ring-4 focus:ring-blue-100 cursor-pointer"
+                          >
+                            <Icon name="edit" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => confirmDelete(nonMember)}
+                            title="Delete non-member"
+                            aria-label={`Delete ${nonMember.full_name}`}
+                            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-red-100 bg-white text-red-600 transition hover:border-red-300 hover:bg-red-600 hover:text-white focus:outline-none focus:ring-4 focus:ring-red-100 cursor-pointer"
+                          >
+                            <Icon name="trash" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
+
+        {/* Table footer */}
+        <footer className="flex flex-col gap-3 border-t border-slate-200 bg-slate-50 px-4 py-3.5 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between print:hidden">
+          <p>
+            Showing{" "}
+            <strong className="text-slate-800">
+              {filteredNonMembers.length}
+            </strong>{" "}
+            of <strong className="text-slate-800">{nonMembers.length}</strong>{" "}
+            non-members
+          </p>
 
           <button
             type="button"
             onClick={() => void fetchNonMembers()}
             disabled={loading}
-            className="self-start font-medium text-blue-600 transition hover:text-blue-800 disabled:cursor-not-allowed disabled:opacity-50 sm:self-auto"
+            className="inline-flex items-center justify-center gap-2 self-start rounded-lg border border-slate-200 bg-white px-3 py-2 font-semibold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50 sm:self-auto cursor-pointer"
           >
+            <Icon name="refresh" />
             Refresh list
           </button>
-        </div>
-      </div>
+        </footer>
+      </section>
 
-      {/* Create / Edit Form Modal */}
-      {isFormOpen && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center overflow-y-auto bg-black/50 p-4">
-          <div className="my-auto w-full max-w-2xl rounded-2xl bg-white shadow-xl">
-            <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+      {/* Create / Edit modal */}
+      {showForm && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center overflow-y-auto bg-slate-950/60 p-3 backdrop-blur-sm sm:p-5 print:hidden">
+          <div className="my-auto w-full max-w-3xl overflow-hidden rounded-2xl border border-white/20 bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-200 px-4 py-4 sm:px-6">
               <div>
-                <h2 className="text-lg font-bold text-gray-900">
+                <h2 className="text-lg font-bold text-slate-900">
                   {editingNonMember ? "Edit Non-Member" : "Add Non-Member"}
                 </h2>
-                <p className="mt-1 text-sm text-gray-500">
-                  Enter the non-member information below.
-                </p>
               </div>
 
               <button
                 type="button"
+                disabled={saving}
                 onClick={closeForm}
-                disabled={submitting}
                 aria-label="Close form"
-                className="rounded-lg p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-700 disabled:opacity-50"
+                className="rounded-xl p-2 text-2xl leading-none text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 disabled:opacity-50 cursor-pointer"
               >
-                <svg
-                  className="h-5 w-5"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="m6 6 12 12M18 6 6 18"
-                  />
-                </svg>
+                ×
               </button>
             </div>
 
             <form onSubmit={handleSubmit}>
-              <div className="grid grid-cols-1 gap-4 p-6 sm:grid-cols-2">
-                <div>
-                  <label className={labelClass}>
-                    Non-Member Number <span className="text-red-500">*</span>
-                  </label>
+              <div className="grid max-h-[65vh] grid-cols-1 gap-4 overflow-y-auto p-4 sm:grid-cols-2 sm:p-6">
+                <FormField label="Non-Member Number" required>
                   <input
-                    type="text"
                     required
+                    maxLength={255}
                     value={form.non_member_number}
                     disabled={!!editingNonMember}
                     onChange={(event) =>
-                      handleChange("non_member_number", event.target.value)
+                      updateField("non_member_number", event.target.value)
                     }
                     placeholder="Enter non-member number"
-                    className={`${inputClass} disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500`}
+                    className={inputClass}
                   />
                   {editingNonMember && (
-                    <p className="mt-1 text-xs text-gray-500">
+                    <p className="mt-1 text-xs text-slate-500">
                       Non-member number cannot be changed.
                     </p>
                   )}
-                </div>
+                </FormField>
 
-                <div>
-                  <label className={labelClass}>
-                    Full Name <span className="text-red-500">*</span>
-                  </label>
+                <FormField label="Full Name" required>
                   <input
-                    type="text"
                     required
+                    maxLength={255}
                     value={form.full_name}
                     onChange={(event) =>
-                      handleChange("full_name", event.target.value)
+                      updateField("full_name", event.target.value)
                     }
                     placeholder="Enter full name"
                     className={inputClass}
                   />
-                </div>
+                </FormField>
 
-                <div>
-                  <label className={labelClass}>
-                    Gender <span className="text-red-500">*</span>
-                  </label>
+                <FormField label="Gender" required>
                   <select
                     required
                     value={form.gender}
                     onChange={(event) =>
-                      handleChange("gender", event.target.value)
+                      updateField("gender", event.target.value as Gender)
                     }
                     className={inputClass}
                   >
                     <option value="Male">Male</option>
                     <option value="Female">Female</option>
                   </select>
-                </div>
+                </FormField>
 
-                <div>
-                  <label className={labelClass}>
-                    ID Card Number <span className="text-red-500">*</span>
-                  </label>
+                <FormField label="ID Card Number" required>
                   <input
-                    type="text"
                     required
+                    maxLength={255}
                     value={form.id_card_number}
                     onChange={(event) =>
-                      handleChange("id_card_number", event.target.value)
+                      updateField("id_card_number", event.target.value)
                     }
                     placeholder="Enter ID card number"
                     className={inputClass}
                   />
-                </div>
+                </FormField>
 
-                <div>
-                  <label className={labelClass}>
-                    Phone Number <span className="text-red-500">*</span>
-                  </label>
+                <FormField label="Phone Number" required>
                   <input
-                    type="tel"
                     required
+                    maxLength={255}
                     value={form.phone_number}
                     onChange={(event) =>
-                      handleChange("phone_number", event.target.value)
+                      updateField("phone_number", event.target.value)
                     }
                     placeholder="Enter phone number"
                     className={inputClass}
                   />
-                </div>
+                </FormField>
 
-                <div>
-                  <label className={labelClass}>
-                    Employer <span className="text-red-500">*</span>
-                  </label>
+                <FormField label="Employer" required>
                   <input
-                    type="text"
                     required
+                    maxLength={255}
                     value={form.employer}
                     onChange={(event) =>
-                      handleChange("employer", event.target.value)
+                      updateField("employer", event.target.value)
                     }
                     placeholder="Enter employer"
                     className={inputClass}
                   />
-                </div>
+                </FormField>
 
-                <div>
-                  <label className={labelClass}>
-                    Work Location <span className="text-red-500">*</span>
-                  </label>
+                <FormField label="Work Location" required>
                   <input
-                    type="text"
                     required
+                    maxLength={255}
                     value={form.work_location}
                     onChange={(event) =>
-                      handleChange("work_location", event.target.value)
+                      updateField("work_location", event.target.value)
                     }
                     placeholder="Enter work location"
                     className={inputClass}
                   />
-                </div>
+                </FormField>
 
                 <div className="sm:col-span-2">
                   <label className={labelClass}>
@@ -663,10 +1035,11 @@ export default function NonMember() {
                   </label>
                   <textarea
                     required
+                    maxLength={255}
                     rows={3}
                     value={form.address}
                     onChange={(event) =>
-                      handleChange("address", event.target.value)
+                      updateField("address", event.target.value)
                     }
                     placeholder="Enter address"
                     className={inputClass}
@@ -674,25 +1047,22 @@ export default function NonMember() {
                 </div>
               </div>
 
-              <div className="flex flex-col-reverse gap-3 border-t border-gray-200 px-6 py-4 sm:flex-row sm:justify-end">
+              <div className="flex flex-col-reverse gap-3 border-t border-slate-200 bg-slate-50/70 px-4 py-4 sm:flex-row sm:justify-end sm:px-6">
                 <button
                   type="button"
                   onClick={closeForm}
-                  disabled={submitting}
-                  className="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-50 cursor-pointer"
+                  disabled={saving}
+                  className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:opacity-50 cursor-pointer"
                 >
                   Cancel
                 </button>
-
                 <button
                   type="submit"
-                  disabled={submitting}
-                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  disabled={saving}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
                 >
-                  {submitting && (
-                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white cursor-pointer" />
-                  )}
-                  {submitting
+                  {saving && <Spinner />}
+                  {saving
                     ? "Saving..."
                     : editingNonMember
                       ? "Update Non-Member"
@@ -704,109 +1074,63 @@ export default function NonMember() {
         </div>
       )}
 
-      {/* Confirmation / Feedback Modal */}
-      {modalType && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+      {/* Confirmation and feedback modal */}
+      {modal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm print:hidden">
+          <div className="w-full max-w-md rounded-2xl border border-slate-100 bg-white p-5 shadow-2xl sm:p-6">
             <div className="flex items-start gap-4">
               <div
                 className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${
-                  modalType === "success"
-                    ? "bg-green-100 text-green-600"
-                    : modalType === "confirm"
-                      ? "bg-amber-100 text-amber-600"
-                      : "bg-red-100 text-red-600"
+                  modal === "success"
+                    ? "bg-green-100 text-green-700"
+                    : modal === "confirm"
+                      ? "bg-amber-100 text-amber-700"
+                      : "bg-red-100 text-red-700"
                 }`}
               >
-                {modalType === "success" ? (
-                  <svg
-                    className="h-6 w-6"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="m5 12 4 4L19 6"
-                    />
-                  </svg>
-                ) : modalType === "confirm" ? (
-                  <svg
-                    className="h-6 w-6"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M12 9v4m0 4h.01M10.3 3.86 1.82 18.5A2 2 0 0 0 3.55 21h16.9a2 2 0 0 0 1.73-2.5L13.7 3.86a2 2 0 0 0-3.4 0Z"
-                    />
-                  </svg>
-                ) : (
-                  <svg
-                    className="h-6 w-6"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M12 8v4m0 4h.01M10.3 3.86 1.82 18.5A2 2 0 0 0 3.55 21h16.9a2 2 0 0 0 1.73-2.5L13.7 3.86a2 2 0 0 0-3.4 0Z"
-                    />
-                  </svg>
-                )}
+                <Icon name={modal === "success" ? "check" : "warning"} />
               </div>
 
               <div className="min-w-0 flex-1">
-                <h3 className="font-semibold text-gray-900">
-                  {modalType === "success"
+                <h3 className="font-bold text-slate-900">
+                  {modal === "success"
                     ? "Success"
-                    : modalType === "confirm"
+                    : modal === "confirm"
                       ? "Confirm Delete"
                       : "Something Went Wrong"}
                 </h3>
-
-                <p className="mt-2 whitespace-pre-line text-sm leading-6 text-gray-600">
-                  {modalMessage}
+                <p className="mt-2 whitespace-pre-line text-sm leading-6 text-slate-600">
+                  {message}
                 </p>
               </div>
             </div>
 
-            <div className="mt-6 flex justify-end gap-3">
-              {modalType === "confirm" ? (
+            <div className="mt-6 flex flex-col-reverse justify-end gap-3 sm:flex-row">
+              {modal === "confirm" ? (
                 <>
                   <button
                     type="button"
-                    onClick={closeMessageModal}
+                    onClick={closeModal}
                     disabled={deleting}
-                    className="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-50 cursor-pointer"
+                    className="rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50 cursor-pointer"
                   >
                     Cancel
                   </button>
-
                   <button
                     type="button"
                     onClick={() => void handleDelete()}
                     disabled={deleting}
-                    className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700 focus:outline-none focus:ring-4 focus:ring-red-200 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
                   >
-                    {deleting && (
-                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
-                    )}
-                    {deleting ? "Deleting..." : "Delete"}
+                    {deleting && <Spinner />}
+                    {deleting ? "Deleting..." : "Delete Non-Member"}
                   </button>
                 </>
               ) : (
                 <button
                   type="button"
-                  onClick={closeMessageModal}
-                  className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700 cursor-pointer"
+                  onClick={closeModal}
+                  className="rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-200"
                 >
                   OK
                 </button>
@@ -815,6 +1139,427 @@ export default function NonMember() {
           </div>
         </div>
       )}
+
+      {/* Print styling */}
+      <style>{`
+        @media print {
+          @page {
+            size: landscape;
+            margin: 10mm;
+          }
+
+          body {
+            background: #fff !important;
+            color: #111827 !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+
+          body * {
+            visibility: hidden !important;
+          }
+
+          .nonmember-report-print,
+          .nonmember-report-print * {
+            visibility: visible !important;
+          }
+
+          .nonmember-report-print {
+            position: absolute !important;
+            inset: 0 auto auto 0 !important;
+            width: 100% !important;
+            min-height: 0 !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            background: #fff !important;
+          }
+
+          .nonmember-report-print .print\\:hidden {
+            display: none !important;
+          }
+
+          .nonmember-report-print .print\\:block {
+            display: block !important;
+          }
+
+          .nonmember-report-print .md\\:hidden {
+            display: none !important;
+          }
+
+          .nonmember-report-print .overflow-hidden,
+          .nonmember-report-print .overflow-x-auto {
+            overflow: visible !important;
+          }
+
+          .nonmember-report-print table {
+            width: 100% !important;
+            min-width: 0 !important;
+            table-layout: auto !important;
+            font-size: 7pt !important;
+          }
+
+          .nonmember-report-print th,
+          .nonmember-report-print td {
+            padding: 4px !important;
+            overflow-wrap: anywhere !important;
+          }
+
+          .nonmember-report-print thead {
+            display: table-header-group;
+          }
+
+          .nonmember-report-print tr {
+            break-inside: avoid;
+          }
+
+          .nonmember-report-print section {
+            border: none !important;
+            box-shadow: none !important;
+          }
+
+          .nonmember-report-print .rounded-2xl {
+            border-radius: 0 !important;
+          }
+        }
+      `}</style>
     </div>
   );
+}
+
+function SummaryCard({
+  title,
+  value,
+  color,
+  icon,
+}: {
+  title: string;
+  value: number;
+  color: "blue" | "green" | "gray";
+  icon: "users" | "check" | "loan";
+}) {
+  const colors = {
+    blue: {
+      iconBox: "bg-blue-100 text-blue-700",
+      number: "text-blue-700",
+      border: "border-blue-100",
+      accent: "bg-blue-500",
+    },
+    green: {
+      iconBox: "bg-green-100 text-green-700",
+      number: "text-green-700",
+      border: "border-green-100",
+      accent: "bg-green-500",
+    },
+    gray: {
+      iconBox: "bg-slate-100 text-slate-600",
+      number: "text-slate-800",
+      border: "border-slate-200",
+      accent: "bg-slate-400",
+    },
+  }[color];
+
+  return (
+    <div
+      className={`relative overflow-hidden rounded-2xl border ${colors.border} bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md sm:p-5`}
+    >
+      <div className={`absolute inset-x-0 top-0 h-1 ${colors.accent}`} />
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-sm font-medium text-slate-500">{title}</p>
+          <p
+            className={`mt-2 text-3xl font-bold tracking-tight ${colors.number}`}
+          >
+            {value.toLocaleString()}
+          </p>
+        </div>
+        <div
+          className={`flex h-11 w-11 items-center justify-center rounded-xl ${colors.iconBox}`}
+        >
+          <Icon name={icon} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MobileField({
+  label,
+  value,
+}: {
+  label: string;
+  value?: string | null;
+}) {
+  return (
+    <div className="min-w-0">
+      <p className="text-xs font-medium text-slate-500">{label}</p>
+      <p className="mt-0.5 break-words text-sm font-medium text-slate-800">
+        {value || "-"}
+      </p>
+    </div>
+  );
+}
+
+function FormField({
+  label,
+  required,
+  children,
+}: {
+  label: string;
+  required?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <div>
+      <label className={labelClass}>
+        {label} {required && <span className="text-red-500">*</span>}
+      </label>
+      {children}
+    </div>
+  );
+}
+
+function ExportOption({
+  icon,
+  title,
+  description,
+  color,
+  onClick,
+}: {
+  icon: string;
+  title: string;
+  description: string;
+  color: "slate" | "green" | "blue" | "purple";
+  onClick: () => void;
+}) {
+  const colors = {
+    slate: "bg-slate-100 text-slate-700 group-hover:bg-slate-200",
+    green: "bg-green-100 text-green-700 group-hover:bg-green-200",
+    blue: "bg-blue-100 text-blue-700 group-hover:bg-blue-200",
+    purple: "bg-purple-100 text-purple-700 group-hover:bg-purple-200",
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-200"
+    >
+      <span
+        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition ${colors[color]}`}
+      >
+        <Icon name={icon} />
+      </span>
+      <span>
+        <span className="block text-sm font-semibold text-slate-800">
+          {title}
+        </span>
+        <span className="mt-0.5 block text-xs text-slate-500">
+          {description}
+        </span>
+      </span>
+    </button>
+  );
+}
+
+function Spinner() {
+  return (
+    <span className="h-4 w-4 animate-spin rounded-full border-2 border-current/30 border-t-current" />
+  );
+}
+
+function Icon({ name }: { name: string }) {
+  const common = {
+    className: "h-5 w-5",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 1.8,
+    viewBox: "0 0 24 24",
+    "aria-hidden": true as const,
+  };
+
+  switch (name) {
+    case "plus":
+      return (
+        <svg {...common}>
+          <path strokeLinecap="round" d="M12 5v14M5 12h14" />
+        </svg>
+      );
+
+    case "search":
+      return (
+        <svg {...common}>
+          <circle cx="10.5" cy="10.5" r="6.5" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="m16 16 4 4" />
+        </svg>
+      );
+
+    case "download":
+      return (
+        <svg {...common}>
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M12 3v12m-5-5 5 5 5-5M5 17v3h14v-3"
+          />
+        </svg>
+      );
+
+    case "chevron":
+      return (
+        <svg {...common}>
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="m7 10 5 5 5-5"
+          />
+        </svg>
+      );
+
+    case "print":
+      return (
+        <svg {...common}>
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M7 8V3.5h10V8M7 17H5a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2"
+          />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M7 14h10v6.5H7z"
+          />
+        </svg>
+      );
+
+    case "excel":
+      return (
+        <svg {...common}>
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M13 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10z"
+          />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M13 3v7h7M8 13l4 5m0-5-4 5"
+          />
+        </svg>
+      );
+
+    case "word":
+      return (
+        <svg {...common}>
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M13 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10z"
+          />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M13 3v7h7M7.5 13l1.5 5 2-4 2 4 1.5-5"
+          />
+        </svg>
+      );
+
+    case "csv":
+      return (
+        <svg {...common}>
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M13 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10z"
+          />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M13 3v7h7M8 14h8M8 17h8"
+          />
+        </svg>
+      );
+
+    case "edit":
+      return (
+        <svg {...common}>
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="m16.86 4.49 2.65 2.65M4 20l4.5-1 11-11a2.12 2.12 0 0 0-3-3l-11 11L4 20Z"
+          />
+        </svg>
+      );
+
+    case "trash":
+      return (
+        <svg {...common}>
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M3 6h18m-2 0-1 14H6L5 6m3 0V4h8v2m-7 4v6m4-6v6"
+          />
+        </svg>
+      );
+
+    case "refresh":
+      return (
+        <svg {...common}>
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M20 7v5h-5M4 17v-5h5"
+          />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M5.6 9A7 7 0 0 1 18 6l2 6M4 12l2 6a7 7 0 0 0 12.4-3"
+          />
+        </svg>
+      );
+
+    case "check":
+      return (
+        <svg {...common}>
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="m5 12 4 4L19 6"
+          />
+        </svg>
+      );
+
+    case "loan":
+      return (
+        <svg {...common}>
+          <rect x="3" y="5" width="18" height="14" rx="2" />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M3 10h18M7 15h4"
+          />
+        </svg>
+      );
+
+    case "warning":
+      return (
+        <svg {...common}>
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M12 9v4m0 4h.01M10.3 3.86 1.82 18.5A2 2 0 0 0 3.55 21h16.9a2 2 0 0 0 1.73-2.5L13.7 3.86a2 2 0 0 0-3.4 0Z"
+          />
+        </svg>
+      );
+
+    default:
+      return (
+        <svg {...common}>
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M16 19h6v-1a4 4 0 0 0-6-3.46M16 19H8m8 0v-1a4 4 0 0 0-8 0v1m8-10a4 4 0 1 1-8 0 4 4 0 0 1 8 0Zm6 10v-1a4 4 0 0 0-3-3.87M2 19v-1a4 4 0 0 1 3-3.87"
+          />
+        </svg>
+      );
+  }
 }

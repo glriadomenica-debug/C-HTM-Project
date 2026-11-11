@@ -126,7 +126,6 @@ export default function LoanReport() {
   const [status, setStatus] = useState("all");
   const [owner, setOwner] = useState("all");
 
-  // Default to the current month and year.
   const [selectedMonth, setSelectedMonth] = useState(
     String(new Date().getMonth() + 1).padStart(2, "0"),
   );
@@ -160,7 +159,6 @@ export default function LoanReport() {
     void fetchLoans();
   }, [fetchLoans]);
 
-  // Available years come from loan records and the current year.
   const availableYears = useMemo(() => {
     const years = loans
       .map((loan) => Number(loan.loan_date?.slice(0, 4)))
@@ -169,7 +167,6 @@ export default function LoanReport() {
     return [...new Set([currentYear, ...years])].sort((a, b) => b - a);
   }, [loans, currentYear]);
 
-  // Filter loans by month, year, borrower, status, and search.
   const filteredLoans = useMemo(() => {
     const keyword = search.trim().toLowerCase();
 
@@ -186,7 +183,6 @@ export default function LoanReport() {
       const balance = getBalance(loan);
       const total = getTotal(loan);
 
-      // Uses loan_date, not payment_date.
       const loanDate = loan.loan_date?.slice(0, 10) ?? "";
       const [loanYear, loanMonth] = loanDate.split("-");
 
@@ -221,7 +217,6 @@ export default function LoanReport() {
     });
   }, [loans, search, owner, status, selectedMonth, selectedYear]);
 
-  // Summary cards follow the filtered loan records.
   const summary = useMemo(
     () =>
       filteredLoans.reduce(
@@ -371,14 +366,65 @@ export default function LoanReport() {
       ? "All periods"
       : `${selectedMonthLabel} ${selectedYear === "all" ? "" : selectedYear}`.trim();
 
+  const summaryCards = [
+    {
+      label: "Loan Records",
+      value: String(filteredLoans.length),
+      description: "",
+      icon: "▤",
+      accent: "bg-blue-500",
+      iconBg: "bg-blue-50",
+      iconColor: "text-blue-600",
+      valueColor: "text-gray-900",
+    },
+    {
+      label: "Total Loan Amount (exc. interest)",
+      value: money(summary.principal),
+      description: "",
+      icon: "$",
+      accent: "bg-emerald-500",
+      iconBg: "bg-emerald-50",
+      iconColor: "text-emerald-600",
+      valueColor: "text-emerald-700",
+    },
+    {
+      label: "Total Loan Amount (inc. interest)",
+      value: money(summary.total),
+      description: "",
+      icon: "↗",
+      accent: "bg-blue-600",
+      iconBg: "bg-blue-50",
+      iconColor: "text-blue-700",
+      valueColor: "text-blue-700",
+    },
+    {
+      label: "Total Payments",
+      value: money(summary.paid),
+      description: "",
+      icon: "✓",
+      accent: "bg-violet-500",
+      iconBg: "bg-violet-50",
+      iconColor: "text-violet-600",
+      valueColor: "text-violet-700",
+    },
+    {
+      label: "Outstanding Balance",
+      value: money(summary.balance),
+      description: "",
+      icon: "!",
+      accent: "bg-rose-500",
+      iconBg: "bg-rose-50",
+      iconColor: "text-rose-600",
+      valueColor: "text-rose-600",
+    },
+  ];
+
   return (
     <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
       <div className="mx-auto max-w-[1600px] space-y-6">
-        {/* Page Header */}
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center print:hidden">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Loan Report</h1>
-
             <p className="mt-1 text-sm text-gray-500">
               Report in {reportPeriod}
             </p>
@@ -389,7 +435,7 @@ export default function LoanReport() {
               type="button"
               onClick={() => void fetchLoans()}
               disabled={loading}
-              className="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:opacity-50 cursor-pointer"
+              className="cursor-pointer rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
             >
               {loading ? "Refreshing..." : "Refresh"}
             </button>
@@ -398,7 +444,7 @@ export default function LoanReport() {
               type="button"
               onClick={exportCSV}
               disabled={loading || filteredLoans.length === 0}
-              className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-50 cursor-pointer"
+              className="cursor-pointer rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-50"
             >
               Export CSV
             </button>
@@ -407,7 +453,7 @@ export default function LoanReport() {
               type="button"
               onClick={() => window.print()}
               disabled={loading || filteredLoans.length === 0}
-              className="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:opacity-50 cursor-pointer"
+              className="cursor-pointer rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
             >
               Print Report
             </button>
@@ -426,41 +472,37 @@ export default function LoanReport() {
 
         {/* Summary Cards */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
-          {[
-            {
-              label: "Loan Records",
-              value: String(filteredLoans.length),
-              color: "text-gray-900",
-            },
-            {
-              label: "Total Principal",
-              value: money(summary.principal),
-              color: "text-gray-900",
-            },
-            {
-              label: "Total Loan Amount",
-              value: money(summary.total),
-              color: "text-blue-700",
-            },
-            {
-              label: "Total Payments",
-              value: money(summary.paid),
-              color: "text-emerald-700",
-            },
-            {
-              label: "Outstanding",
-              value: money(summary.balance),
-              color: "text-rose-600",
-            },
-          ].map((item) => (
+          {summaryCards.map((item) => (
             <div
               key={item.label}
-              className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm"
+              className="group relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md"
             >
-              <p className="text-sm font-medium text-gray-500">{item.label}</p>
-              <p className={`mt-2 break-words text-xl font-bold ${item.color}`}>
-                {item.value}
-              </p>
+              <div className={`absolute inset-x-0 top-0 h-1 ${item.accent}`} />
+
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-gray-500">
+                    {item.label}
+                  </p>
+
+                  <p
+                    className={`mt-3 break-words text-xl font-bold tracking-tight sm:text-2xl ${item.valueColor}`}
+                  >
+                    {item.value}
+                  </p>
+                </div>
+
+                <div
+                  className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-xl font-bold ${item.iconBg} ${item.iconColor}`}
+                  aria-hidden="true"
+                >
+                  {item.icon}
+                </div>
+              </div>
+
+              <div className="mt-4 border-t border-gray-100 pt-3">
+                <p className="text-xs text-gray-500">{item.description}</p>
+              </div>
             </div>
           ))}
         </div>
@@ -475,7 +517,6 @@ export default function LoanReport() {
           </div>
 
           <div className="flex flex-col gap-3 md:flex-row md:flex-wrap">
-            {/* Search */}
             <input
               value={search}
               onChange={(event) => setSearch(event.target.value)}
@@ -483,15 +524,13 @@ export default function LoanReport() {
               className="min-w-0 flex-1 rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
             />
 
-            {/* Month */}
             <select
               aria-label="Filter by month"
               value={selectedMonth}
               onChange={(event) => setSelectedMonth(event.target.value)}
-              className="rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm"
+              className="rounded-lg cursor-pointer border border-gray-300 bg-white px-3 py-2.5 text-sm"
             >
               <option value="all">All Months</option>
-
               {MONTHS.map((month) => (
                 <option key={month.value} value={month.value}>
                   {month.label}
@@ -499,15 +538,13 @@ export default function LoanReport() {
               ))}
             </select>
 
-            {/* Year */}
             <select
               aria-label="Filter by year"
               value={selectedYear}
               onChange={(event) => setSelectedYear(event.target.value)}
-              className="rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm"
+              className="rounded-lg cursor-pointer border border-gray-300 bg-white px-3 py-2.5 text-sm"
             >
               <option value="all">All Years</option>
-
               {availableYears.map((year) => (
                 <option key={year} value={String(year)}>
                   {year}
@@ -515,24 +552,22 @@ export default function LoanReport() {
               ))}
             </select>
 
-            {/* Borrower Type */}
             <select
               aria-label="Filter by borrower type"
               value={owner}
               onChange={(event) => setOwner(event.target.value)}
-              className="rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm"
+              className="rounded-lg cursor-pointer border border-gray-300 bg-white px-3 py-2.5 text-sm"
             >
               <option value="all">All Borrowers</option>
               <option value="member">Members</option>
               <option value="nonmember">Non-Members</option>
             </select>
 
-            {/* Payment Status */}
             <select
               aria-label="Filter by payment status"
               value={status}
               onChange={(event) => setStatus(event.target.value)}
-              className="rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm"
+              className="rounded-lg cursor-pointer border border-gray-300 bg-white px-3 py-2.5 text-sm"
             >
               <option value="all">All Loan Statuses</option>
               <option value="paid">Fully Paid</option>
@@ -543,7 +578,7 @@ export default function LoanReport() {
             <button
               type="button"
               onClick={resetFilters}
-              className="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 cursor-pointer"
+              className="cursor-pointer rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
             >
               Reset Filters
             </button>
@@ -572,11 +607,9 @@ export default function LoanReport() {
               <h3 className="font-semibold text-gray-800">
                 No Loan Records Found
               </h3>
-
               <p className="mt-2 text-sm text-gray-500">
                 No loans match {reportPeriod} and your current filters.
               </p>
-
               <button
                 type="button"
                 onClick={resetFilters}
@@ -660,11 +693,9 @@ export default function LoanReport() {
                             <p className="font-semibold text-gray-800">
                               {name}
                             </p>
-
                             <p className="mt-1 text-xs text-gray-500">
                               {borrowerNumber}
                             </p>
-
                             <span className="mt-1 inline-block rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">
                               {loan.member_number ? "MEMBER" : "NON-MEMBER"}
                             </span>
@@ -720,7 +751,6 @@ export default function LoanReport() {
                                   <h3 className="font-semibold text-slate-800">
                                     Payment History — {name}
                                   </h3>
-
                                   <p className="mt-1 text-xs text-slate-500">
                                     {payments.length} payment transaction
                                     {payments.length === 1 ? "" : "s"}
@@ -765,21 +795,17 @@ export default function LoanReport() {
                                               <td className="px-4 py-3 text-sm text-gray-500">
                                                 {paymentIndex + 1}
                                               </td>
-
                                               <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-700">
                                                 {date(payment.payment_date)}
                                               </td>
-
                                               <td className="px-4 py-3 text-sm text-gray-700">
                                                 {payment.method ??
                                                   payment.payment_method ??
                                                   "-"}
                                               </td>
-
                                               <td className="whitespace-nowrap px-4 py-3 text-right text-sm font-semibold tabular-nums text-emerald-700">
                                                 {money(number(payment.amount))}
                                               </td>
-
                                               <td className="px-4 py-3 text-sm text-gray-600">
                                                 {payment.description || "-"}
                                               </td>
@@ -810,7 +836,6 @@ export default function LoanReport() {
               </span>{" "}
               loan record{filteredLoans.length === 1 ? "" : "s"}
             </p>
-
             <p className="text-xs text-slate-400">{reportPeriod}</p>
           </div>
         </div>

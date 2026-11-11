@@ -174,7 +174,7 @@ const calculateInterestRate = (
 };
 
 /**
- * Determine the effective rate for a loan.
+ * Determine the effective interest rate for a loan.
  */
 const getLoanRate = (loan: Loan): number => {
   if (loan.interest_rate !== undefined && loan.interest_rate !== null) {
@@ -189,15 +189,11 @@ const getLoanRate = (loan: Loan): number => {
 
 /**
  * Calculate interest from principal and rate.
- * If the saved interest is missing or inconsistent, use
- * the calculated value for the frontend display.
  */
 const getLoanInterest = (loan: Loan): number => {
   const principal = toNumber(loan.loan_amount);
   const rate = getLoanRate(loan);
-
   const calculatedInterest = roundMoney((principal * rate) / 100);
-
   const savedInterest = toNumber(loan.interest_amount);
 
   if (
@@ -213,7 +209,6 @@ const getLoanInterest = (loan: Loan): number => {
 
 /**
  * Total loan = principal + interest.
- * Recalculate instead of trusting a stale total_amount value.
  */
 const getLoanTotal = (loan: Loan): number =>
   roundMoney(toNumber(loan.loan_amount) + getLoanInterest(loan));
@@ -561,19 +556,19 @@ export default function Loan() {
         {/* Page Header */}
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div>
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-700">
+              C-HTM / Finance Management
+            </p>
             <h1 className="text-2xl font-bold text-gray-900">
               Loan Management
             </h1>
-            {/* <p className="mt-1 text-sm text-gray-500">
-              Manage loans, interest, and repayment totals for all borrowers.
-            </p> */}
           </div>
 
           <button
             type="button"
             onClick={openCreateForm}
             disabled={loadingOwners}
-            className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+            className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <span className="text-lg leading-none">+</span>
             Add Loan
@@ -582,56 +577,213 @@ export default function Loan() {
 
         {/* Summary Cards */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-            <p className="text-sm font-medium text-gray-500">Total Loans</p>
-            <p className="mt-2 text-2xl font-bold text-gray-900">
-              {loans.length}
-            </p>
+          {/* Total Loans */}
+          <div className="group relative overflow-hidden rounded-2xl border border-blue-100 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md">
+            <div className="absolute inset-x-0 top-0 h-1 bg-blue-500" />
+
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-gray-500">Total Loans</p>
+                <p className="mt-3 text-3xl font-bold tracking-tight text-gray-900">
+                  {loans.length}
+                </p>
+              </div>
+
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600 transition group-hover:bg-blue-600 group-hover:text-white">
+                <svg
+                  className="h-6 w-6"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  aria-hidden="true"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M7 3.75h7l4.25 4.5v12H7a2 2 0 0 1-2-2v-12a2.5 2.5 0 0 1 2-2.5Z"
+                  />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M14 4v5h4M8.5 13h6M8.5 16.5h6"
+                  />
+                </svg>
+              </div>
+            </div>
           </div>
 
-          <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-            <p className="text-sm font-medium text-gray-500">
-              Total Loans Amount
-            </p>
-            <p className="mt-2 break-words text-2xl font-bold text-gray-900">
-              {formatCurrency(totalPrincipal)}
-            </p>
+          {/* Total Principal */}
+          <div className="group relative overflow-hidden rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md">
+            <div className="absolute inset-x-0 top-0 h-1 bg-emerald-500" />
+
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-gray-500">
+                  Total Loan Amount
+                  <p>(exc. interest)</p>
+                </p>
+                <p className="mt-3 break-words text-2xl font-bold tracking-tight text-emerald-700">
+                  {formatCurrency(totalPrincipal)}
+                </p>
+              </div>
+
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 transition group-hover:bg-emerald-600 group-hover:text-white">
+                <svg
+                  className="h-6 w-6"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  aria-hidden="true"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 3v18m5-14H9.5a3 3 0 0 0 0 6h5a3 3 0 0 1 0 6H6"
+                  />
+                </svg>
+              </div>
+            </div>
           </div>
 
-          <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-            <p className="text-sm font-medium text-gray-500">Total Interest</p>
-            <p className="mt-2 break-words text-2xl font-bold text-amber-700">
-              {formatCurrency(totalInterest)}
-            </p>
+          <div className="group relative overflow-hidden rounded-2xl border border-amber-100 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md">
+            <div className="absolute inset-x-0 top-0 h-1 bg-amber-500" />
+
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-gray-500">
+                  Total Interest
+                </p>
+                <p className="mt-3 break-words text-2xl font-bold tracking-tight text-amber-700">
+                  {formatCurrency(totalInterest)}
+                </p>
+              </div>
+
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600 transition group-hover:bg-amber-500 group-hover:text-white">
+                <svg
+                  className="h-6 w-6"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  aria-hidden="true"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M7 17 17 7M8 7h.01M16 17h.01"
+                  />
+                  <circle cx="8" cy="7" r="2" />
+                  <circle cx="16" cy="17" r="2" />
+                </svg>
+              </div>
+            </div>
           </div>
 
-          <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-            <p className="text-sm font-medium text-gray-500">
-              Total Loans (incl. Interest)
-            </p>
-            <p className="mt-2 break-words text-2xl font-bold text-blue-700">
-              {formatCurrency(totalLoanAmount)}
-            </p>
+          {/* Total Loan Amount */}
+          <div className="group relative overflow-hidden rounded-2xl border border-violet-100 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md">
+            <div className="absolute inset-x-0 top-0 h-1 bg-violet-500" />
+
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-gray-500">
+                  Total Loan Amount
+                  <p>(inc. interest) </p>
+                </p>
+                <p className="mt-3 break-words text-2xl font-bold tracking-tight text-violet-700">
+                  {formatCurrency(totalLoanAmount)}
+                </p>
+              </div>
+
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-violet-50 text-violet-600 transition group-hover:bg-violet-600 group-hover:text-white">
+                <svg
+                  className="h-6 w-6"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  aria-hidden="true"
+                >
+                  <rect x="3" y="5" width="18" height="14" rx="2" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M3 10h18M7 15h3"
+                  />
+                </svg>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Payments Summary */}
-        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-            <div>
-              <p className="text-sm font-medium text-gray-500">
-                Total Payments Received
-              </p>
-              <p className="mt-1 text-2xl font-bold text-green-700">
-                {formatCurrency(totalPaid)}
-              </p>
-            </div>
+        {/* Payments Summary Cards */}
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          {/* Payments Received */}
+          <div className="group relative overflow-hidden rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md">
+            <div className="absolute inset-x-0 top-0 h-1 bg-emerald-500" />
 
-            <div>
-              <p className="text-sm text-gray-500">Outstanding Balance</p>
-              <p className="mt-1 text-xl font-semibold text-red-700">
-                {formatCurrency(totalBalance)}
-              </p>
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-gray-500">
+                  Total Payments Received
+                </p>
+                <p className="mt-3 break-words text-2xl font-bold tracking-tight text-emerald-700">
+                  {formatCurrency(totalPaid)}
+                </p>
+              </div>
+
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 transition group-hover:bg-emerald-600 group-hover:text-white">
+                <svg
+                  className="h-6 w-6"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  aria-hidden="true"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="m5 12 4 4L19 6"
+                  />
+                  <circle cx="12" cy="12" r="9" />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          {/* Outstanding Balance */}
+          <div className="group relative overflow-hidden rounded-2xl border border-rose-100 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md">
+            <div className="absolute inset-x-0 top-0 h-1 bg-rose-500" />
+
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-gray-500">
+                  Outstanding Balance
+                </p>
+                <p className="mt-3 break-words text-2xl font-bold tracking-tight text-rose-700">
+                  {formatCurrency(totalBalance)}
+                </p>
+              </div>
+
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-rose-50 text-rose-600 transition group-hover:bg-rose-600 group-hover:text-white">
+                <svg
+                  className="h-6 w-6"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  aria-hidden="true"
+                >
+                  <circle cx="12" cy="12" r="9" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 7v5l3 2"
+                  />
+                </svg>
+              </div>
             </div>
           </div>
         </div>
@@ -659,14 +811,14 @@ export default function Loan() {
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Search by borrower, number, ID, or amount..."
-                className="w-full rounded-lg border border-gray-300 py-2.5 pl-10 pr-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                className="w-full rounded-lg border border-gray-300 py-2.5 pl-10 pr-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 cursor-pointer"
               />
             </div>
 
             <select
               value={ownerFilter}
               onChange={(event) => setOwnerFilter(event.target.value)}
-              className="rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 md:w-52"
+              className="cursor-pointer rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 md:w-52"
               aria-label="Filter by borrower type"
             >
               <option value="all">All Borrowers</option>
@@ -681,20 +833,15 @@ export default function Loan() {
                 setOwnerFilter("all");
                 void fetchLoans();
               }}
-              className="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 cursor-pointer"
+              className="cursor-pointer rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
             >
               Reset
             </button>
           </div>
         </div>
 
-        {/* Loans Table */}
-
-        {/* Loans Table — Clean Financial Dashboard */}
+        {/* Loan Records Table */}
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-          {/* Table Header */}
-
-          {/* Table Header */}
           <div className="flex flex-col justify-between gap-3 border-b border-slate-200 bg-white px-5 py-5 sm:flex-row sm:items-center">
             <div>
               <h2 className="text-lg font-bold text-slate-800">Loan Records</h2>
@@ -706,7 +853,7 @@ export default function Loan() {
                 onClick={() => {
                   window.location.href = "/superadmin/loanreport";
                 }}
-                className="inline-flex items-center justify-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-4 py-2.5 text-sm font-semibold text-blue-700 transition hover:border-blue-600 hover:bg-blue-600 hover:text-white cursor-pointer"
+                className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-4 py-2.5 text-sm font-semibold text-blue-700 transition hover:border-blue-600 hover:bg-blue-600 hover:text-white"
               >
                 <svg
                   className="h-4 w-4"
@@ -730,12 +877,11 @@ export default function Loan() {
                 Loan List Report
               </button>
 
-              {/* Refresh Button */}
               <button
                 type="button"
                 onClick={() => void fetchLoans()}
                 disabled={loading}
-                className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <svg
                   className={`h-4 w-4 ${loading ? "animate-spin" : ""}`}
@@ -762,7 +908,6 @@ export default function Loan() {
             </div>
           </div>
 
-          {/* Loading State */}
           {loading ? (
             <div className="flex flex-col items-center justify-center px-4 py-16">
               <div className="h-9 w-9 animate-spin rounded-full border-4 border-blue-100 border-t-blue-600" />
@@ -774,7 +919,6 @@ export default function Loan() {
               </p>
             </div>
           ) : filteredLoans.length === 0 ? (
-            /* Empty State */
             <div className="flex flex-col items-center justify-center px-4 py-16 text-center">
               <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
                 <svg
@@ -813,7 +957,7 @@ export default function Loan() {
                   type="button"
                   onClick={openCreateForm}
                   disabled={loadingOwners}
-                  className="mt-5 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-50"
+                  className="mt-5 cursor-pointer rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-50"
                 >
                   + Add First Loan
                 </button>
@@ -821,7 +965,6 @@ export default function Loan() {
             </div>
           ) : (
             <>
-              {/* Responsive Table */}
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[1250px] border-collapse text-left">
                   <thead>
@@ -880,21 +1023,18 @@ export default function Loan() {
                             index % 2 === 0 ? "bg-white" : "bg-slate-50/70"
                           }`}
                         >
-                          {/* Row Number */}
                           <td className="whitespace-nowrap px-4 py-4">
                             <span className="inline-flex h-8 min-w-8 items-center justify-center rounded-lg bg-slate-100 px-2 text-sm font-semibold text-slate-600">
                               {index + 1}
                             </span>
                           </td>
 
-                          {/* Loan Date */}
                           <td className="whitespace-nowrap px-4 py-4">
                             <div className="text-sm font-medium text-slate-700">
                               {formatDate(loan.loan_date)}
                             </div>
                           </td>
 
-                          {/* Borrower */}
                           <td className="px-4 py-4">
                             <div className="flex min-w-[190px] items-center gap-3">
                               <div
@@ -933,35 +1073,30 @@ export default function Loan() {
                             </div>
                           </td>
 
-                          {/* Principal */}
                           <td className="whitespace-nowrap px-4 py-4">
                             <span className="text-sm font-semibold tabular-nums text-slate-800">
                               {formatCurrency(principal)}
                             </span>
                           </td>
 
-                          {/* Interest Rate */}
                           <td className="whitespace-nowrap px-4 py-4">
                             <span className="inline-flex rounded-lg bg-amber-50 px-2.5 py-1.5 text-sm font-semibold text-amber-700">
                               {rate.toFixed(2)}%
                             </span>
                           </td>
 
-                          {/* Interest */}
                           <td className="whitespace-nowrap px-4 py-4">
                             <span className="text-sm font-medium tabular-nums text-amber-700">
                               {formatCurrency(interest)}
                             </span>
                           </td>
 
-                          {/* Total Loan */}
                           <td className="whitespace-nowrap px-4 py-4">
                             <span className="text-sm font-bold tabular-nums text-blue-700">
                               {formatCurrency(total)}
                             </span>
                           </td>
 
-                          {/* Payments */}
                           <td className="whitespace-nowrap px-4 py-4">
                             <div className="flex flex-col items-start gap-1.5">
                               <span
@@ -988,7 +1123,6 @@ export default function Loan() {
                             </div>
                           </td>
 
-                          {/* Outstanding Balance */}
                           <td className="whitespace-nowrap px-4 py-4">
                             <div className="flex flex-col items-start gap-1.5">
                               <span
@@ -1015,7 +1149,6 @@ export default function Loan() {
                             </div>
                           </td>
 
-                          {/* Actions */}
                           <td className="whitespace-nowrap px-4 py-4">
                             <div className="flex items-center justify-center gap-2">
                               <button
@@ -1023,7 +1156,7 @@ export default function Loan() {
                                 onClick={() => openEditForm(loan)}
                                 title="Edit loan"
                                 aria-label={`Edit loan for ${borrowerName}`}
-                                className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-blue-200 bg-white text-blue-600 transition hover:border-blue-600 hover:bg-blue-600 hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-200"
+                                className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-blue-200 bg-white text-blue-600 transition hover:border-blue-600 hover:bg-blue-600 hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-200 cursor-pointer"
                               >
                                 <svg
                                   className="h-4 w-4"
@@ -1050,7 +1183,7 @@ export default function Loan() {
                                     : "Delete loan"
                                 }
                                 aria-label={`Delete loan for ${borrowerName}`}
-                                className={`inline-flex h-9 w-9 items-center justify-center rounded-lg border transition focus:outline-none focus:ring-2 ${
+                                className={`inline-flex h-9 w-9 items-center justify-center rounded-lg border transition focus:outline-none focus:ring-2 cursor-pointer ${
                                   hasPayments
                                     ? "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400"
                                     : "border-rose-200 bg-white text-rose-600 hover:border-rose-600 hover:bg-rose-600 hover:text-white focus:ring-rose-200"
@@ -1080,7 +1213,6 @@ export default function Loan() {
                 </table>
               </div>
 
-              {/* Table Footer */}
               <div className="flex flex-col justify-between gap-2 border-t border-slate-200 bg-slate-50 px-5 py-4 sm:flex-row sm:items-center">
                 <p className="text-sm text-slate-500">
                   Showing{" "}
@@ -1155,7 +1287,6 @@ export default function Loan() {
                   </div>
                 )}
 
-                {/* Borrower Type */}
                 <div>
                   <label className="mb-2 block text-sm font-medium text-gray-700">
                     Borrower Type <span className="text-red-500">*</span>
@@ -1168,7 +1299,7 @@ export default function Loan() {
                       className={`rounded-lg border px-4 py-3 text-sm font-semibold transition ${
                         form.owner_type === "member"
                           ? "border-blue-600 bg-blue-50 text-blue-700 ring-1 ring-blue-600"
-                          : "border-gray-300 text-gray-600 hover:bg-gray-50"
+                          : "border-gray-300 text-gray-600 hover:bg-gray-50 cursor-pointer"
                       }`}
                     >
                       Member
@@ -1180,19 +1311,14 @@ export default function Loan() {
                       className={`rounded-lg border px-4 py-3 text-sm font-semibold transition ${
                         form.owner_type === "nonmember"
                           ? "border-purple-600 bg-purple-50 text-purple-700 ring-1 ring-purple-600"
-                          : "border-gray-300 text-gray-600 hover:bg-gray-50"
+                          : "border-gray-300 text-gray-600 hover:bg-gray-50 cursor-pointer"
                       }`}
                     >
                       Non-Member
                     </button>
                   </div>
-
-                  <p className="mt-2 text-xs text-gray-500">
-                    A loan can only belong to one borrower.
-                  </p>
                 </div>
 
-                {/* Member Selection */}
                 {form.owner_type === "member" ? (
                   <div>
                     <label
@@ -1213,7 +1339,7 @@ export default function Loan() {
                       }
                       required
                       disabled={loadingOwners}
-                      className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:bg-gray-100"
+                      className="w-full cursor-pointer rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:bg-gray-100"
                     >
                       <option value="">-- Select Member --</option>
                       {members.map((member) => (
@@ -1249,7 +1375,7 @@ export default function Loan() {
                       }
                       required
                       disabled={loadingOwners}
-                      className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:bg-gray-100"
+                      className="w-full cursor-pointer rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:bg-gray-100"
                     >
                       <option value="">-- Select Non-Member --</option>
                       {nonmembers.map((nonmember) => (
@@ -1270,7 +1396,6 @@ export default function Loan() {
                   </div>
                 )}
 
-                {/* Date and Principal */}
                 <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                   <div>
                     <label
@@ -1391,7 +1516,7 @@ export default function Loan() {
                   type="button"
                   onClick={closeForm}
                   disabled={submitting}
-                  className="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-50 cursor-pointer"
+                  className="cursor-pointer rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
                 >
                   Cancel
                 </button>
@@ -1399,7 +1524,7 @@ export default function Loan() {
                 <button
                   type="submit"
                   disabled={submitting || loadingOwners}
-                  className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+                  className="cursor-pointer rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {submitting
                     ? "Saving..."
@@ -1471,7 +1596,7 @@ export default function Loan() {
                     type="button"
                     onClick={closeMessageModal}
                     disabled={deleting}
-                    className="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-50 cursor-pointer"
+                    className="cursor-pointer rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
                   >
                     Cancel
                   </button>
@@ -1480,7 +1605,7 @@ export default function Loan() {
                     type="button"
                     onClick={() => void handleDelete()}
                     disabled={deleting}
-                    className="rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-50"
+                    className="rounded-lg bg-red-600 cursor-pointer px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-50"
                   >
                     {deleting ? "Deleting..." : "Yes, Delete"}
                   </button>
@@ -1489,7 +1614,7 @@ export default function Loan() {
                 <button
                   type="button"
                   onClick={closeMessageModal}
-                  className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 cursor-pointer"
+                  className="cursor-pointer rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
                 >
                   Close
                 </button>

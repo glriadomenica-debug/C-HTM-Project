@@ -169,16 +169,14 @@ const roundMoney = (value: number): number =>
 
 const getLoanTotal = (loan: Loan): number => {
   const principal = toNumber(loan.loan_amount);
-
   const storedTotal = toNumber(loan.total_amount ?? loan.total_loan_amount);
 
-  // If the API already provides the correct total including interest,
-  // use that total.
+  // Use the stored total when it includes interest.
   if (storedTotal > principal) {
     return roundMoney(storedTotal);
   }
 
-  // Determine borrower type and interest rate, matching loan.tsx.
+  // Match the interest tiers used in loan.tsx.
   const isMember = Boolean(loan.member_number);
   const savedRate = toNumber(loan.interest_rate ?? loan.interest_percentage);
 
@@ -200,9 +198,7 @@ const getLoanTotal = (loan: Loan): number => {
   }
 
   const calculatedInterest = roundMoney((principal * rate) / 100);
-
   const savedInterest = toNumber(loan.interest_amount ?? loan.interest);
-
   const interest = savedInterest > 0 ? savedInterest : calculatedInterest;
 
   return roundMoney(principal + interest);
@@ -217,8 +213,7 @@ const getPaymentLoan = (payment: LoanPayment, loans: Loan[]): Loan | null => {
   if (!listedLoan) return relatedLoan || null;
   if (!relatedLoan) return listedLoan;
 
-  // Merge both sources so an incomplete /loans response does not overwrite
-  // interest and total fields available through the payment's loan relation.
+  // Preserve relation fields if the loans endpoint omits them.
   return {
     ...relatedLoan,
     ...listedLoan,
@@ -400,7 +395,6 @@ export default function LoanPayment() {
 
     return payments.filter((payment) => {
       const loan = getPaymentLoan(payment, loans);
-
       const borrowerName = loan ? getBorrowerName(loan) : "";
       const borrowerNumber = loan ? getBorrowerNumber(loan) : "";
 
@@ -450,7 +444,6 @@ export default function LoanPayment() {
     return [];
   }, [form.borrower_type, members, nonmembers]);
 
-  // Keep fully paid loans visible, but prevent additional payments.
   const availableLoans = useMemo(() => {
     if (!form.borrower_type || !form.borrower_number) return [];
 
@@ -486,8 +479,7 @@ export default function LoanPayment() {
     };
   }, [selectedLoan, payments]);
 
-  // When editing, add the existing payment amount back to the balance because
-  // that payment is already included in the total paid amount.
+  // Add the existing payment back when editing, because it is already counted.
   const previousPaymentAmount = editingPayment
     ? toNumber(editingPayment.amount)
     : 0;
@@ -498,7 +490,6 @@ export default function LoanPayment() {
 
   const enteredPaymentAmount = Number(form.amount);
 
-  // Compare cents to avoid floating-point issues such as 0.76 vs 0.75.
   const paymentExceedsBalance =
     Boolean(selectedLoan) &&
     form.amount.trim() !== "" &&
@@ -639,9 +630,6 @@ export default function LoanPayment() {
 
     const paid = getLoanPaid(selectedLoan, payments);
     const remaining = getLoanBalance(selectedLoan, paid);
-
-    // Use the same maximum shown below the amount field and used to disable
-    // Record Payment, so the live validation and submit validation agree.
     const maximumAllowed = maximumAllowedPayment;
 
     if (!editingPayment && remaining <= 0.009) {
@@ -727,12 +715,12 @@ export default function LoanPayment() {
     <div className="space-y-6 p-4 sm:p-6">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-700">
+            C-HTM / Finance Management
+          </p>
           <h1 className="text-2xl font-bold tracking-tight text-gray-900">
             Loan Payments
           </h1>
-          {/* <p className="mt-1 text-sm text-gray-500">
-            Record repayments and track outstanding loan balances.
-          </p> */}
         </div>
 
         <button
@@ -758,27 +746,82 @@ export default function LoanPayment() {
         </div>
       )}
 
+      {/* Updated Summary Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <SummaryCard
-          title="Payment Transactions"
-          value={String(paymentTotals.count)}
-          description=""
-        />
-        <SummaryCard
-          title="Total Collected"
-          value={formatCurrency(paymentTotals.total)}
-          description=""
-        />
-        <SummaryCard
-          title="Cash Payments"
-          value={formatCurrency(paymentTotals.cash)}
-          description=""
-        />
-        <SummaryCard
-          title="Bank Transfers"
-          value={formatCurrency(paymentTotals.bankTransfer)}
-          description=""
-        />
+        {[
+          {
+            title: "Payment Transactions",
+            value: String(paymentTotals.count),
+            description: "",
+            icon: "▤",
+            accent: "bg-blue-500",
+            iconBg: "bg-blue-50",
+            iconColor: "text-blue-600",
+            valueColor: "text-gray-900",
+          },
+          {
+            title: "Total Collected",
+            value: formatCurrency(paymentTotals.total),
+            description: "",
+            icon: "$",
+            accent: "bg-emerald-500",
+            iconBg: "bg-emerald-50",
+            iconColor: "text-emerald-600",
+            valueColor: "text-emerald-700",
+          },
+          {
+            title: "Cash Payments",
+            value: formatCurrency(paymentTotals.cash),
+            description: "",
+            icon: "↗",
+            accent: "bg-violet-500",
+            iconBg: "bg-violet-50",
+            iconColor: "text-violet-600",
+            valueColor: "text-violet-700",
+          },
+          {
+            title: "Bank Transfers",
+            value: formatCurrency(paymentTotals.bankTransfer),
+            description: "",
+            icon: "⇄",
+            accent: "bg-amber-500",
+            iconBg: "bg-amber-50",
+            iconColor: "text-amber-600",
+            valueColor: "text-amber-700",
+          },
+        ].map((item) => (
+          <div
+            key={item.title}
+            className="group relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md"
+          >
+            <div className={`absolute inset-x-0 top-0 h-1 ${item.accent}`} />
+
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-gray-500">
+                  {item.title}
+                </p>
+
+                <p
+                  className={`mt-3 break-words text-xl font-bold tracking-tight sm:text-2xl ${item.valueColor}`}
+                >
+                  {item.value}
+                </p>
+              </div>
+
+              <div
+                className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-xl font-bold ${item.iconBg} ${item.iconColor}`}
+                aria-hidden="true"
+              >
+                {item.icon}
+              </div>
+            </div>
+
+            <div className="mt-4 border-t border-gray-100 pt-3">
+              <p className="text-xs text-gray-500">{item.description}</p>
+            </div>
+          </div>
+        ))}
       </div>
 
       <section className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
@@ -796,7 +839,7 @@ export default function LoanPayment() {
                 onClick={() => {
                   window.location.href = "/superadmin/loanpayreport";
                 }}
-                className="inline-flex items-center justify-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-4 py-2.5 text-sm font-semibold text-blue-700 transition hover:border-blue-600 hover:bg-blue-600 hover:text-white cursor-pointer"
+                className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-4 py-2.5 text-sm font-semibold text-blue-700 transition hover:border-blue-600 hover:bg-blue-600 hover:text-white"
               >
                 <svg
                   className="h-4 w-4"
@@ -820,12 +863,11 @@ export default function LoanPayment() {
                 Loan Payment Report
               </button>
 
-              {/* Refresh Button */}
               <button
                 type="button"
-                onClick={() => void fetchLoans()}
+                onClick={() => void refreshData()}
                 disabled={loading}
-                className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex items-center cursor-pointer justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <svg
                   className={`h-4 w-4 ${loading ? "animate-spin" : ""}`}
@@ -866,7 +908,7 @@ export default function LoanPayment() {
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Borrower, payment ID, loan ID..."
-                className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                className="w-full cursor-pointer rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
               />
             </div>
 
@@ -881,7 +923,7 @@ export default function LoanPayment() {
                 id="payment-method-filter"
                 value={methodFilter}
                 onChange={(event) => setMethodFilter(event.target.value)}
-                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 cursor-pointer"
+                className="w-full cursor-pointer rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
               >
                 <option value="All">All Methods</option>
                 <option value="Cash">Cash</option>
@@ -900,7 +942,7 @@ export default function LoanPayment() {
                 id="payment-status-filter"
                 value={statusFilter}
                 onChange={(event) => setStatusFilter(event.target.value)}
-                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 cursor-pointer"
+                className="w-full cursor-pointer rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
               >
                 <option value="All">All Loan Statuses</option>
                 <option value="Outstanding">Outstanding</option>
@@ -933,7 +975,7 @@ export default function LoanPayment() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-[1050px] w-full text-left text-sm">
+            <table className="w-full min-w-[1050px] text-left text-sm">
               <thead className="bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
                 <tr className="bg-slate-800 text-white">
                   <th className="px-5 py-3.5 font-semibold">No.</th>
@@ -985,9 +1027,6 @@ export default function LoanPayment() {
                         <div className="font-semibold text-gray-900">
                           {index + 1}
                         </div>
-                        {/* <div className="mt-1 text-xs text-gray-500">
-                          Loan #{payment.loan_id}
-                        </div> */}
                       </td>
 
                       <td className="px-5 py-4">
@@ -1038,7 +1077,9 @@ export default function LoanPayment() {
                           <button
                             type="button"
                             onClick={() => openEditForm(payment)}
-                            className="px-3 py-2 text-xs font-semibold text-gray-700 transition hover:bg-gray-100 cursor-pointer"
+                            aria-label={`Edit payment ${payment.id}`}
+                            title="Edit payment"
+                            className="cursor-pointer px-3 py-2 text-xs font-semibold text-gray-700 transition hover:bg-gray-100"
                           >
                             <svg
                               className="h-7 w-5"
@@ -1054,10 +1095,13 @@ export default function LoanPayment() {
                               />
                             </svg>
                           </button>
+
                           <button
                             type="button"
                             onClick={() => openDeleteConfirmation(payment)}
-                            className="px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-50 cursor-pointer"
+                            aria-label={`Delete payment ${payment.id}`}
+                            title="Delete payment"
+                            className="cursor-pointer px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-50"
                           >
                             <svg
                               className="h-7 w-5"
@@ -1130,7 +1174,7 @@ export default function LoanPayment() {
                   </div>
                 )}
 
-                {/* Borrower Type Cards */}
+                {/* Borrower Type */}
                 <div>
                   <label className="mb-2 block text-sm font-semibold text-gray-800">
                     1. Borrower Type <span className="text-red-500">*</span>
@@ -1146,7 +1190,7 @@ export default function LoanPayment() {
                         form.borrower_type === "member"
                           ? "border-blue-600 bg-blue-50 ring-2 ring-blue-100"
                           : "border-gray-200 bg-white hover:border-blue-300 hover:bg-gray-50"
-                      } disabled:cursor-not-allowed disabled:opacity-60`}
+                      } disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer`}
                     >
                       <div className="flex items-start gap-3">
                         <div
@@ -1190,7 +1234,7 @@ export default function LoanPayment() {
                         form.borrower_type === "nonmember"
                           ? "border-blue-600 bg-blue-50 ring-2 ring-blue-100"
                           : "border-gray-200 bg-white hover:border-blue-300 hover:bg-gray-50"
-                      } disabled:cursor-not-allowed disabled:opacity-60`}
+                      } disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer`}
                     >
                       <div className="flex items-start gap-3">
                         <div
@@ -1400,6 +1444,7 @@ export default function LoanPayment() {
                       Payment Amount (USD){" "}
                       <span className="text-red-500">*</span>
                     </label>
+
                     <div className="relative">
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-500">
                         $
@@ -1513,7 +1558,7 @@ export default function LoanPayment() {
                   type="button"
                   onClick={closeForm}
                   disabled={submitting}
-                  className={secondaryButtonClass}
+                  className={`${secondaryButtonClass} cursor-pointer`}
                 >
                   Cancel
                 </button>
@@ -1526,7 +1571,7 @@ export default function LoanPayment() {
                     (!editingPayment &&
                       Boolean(selectedLoan && selectedLoanProgress.fullyPaid))
                   }
-                  className={buttonClass}
+                  className={`${buttonClass} cursor-pointer`}
                 >
                   {submitting
                     ? "Saving..."
@@ -1576,7 +1621,7 @@ export default function LoanPayment() {
                     type="button"
                     onClick={closeMessageModal}
                     disabled={deleting}
-                    className={secondaryButtonClass}
+                    className={`${secondaryButtonClass} cursor-pointer`}
                   >
                     Cancel
                   </button>
@@ -1584,7 +1629,7 @@ export default function LoanPayment() {
                     type="button"
                     onClick={() => void handleDelete()}
                     disabled={deleting}
-                    className="rounded-lg bg-red-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-60"
+                    className="rounded-lg cursor-pointer bg-red-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-60"
                   >
                     {deleting ? "Deleting..." : "Delete Payment"}
                   </button>
@@ -1602,24 +1647,6 @@ export default function LoanPayment() {
           </div>
         </div>
       )}
-    </div>
-  );
-}
-
-interface SummaryCardProps {
-  title: string;
-  value: string;
-  description: string;
-}
-
-function SummaryCard({ title, value, description }: SummaryCardProps) {
-  return (
-    <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-      <p className="text-sm font-medium text-gray-500">{title}</p>
-      <p className="mt-2 break-words text-2xl font-bold tracking-tight text-gray-900">
-        {value}
-      </p>
-      <p className="mt-1 text-xs text-gray-500">{description}</p>
     </div>
   );
 }
