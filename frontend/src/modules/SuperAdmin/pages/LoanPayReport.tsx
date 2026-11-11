@@ -437,9 +437,9 @@ export default function LoanPayReport() {
                   <th className="px-4 py-3.5">No.</th>
                   <th className="px-4 py-3.5">Loan Date</th>
                   <th className="px-4 py-3.5">Borrower</th>
-                  <th className="px-4 py-3.5 text-right">Principal</th>
+                  <th className="px-4 py-3.5 text-right">Loan Amount</th>
                   <th className="px-4 py-3.5 text-right">
-                    Total Loan (incl. Interest)
+                    Loan Amount (incl. Interest)
                   </th>
                   <th className="px-4 py-3.5 text-right">Total Paid</th>
                   <th className="px-4 py-3.5 text-right">Balance</th>
