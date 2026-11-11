@@ -316,29 +316,62 @@ export default function Member() {
             <h2 className="font-semibold text-gray-900">Member List</h2>
           </div>
 
-          <div className="relative w-full sm:max-w-xs">
-            <svg
-              className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              viewBox="0 0 24 24"
+          <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <button
+              type="button"
+              onClick={() => {
+                window.location.href = "/superadmin";
+              }}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-4 py-2.5 text-sm font-semibold text-blue-700 transition hover:border-blue-600 hover:bg-blue-600 hover:text-white sm:w-auto"
             >
-              <circle cx="10.5" cy="10.5" r="6.5" />
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="m16 16 4 4"
-              />
-            </svg>
+              <svg
+                className="h-4 w-4"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                aria-hidden="true"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M8 3h7l4 4v14H5V3h3Z"
+                />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M15 3v5h4M8 13h8M8 17h8"
+                />
+              </svg>
+              Deposit Report
+            </button>
 
-            <input
-              type="search"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search members..."
-              className="w-full rounded-lg border border-gray-300 py-2.5 pl-9 pr-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-            />
+            {/* Search Input */}
+            <div className="relative w-full sm:max-w-xs">
+              <svg
+                className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <circle cx="10.5" cy="10.5" r="6.5" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="m16 16 4 4"
+                />
+              </svg>
+
+              <input
+                type="search"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search members..."
+                className="w-full rounded-lg border border-gray-300 py-2.5 pl-9 pr-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+              />
+            </div>
           </div>
         </div>
 
