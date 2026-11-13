@@ -1,13 +1,43 @@
-import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  RefreshCw,
+  Printer,
+  Download,
+  Search,
+  ReceiptText,
+  Wallet,
+  Landmark,
+  CreditCard,
+  CalendarDays,
+  AlertCircle,
+} from "lucide-react";
 import api from "../../../services/api";
 
 type PaymentMethod = "Cash" | "Bank Transfer";
+type BorrowerType = "Member" | "Non-Member";
+type PaymentStatus = "Fully Paid" | "Outstanding";
 
 interface Borrower {
   id: number;
   full_name: string;
   member_number?: string | null;
   non_member_number?: string | null;
+}
+
+interface Loan {
+  id: number;
+  member_number?: string | null;
+  non_member_number?: string | null;
+  loan_date?: string;
+  loan_amount: number | string;
+  interest_rate?: number | string | null;
+  interest_percentage?: number | string | null;
+  interest?: number | string | null;
+  interest_amount?: number | string | null;
+  total_amount?: number | string | null;
+  total_loan_amount?: number | string | null;
+  member?: Borrower | null;
+  nonmember?: Borrower | null;
 }
 
 interface LoanPayment {
@@ -21,30 +51,33 @@ interface LoanPayment {
   loan?: Loan | null;
 }
 
-interface Loan {
-  id: number;
-  member_number: string | null;
-  non_member_number: string | null;
-  loan_date: string;
-  loan_amount: number | string;
-  interest_rate?: number | string | null;
-  interest_percentage?: number | string | null;
-  interest?: number | string | null;
-  interest_amount?: number | string | null;
-  total_amount?: number | string | null;
-  total_loan_amount?: number | string | null;
-  member?: Borrower | null;
-  nonmember?: Borrower | null;
-  payments?: LoanPayment[];
+interface PaymentReportRow {
+  payment: LoanPayment;
+  loan: Loan | null;
+  borrowerName: string;
+  borrowerNumber: string;
+  borrowerType: BorrowerType;
+  loanTotal: number;
+  cumulativePaid: number;
+  balanceAfterPayment: number;
+  currentBalance: number;
+  statusAfterPayment: PaymentStatus;
 }
 
-interface ReportLoan extends Loan {
-  reportPayments: LoanPayment[];
+interface ApiError {
+  message?: string;
+  response?: {
+    data?: {
+      message?: string;
+    };
+  };
 }
 
 const getResponseData = <T,>(response: unknown): T => {
   const result = response as {
-    data?: { data?: T } & T;
+    data?: {
+      data?: T;
+    } & T;
   };
 
   const body = result?.data;
@@ -57,8 +90,8 @@ const getResponseData = <T,>(response: unknown): T => {
 };
 
 const toNumber = (value: number | string | null | undefined): number => {
-  const parsed = Number(value ?? 0);
-  return Number.isFinite(parsed) ? parsed : 0;
+  const number = Number(value ?? 0);
+  return Number.isFinite(number) ? number : 0;
 };
 
 const roundMoney = (value: number) =>
@@ -86,33 +119,52 @@ const formatDate = (value?: string | null) => {
   });
 };
 
-const getBorrowerName = (loan: Loan) =>
-  loan.member?.full_name ||
-  loan.nonmember?.full_name ||
-  (loan.member_number
-    ? `Member ${loan.member_number}`
-    : loan.non_member_number
-      ? `Non-Member ${loan.non_member_number}`
-      : "Unknown borrower");
+const getPaymentMethod = (payment: LoanPayment): PaymentMethod | "-" =>
+  payment.payment_method || payment.method || "-";
 
-const getBorrowerNumber = (loan: Loan) =>
-  loan.member_number || loan.non_member_number || "-";
+const getBorrowerName = (loan: Loan | null): string => {
+  if (!loan) return "Borrower unavailable";
 
-const getBorrowerType = (loan: Loan): "Member" | "Non-Member" =>
-  loan.member_number ? "Member" : "Non-Member";
+  return (
+    loan.member?.full_name ||
+    loan.nonmember?.full_name ||
+    (loan.member_number
+      ? `Member ${loan.member_number}`
+      : loan.non_member_number
+        ? `Non-Member ${loan.non_member_number}`
+        : "Unknown borrower")
+  );
+};
 
-const getLoanTotal = (loan: Loan): number => {
+const getBorrowerNumber = (loan: Loan | null): string => {
+  return loan?.member_number || loan?.non_member_number || "-";
+};
+
+const getBorrowerType = (loan: Loan | null): BorrowerType => {
+  return loan?.member_number ? "Member" : "Non-Member";
+};
+
+/**
+ * Use the saved total amount including interest when available.
+ * Otherwise calculate using the same interest tiers as Loan Management.
+ */
+const getLoanTotal = (loan: Loan | null): number => {
+  if (!loan) return 0;
+
   const principal = toNumber(loan.loan_amount);
   const storedTotal = toNumber(loan.total_amount ?? loan.total_loan_amount);
 
-  // Use the saved total when it includes interest.
-  if (storedTotal >= principal && storedTotal > 0) {
+  if (storedTotal > principal) {
     return roundMoney(storedTotal);
   }
 
-  const savedRate = toNumber(loan.interest_rate ?? loan.interest_percentage);
+  const savedInterest = toNumber(loan.interest_amount ?? loan.interest);
 
-  let rate = savedRate;
+  if (savedInterest > 0) {
+    return roundMoney(principal + savedInterest);
+  }
+
+  let rate = toNumber(loan.interest_rate ?? loan.interest_percentage);
 
   if (rate <= 0) {
     if (loan.member_number) {
@@ -129,103 +181,86 @@ const getLoanTotal = (loan: Loan): number => {
     }
   }
 
-  const savedInterest = toNumber(loan.interest_amount ?? loan.interest);
-
-  const interest =
-    savedInterest > 0 ? savedInterest : roundMoney((principal * rate) / 100);
-
-  return roundMoney(principal + interest);
+  return roundMoney(principal + (principal * rate) / 100);
 };
 
-const getLoanPaid = (loan: ReportLoan): number =>
-  roundMoney(
-    loan.reportPayments.reduce(
-      (sum, payment) => sum + toNumber(payment.amount),
-      0,
-    ),
+const getErrorMessage = (error: unknown) => {
+  const err = error as ApiError;
+
+  return (
+    err.response?.data?.message ||
+    err.message ||
+    "Unable to load payment report."
   );
+};
 
-const getLoanBalance = (loan: ReportLoan) =>
-  roundMoney(Math.max(0, getLoanTotal(loan) - getLoanPaid(loan)));
+const getYearMonth = (date?: string | null) => date?.slice(0, 7) || "";
 
-const isFullyPaid = (loan: ReportLoan) => getLoanBalance(loan) <= 0.009;
+const currentYear = String(new Date().getFullYear());
 
-const getPaymentMethod = (payment: LoanPayment) =>
-  payment.payment_method || payment.method || "-";
+const monthOptions = [
+  { value: "01", label: "January" },
+  { value: "02", label: "February" },
+  { value: "03", label: "March" },
+  { value: "04", label: "April" },
+  { value: "05", label: "May" },
+  { value: "06", label: "June" },
+  { value: "07", label: "July" },
+  { value: "08", label: "August" },
+  { value: "09", label: "September" },
+  { value: "10", label: "October" },
+  { value: "11", label: "November" },
+  { value: "12", label: "December" },
+];
 
 export default function LoanPayReport() {
-  const [loans, setLoans] = useState<ReportLoan[]>([]);
+  const [payments, setPayments] = useState<LoanPayment[]>([]);
+  const [loans, setLoans] = useState<Loan[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
+  const [loanWarning, setLoanWarning] = useState("");
+
   const [search, setSearch] = useState("");
+  const [selectedMonth, setSelectedMonth] = useState("All");
+  const [selectedYear, setSelectedYear] = useState("All");
+  const [methodFilter, setMethodFilter] = useState("All");
   const [borrowerFilter, setBorrowerFilter] = useState("All");
   const [statusFilter, setStatusFilter] = useState("All");
-  const [expandedLoans, setExpandedLoans] = useState<Record<number, boolean>>(
-    {},
-  );
 
   const fetchReport = useCallback(async () => {
     setLoading(true);
     setErrorMessage("");
+    setLoanWarning("");
 
     try {
-      const [loanResult, paymentResult] = await Promise.allSettled([
-        api.get("/loans"),
+      // Payment records are the primary data for this report.
+      // Loans are only supplementary borrower/loan information.
+      const [paymentResult, loanResult] = await Promise.allSettled([
         api.get("/loanpayments"),
+        api.get("/loans"),
       ]);
 
-      if (loanResult.status === "rejected") {
-        throw loanResult.reason;
+      if (paymentResult.status === "rejected") {
+        throw paymentResult.reason;
       }
 
-      const loanData = getResponseData<Loan[]>(loanResult.value);
+      const paymentData = getResponseData<LoanPayment[]>(paymentResult.value);
 
-      const paymentData =
-        paymentResult.status === "fulfilled"
-          ? getResponseData<LoanPayment[]>(paymentResult.value)
-          : [];
+      setPayments(Array.isArray(paymentData) ? paymentData : []);
 
-      const loanList = Array.isArray(loanData) ? loanData : [];
-      const paymentList = Array.isArray(paymentData) ? paymentData : [];
-
-      const reportLoans: ReportLoan[] = loanList.map((loan) => {
-        const listedPayments = paymentList.filter(
-          (payment) => Number(payment.loan_id) === Number(loan.id),
-        );
-
-        // Prefer the payment endpoint. Fall back to nested payments
-        // only when the endpoint has no records for this loan.
-        const loanPayments =
-          listedPayments.length > 0 ? listedPayments : loan.payments || [];
-
-        return {
-          ...loan,
-          reportPayments: [...loanPayments].sort(
-            (a, b) =>
-              new Date(b.payment_date).getTime() -
-              new Date(a.payment_date).getTime(),
-          ),
-        };
-      });
-
-      setLoans(reportLoans);
-
-      if (paymentResult.status === "rejected") {
-        setErrorMessage(
-          "Payment records could not be loaded. The report may show only payments included in the loan records.",
+      if (loanResult.status === "fulfilled") {
+        const loanData = getResponseData<Loan[]>(loanResult.value);
+        setLoans(Array.isArray(loanData) ? loanData : []);
+      } else {
+        // Payment records remain visible if supplementary loan data fails.
+        setLoans([]);
+        setLoanWarning(
+          "Loan details could not be loaded. Some borrower names or loan totals may be unavailable.",
         );
       }
     } catch (error) {
-      const err = error as {
-        response?: { data?: { message?: string } };
-        message?: string;
-      };
-
-      setErrorMessage(
-        err.response?.data?.message ||
-          err.message ||
-          "Unable to load the loan report.",
-      );
+      setErrorMessage(getErrorMessage(error));
+      setPayments([]);
     } finally {
       setLoading(false);
     }
@@ -235,71 +270,274 @@ export default function LoanPayReport() {
     void fetchReport();
   }, [fetchReport]);
 
-  const filteredLoans = useMemo(() => {
+  const loanById = useMemo(() => {
+    const result = new Map<number, Loan>();
+
+    loans.forEach((loan) => {
+      result.set(Number(loan.id), loan);
+    });
+
+    return result;
+  }, [loans]);
+
+  /**
+   * Resolve each payment to its loan.
+   * Calculate cumulative paid in payment-date order so the report
+   * shows the balance after each individual payment.
+   */
+  const allPaymentRows = useMemo(() => {
+    const orderedPayments = [...payments].sort((a, b) => {
+      const dateCompare = (a.payment_date || "").localeCompare(
+        b.payment_date || "",
+      );
+
+      if (dateCompare !== 0) return dateCompare;
+
+      return Number(a.id) - Number(b.id);
+    });
+
+    const cumulativeByLoan = new Map<number, number>();
+    const rows: PaymentReportRow[] = [];
+
+    for (const payment of orderedPayments) {
+      const loan =
+        loanById.get(Number(payment.loan_id)) || payment.loan || null;
+
+      const loanId = Number(payment.loan_id);
+      const previousPaid = cumulativeByLoan.get(loanId) || 0;
+      const cumulativePaid = roundMoney(
+        previousPaid + toNumber(payment.amount),
+      );
+
+      cumulativeByLoan.set(loanId, cumulativePaid);
+
+      const loanTotal = getLoanTotal(loan);
+      const balanceAfterPayment = roundMoney(
+        Math.max(0, loanTotal - cumulativePaid),
+      );
+
+      rows.push({
+        payment,
+        loan,
+        borrowerName: getBorrowerName(loan),
+        borrowerNumber: getBorrowerNumber(loan),
+        borrowerType: getBorrowerType(loan),
+        loanTotal,
+        cumulativePaid,
+        balanceAfterPayment,
+        currentBalance: 0,
+        statusAfterPayment:
+          balanceAfterPayment <= 0.009 ? "Fully Paid" : "Outstanding",
+      });
+    }
+
+    // Current balance/status use all payments, not only the selected month.
+    const totalPaidByLoan = new Map<number, number>();
+
+    payments.forEach((payment) => {
+      const loanId = Number(payment.loan_id);
+      totalPaidByLoan.set(
+        loanId,
+        roundMoney(
+          (totalPaidByLoan.get(loanId) || 0) + toNumber(payment.amount),
+        ),
+      );
+    });
+
+    return rows
+      .map((row) => {
+        const loanId = Number(row.payment.loan_id);
+        const totalPaid = totalPaidByLoan.get(loanId) || 0;
+        const currentBalance = roundMoney(
+          Math.max(0, row.loanTotal - totalPaid),
+        );
+
+        return {
+          ...row,
+          currentBalance,
+        };
+      })
+      .reverse();
+  }, [payments, loanById]);
+
+  const availableYears = useMemo(() => {
+    const years = new Set(
+      payments
+        .map((payment) => payment.payment_date?.slice(0, 4))
+        .filter((year): year is string => Boolean(year)),
+    );
+
+    years.add(currentYear);
+
+    return Array.from(years).sort((a, b) => b.localeCompare(a));
+  }, [payments]);
+
+  const filteredRows = useMemo(() => {
     const keyword = search.trim().toLowerCase();
 
-    return loans.filter((loan) => {
+    return allPaymentRows.filter((row) => {
+      const payment = row.payment;
+      const paymentDate = payment.payment_date || "";
+      const paymentMonth = paymentDate.slice(5, 7);
+      const paymentYear = paymentDate.slice(0, 4);
+      const method = getPaymentMethod(payment);
+
       const matchesSearch =
         !keyword ||
-        getBorrowerName(loan).toLowerCase().includes(keyword) ||
-        getBorrowerNumber(loan).toLowerCase().includes(keyword) ||
-        String(loan.id).includes(keyword);
+        row.borrowerName.toLowerCase().includes(keyword) ||
+        row.borrowerNumber.toLowerCase().includes(keyword) ||
+        String(payment.id).includes(keyword) ||
+        String(payment.loan_id).includes(keyword) ||
+        String(payment.amount).includes(keyword) ||
+        (payment.description || "").toLowerCase().includes(keyword);
+
+      const matchesMonth =
+        selectedMonth === "All" || paymentMonth === selectedMonth;
+
+      const matchesYear =
+        selectedYear === "All" || paymentYear === selectedYear;
+
+      const matchesMethod = methodFilter === "All" || method === methodFilter;
 
       const matchesBorrower =
-        borrowerFilter === "All" || getBorrowerType(loan) === borrowerFilter;
-
-      const fullyPaid = isFullyPaid(loan);
+        borrowerFilter === "All" || row.borrowerType === borrowerFilter;
 
       const matchesStatus =
-        statusFilter === "All" ||
-        (statusFilter === "Fully Paid" && fullyPaid) ||
-        (statusFilter === "Outstanding" && !fullyPaid);
+        statusFilter === "All" || row.statusAfterPayment === statusFilter;
 
-      return matchesSearch && matchesBorrower && matchesStatus;
+      return (
+        matchesSearch &&
+        matchesMonth &&
+        matchesYear &&
+        matchesMethod &&
+        matchesBorrower &&
+        matchesStatus
+      );
     });
-  }, [loans, search, borrowerFilter, statusFilter]);
+  }, [
+    allPaymentRows,
+    search,
+    selectedMonth,
+    selectedYear,
+    methodFilter,
+    borrowerFilter,
+    statusFilter,
+  ]);
 
-  const summary = useMemo(
-    () =>
-      filteredLoans.reduce(
-        (result, loan) => {
-          result.principal += toNumber(loan.loan_amount);
-          result.totalLoan += getLoanTotal(loan);
-          result.totalPaid += getLoanPaid(loan);
-          result.balance += getLoanBalance(loan);
-          result.paymentCount += loan.reportPayments.length;
+  const summary = useMemo(() => {
+    const cash = filteredRows.reduce(
+      (sum, row) =>
+        sum +
+        (getPaymentMethod(row.payment) === "Cash"
+          ? toNumber(row.payment.amount)
+          : 0),
+      0,
+    );
 
-          return result;
-        },
-        {
-          principal: 0,
-          totalLoan: 0,
-          totalPaid: 0,
-          balance: 0,
-          paymentCount: 0,
-        },
+    const bankTransfer = filteredRows.reduce(
+      (sum, row) =>
+        sum +
+        (getPaymentMethod(row.payment) === "Bank Transfer"
+          ? toNumber(row.payment.amount)
+          : 0),
+      0,
+    );
+
+    return {
+      transactionCount: filteredRows.length,
+      totalCollected: roundMoney(
+        filteredRows.reduce(
+          (sum, row) => sum + toNumber(row.payment.amount),
+          0,
+        ),
       ),
-    [filteredLoans],
-  );
+      cash: roundMoney(cash),
+      bankTransfer: roundMoney(bankTransfer),
+      loanCount: new Set(filteredRows.map((row) => Number(row.payment.loan_id)))
+        .size,
+    };
+  }, [filteredRows]);
 
-  const toggleLoan = (loanId: number) => {
-    setExpandedLoans((previous) => ({
-      ...previous,
-      [loanId]: !previous[loanId],
-    }));
+  const exportCsv = () => {
+    const headers = [
+      "Payment ID",
+      "Payment Date",
+      "Borrower",
+      "Borrower Type",
+      "Borrower Number",
+      "Loan ID",
+      "Total Loan Amount Including Interest",
+      "This Payment",
+      "Cumulative Paid After Payment",
+      "Balance After Payment",
+      "Payment Method",
+      "Status After Payment",
+      "Description",
+    ];
+
+    const csvRows = filteredRows.map((row) => [
+      row.payment.id,
+      row.payment.payment_date,
+      row.borrowerName,
+      row.borrowerType,
+      row.borrowerNumber,
+      row.payment.loan_id,
+      row.loan ? row.loanTotal.toFixed(2) : "",
+      toNumber(row.payment.amount).toFixed(2),
+      row.cumulativePaid.toFixed(2),
+      row.loan ? row.balanceAfterPayment.toFixed(2) : "",
+      getPaymentMethod(row.payment),
+      row.loan ? row.statusAfterPayment : "Loan unavailable",
+      row.payment.description || "",
+    ]);
+
+    const escapeCsv = (value: string | number) =>
+      `"${String(value).replace(/"/g, '""')}"`;
+
+    const csv = [headers, ...csvRows]
+      .map((row) => row.map(escapeCsv).join(","))
+      .join("\r\n");
+
+    const blob = new Blob(["\uFEFF" + csv], {
+      type: "text/csv;charset=utf-8;",
+    });
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `loan-payment-report-${selectedYear}-${selectedMonth}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
   };
 
-  const buttonClass =
-    "rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50";
+  const inputClass =
+    "w-full min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100";
+
+  const resetFilters = () => {
+    setSearch("");
+    setSelectedMonth("All");
+    setSelectedYear("All");
+    setMethodFilter("All");
+    setBorrowerFilter("All");
+    setStatusFilter("All");
+  };
 
   return (
-    <div className="space-y-6 p-4 sm:p-6">
-      {/* Page Header */}
+    <div className="min-w-0 space-y-5 p-3 sm:p-5 lg:p-7">
+      {/* Header */}
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-gray-900">
+        <div className="min-w-0">
+          <p className="text-xs font-bold uppercase tracking-[0.15em] text-blue-700">
+            C-HTM / Finance Management
+          </p>
+
+          <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
             Loan Payment Report
           </h1>
+
+          <p className="mt-1 text-sm text-slate-500">
+            Review payment transactions by payment date, borrower, and method.
+          </p>
         </div>
 
         <div className="flex flex-wrap gap-2 print:hidden">
@@ -307,496 +545,516 @@ export default function LoanPayReport() {
             type="button"
             onClick={() => void fetchReport()}
             disabled={loading}
-            className={buttonClass} 
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
           >
-            <span className="inline-flex items-center gap-2">
-              <svg
-                className={`h-4 w-4 ${loading ? "animate-spin" : ""}`}
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                aria-hidden="true"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M20 7v5h-5M4 17v-5h5"
-                />
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M5.6 9a7 7 0 0 1 11.7-2L20 12M4 12l2.7 5a7 7 0 0 0 11.7-2"
-                />
-              </svg>
-              {loading ? "Refreshing..." : "Refresh"}
-            </span>
+            <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
+            Refresh
+          </button>
+
+          <button
+            type="button"
+            onClick={exportCsv}
+            disabled={loading || filteredRows.length === 0}
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-3.5 py-2.5 text-sm font-semibold text-blue-700 transition hover:bg-blue-100 disabled:opacity-50"
+          >
+            <Download size={16} />
+            Export CSV
           </button>
 
           <button
             type="button"
             onClick={() => window.print()}
-            className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-3.5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
           >
-            <svg
-              className="h-4 w-4"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              aria-hidden="true"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"
-              />
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M6 14h12v7H6z"
-              />
-            </svg>
-            Print Report
+            <Printer size={16} />
+            Print
           </button>
         </div>
       </div>
 
-      {/* Error Message */}
+      {/* Errors and warnings */}
       {errorMessage && (
         <div
           role="alert"
-          className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
+          className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700"
         >
-          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-amber-100 font-bold">
-            !
-          </span>
-          <p>{errorMessage}</p>
+          <AlertCircle size={19} className="mt-0.5 shrink-0" />
+          <div className="min-w-0 flex-1">
+            <p className="font-semibold">Unable to load payment records</p>
+            <p className="mt-1">{errorMessage}</p>
+            <button
+              type="button"
+              onClick={() => void fetchReport()}
+              className="mt-2 font-semibold underline"
+            >
+              Try again
+            </button>
+          </div>
         </div>
       )}
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
+      {loanWarning && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          {loanWarning}
+        </div>
+      )}
+
+      {/* Payment-focused summary cards */}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <SummaryCard
-          title="Total Loans"
-          value={String(filteredLoans.length)}
-          description=""
-          icon="▤"
-          accent="bg-blue-500"
-          iconBg="bg-blue-50"
-          iconColor="text-blue-600"
-          valueColor="text-gray-900"
+          title="Payment Transactions"
+          value={String(summary.transactionCount)}
+          subtitle="Transactions matching filters"
+          icon={<ReceiptText size={21} />}
+          color="blue"
         />
 
         <SummaryCard
-          title="Total Loan Amount (excl. interest)"
-          value={formatCurrency(summary.principal)}
-          description=""
-          icon="$"
-          accent="bg-indigo-500"
-          iconBg="bg-indigo-50"
-          iconColor="text-indigo-600"
-          valueColor="text-indigo-700"
+          title="Total Collected"
+          value={formatCurrency(summary.totalCollected)}
+          subtitle={`${summary.loanCount} loan(s) represented`}
+          icon={<Wallet size={21} />}
+          color="green"
         />
 
         <SummaryCard
-          title="Total Loan Amount (incl. interest)"
-          value={formatCurrency(summary.totalLoan)}
-          description=""
-          icon="↗"
-          accent="bg-violet-500"
-          iconBg="bg-violet-50"
-          iconColor="text-violet-600"
-          valueColor="text-violet-700"
+          title="Cash Payments"
+          value={formatCurrency(summary.cash)}
+          subtitle="Cash transactions in this report"
+          icon={<CreditCard size={21} />}
+          color="violet"
         />
 
         <SummaryCard
-          title="Total Payments"
-          value={formatCurrency(summary.totalPaid)}
-          description=""
-          icon="✓"
-          accent="bg-emerald-500"
-          iconBg="bg-emerald-50"
-          iconColor="text-emerald-600"
-          valueColor="text-emerald-700"
-        />
-
-        <SummaryCard
-          title="Outstanding Balance"
-          value={formatCurrency(summary.balance)}
-          description=""
-          icon="◷"
-          accent="bg-amber-500"
-          iconBg="bg-amber-50"
-          iconColor="text-amber-600"
-          valueColor="text-amber-700"
+          title="Bank Transfers"
+          value={formatCurrency(summary.bankTransfer)}
+          subtitle="Bank transfer transactions"
+          icon={<Landmark size={21} />}
+          color="amber"
         />
       </div>
 
-      <section className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-        <div className="border-b border-gray-200 p-4 sm:p-5 print:hidden">
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900">
-              All Loan Records
+      {/* Filters */}
+      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div className="border-b border-slate-100 p-4 sm:p-5 print:hidden">
+          <div className="flex flex-col gap-1">
+            <h2 className="text-base font-bold text-slate-900">
+              Payment Transaction Records
             </h2>
+            <p className="text-sm text-slate-500">
+              Each row represents one recorded payment, not one loan.
+            </p>
           </div>
 
-          <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
-            <div>
+          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-6">
+            <div className="sm:col-span-2 xl:col-span-2">
               <label
-                htmlFor="loan-report-search"
-                className="mb-1.5 block text-sm font-medium text-gray-700"
+                htmlFor="payment-report-search"
+                className="mb-1.5 block text-xs font-semibold text-slate-600"
               >
-                Search
+                Search transactions
               </label>
               <div className="relative">
-                <svg
-                  className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  aria-hidden="true"
-                >
-                  <circle cx="11" cy="11" r="7" />
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="m20 20-4-4"
-                  />
-                </svg>
+                <Search
+                  size={16}
+                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                />
                 <input
-                  id="loan-report-search"
+                  id="payment-report-search"
                   type="search"
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
-                  placeholder="Borrower, number, or loan ID..."
-                  className="w-full cursor-pointer rounded-lg border border-gray-300 py-2.5 pl-9 pr-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                  placeholder="Borrower, payment ID, loan ID..."
+                  className={`${inputClass} pl-9`}
                 />
               </div>
             </div>
 
             <div>
               <label
-                htmlFor="loan-report-borrower"
-                className="mb-1.5 block text-sm font-medium text-gray-700"
+                htmlFor="payment-report-month"
+                className="mb-1.5 block text-xs font-semibold text-slate-600"
               >
-                Borrower Type
+                Payment month
               </label>
               <select
-                id="loan-report-borrower"
-                value={borrowerFilter}
-                onChange={(event) => setBorrowerFilter(event.target.value)}
-                className="w-full cursor-pointer rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                id="payment-report-month"
+                value={selectedMonth}
+                onChange={(event) => setSelectedMonth(event.target.value)}
+                className={inputClass}
               >
-                <option value="All">All Borrowers</option>
-                <option value="Member">Members</option>
-                <option value="Non-Member">Non-Members</option>
+                <option value="All">All months</option>
+                {monthOptions.map((month) => (
+                  <option key={month.value} value={month.value}>
+                    {month.label}
+                  </option>
+                ))}
               </select>
             </div>
 
             <div>
               <label
-                htmlFor="loan-report-status"
-                className="mb-1.5 block text-sm font-medium text-gray-700"
+                htmlFor="payment-report-year"
+                className="mb-1.5 block text-xs font-semibold text-slate-600"
               >
-                Loan Status
+                Payment year
               </label>
               <select
-                id="loan-report-status"
+                id="payment-report-year"
+                value={selectedYear}
+                onChange={(event) => setSelectedYear(event.target.value)}
+                className={inputClass}
+              >
+                <option value="All">All years</option>
+                {availableYears.map((year) => (
+                  <option key={year} value={year}>
+                    {year}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label
+                htmlFor="payment-report-method"
+                className="mb-1.5 block text-xs font-semibold text-slate-600"
+              >
+                Method
+              </label>
+              <select
+                id="payment-report-method"
+                value={methodFilter}
+                onChange={(event) => setMethodFilter(event.target.value)}
+                className={inputClass}
+              >
+                <option value="All">All methods</option>
+                <option value="Cash">Cash</option>
+                <option value="Bank Transfer">Bank Transfer</option>
+              </select>
+            </div>
+
+            <div>
+              <label
+                htmlFor="payment-report-borrower"
+                className="mb-1.5 block text-xs font-semibold text-slate-600"
+              >
+                Borrower type
+              </label>
+              <select
+                id="payment-report-borrower"
+                value={borrowerFilter}
+                onChange={(event) => setBorrowerFilter(event.target.value)}
+                className={inputClass}
+              >
+                <option value="All">All borrowers</option>
+                <option value="Member">Members</option>
+                <option value="Non-Member">Non-Members</option>
+              </select>
+            </div>
+
+            <div className="sm:col-span-2 xl:col-span-1">
+              <label
+                htmlFor="payment-report-status"
+                className="mb-1.5 block text-xs font-semibold text-slate-600"
+              >
+                Status after payment
+              </label>
+              <select
+                id="payment-report-status"
                 value={statusFilter}
                 onChange={(event) => setStatusFilter(event.target.value)}
-                className="w-full cursor-pointer rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                className={inputClass}
               >
-                <option value="All">All Statuses</option>
+                <option value="All">All statuses</option>
                 <option value="Outstanding">Outstanding</option>
                 <option value="Fully Paid">Fully Paid</option>
               </select>
             </div>
           </div>
+
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+            <p className="text-xs text-slate-500">
+              Period is based on the date the payment was made.
+            </p>
+
+            <button
+              type="button"
+              onClick={resetFilters}
+              className="text-xs font-semibold text-blue-700 hover:text-blue-900"
+            >
+              Clear filters
+            </button>
+          </div>
         </div>
 
+        {/* Loading */}
         {loading ? (
           <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600" />
-            <p className="mt-3 text-sm text-gray-500">Loading loan report...</p>
+            <RefreshCw size={28} className="animate-spin text-blue-600" />
+            <p className="mt-3 text-sm font-medium text-slate-700">
+              Loading payment transactions...
+            </p>
           </div>
-        ) : filteredLoans.length === 0 ? (
-          <div className="px-6 py-16 text-center">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 text-xl text-gray-500">
-              $
+        ) : errorMessage ? (
+          <div className="px-6 py-12 text-center text-sm text-slate-500">
+            Payment report is unavailable until payment records can be loaded.
+          </div>
+        ) : filteredRows.length === 0 ? (
+          <div className="px-6 py-14 text-center">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-500">
+              <CalendarDays size={22} />
             </div>
-            <h3 className="mt-3 font-semibold text-gray-900">
-              No loan records found
+            <h3 className="mt-3 font-semibold text-slate-900">
+              No payment transactions found
             </h3>
-            <p className="mt-1 text-sm text-gray-500">
-              Try changing the search or filters.
+            <p className="mt-1 text-sm text-slate-500">
+              Try a different payment month, year, or filter.
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[1200px] text-left text-sm">
-              <thead className="bg-slate-800 text-xs uppercase tracking-wide text-white">
-                <tr>
-                  <th className="px-4 py-3.5 font-semibold">No.</th>
-                  <th className="px-4 py-3.5 font-semibold">Loan Date</th>
-                  <th className="px-4 py-3.5 font-semibold">Borrower</th>
-                  <th className="px-4 py-3.5 text-right font-semibold">
-                    Loan Amount
-                  </th>
-                  <th className="px-4 py-3.5 text-right font-semibold">
-                    Loan Amount
-                    <span className="mt-1 block text-[10px] font-normal normal-case tracking-normal text-slate-300">
-                      Incl. interest
+          <>
+            {/* Mobile transaction cards */}
+            <div className="space-y-3 p-3 md:hidden">
+              {filteredRows.map((row, index) => (
+                <article
+                  key={row.payment.id}
+                  className="overflow-hidden rounded-xl border border-slate-200 bg-white"
+                >
+                  <div className="flex items-start justify-between gap-3 border-b border-slate-100 bg-slate-50/70 p-3">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-bold text-slate-900">
+                        {row.borrowerName}
+                      </p>
+                      <p className="mt-1 text-xs text-slate-500">
+                        {row.borrowerType} · {row.borrowerNumber}
+                      </p>
+                      <p className="mt-1 text-xs text-slate-500">
+                        Payment #{row.payment.id} · Loan #{row.payment.loan_id}
+                      </p>
+                    </div>
+
+                    <span
+                      className={`shrink-0 rounded-full px-2 py-1 text-[10px] font-semibold ${
+                        row.statusAfterPayment === "Fully Paid"
+                          ? "bg-emerald-100 text-emerald-700"
+                          : "bg-amber-100 text-amber-700"
+                      }`}
+                    >
+                      {row.statusAfterPayment}
                     </span>
-                  </th>
-                  <th className="px-4 py-3.5 text-right font-semibold">
-                    Total Paid
-                  </th>
-                  <th className="px-4 py-3.5 text-right font-semibold">
-                    Balance
-                  </th>
-                  <th className="px-4 py-3.5 font-semibold">Status</th>
-                  <th className="px-4 py-3.5 text-center font-semibold">
-                    Payments
-                  </th>
-                  <th className="px-4 py-3.5 font-semibold print:hidden">
-                    Details
-                  </th>
-                </tr>
-              </thead>
+                  </div>
 
-              <tbody className="divide-y divide-gray-100">
-                {filteredLoans.map((loan, index) => {
-                  const paid = getLoanPaid(loan);
-                  const total = getLoanTotal(loan);
-                  const balance = getLoanBalance(loan);
-                  const fullyPaid = isFullyPaid(loan);
-                  const expanded = Boolean(expandedLoans[loan.id]);
+                  <div className="space-y-3 p-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-xs text-slate-500">
+                        Payment date
+                      </span>
+                      <span className="text-sm font-medium text-slate-800">
+                        {formatDate(row.payment.payment_date)}
+                      </span>
+                    </div>
 
-                  return (
-                    <Fragment key={loan.id}>
-                      <tr className="transition hover:bg-blue-50/40">
-                        <td className="px-4 py-4 font-semibold text-gray-900">
-                          {index + 1}
-                        </td>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-xs text-slate-500">
+                        Total loan incl. interest
+                      </span>
+                      <span className="text-sm font-semibold text-slate-800">
+                        {row.loan ? formatCurrency(row.loanTotal) : "-"}
+                      </span>
+                    </div>
 
-                        <td className="whitespace-nowrap px-4 py-4 text-gray-600">
-                          {formatDate(loan.loan_date)}
-                        </td>
+                    <div className="flex items-center justify-between gap-3 rounded-lg bg-emerald-50 px-3 py-2.5">
+                      <span className="text-xs font-medium text-emerald-800">
+                        This payment
+                      </span>
+                      <span className="text-base font-bold text-emerald-700">
+                        {formatCurrency(toNumber(row.payment.amount))}
+                      </span>
+                    </div>
 
-                        <td className="px-4 py-4">
-                          <p className="font-semibold text-gray-900">
-                            {getBorrowerName(loan)}
-                          </p>
-                          <p className="mt-1 text-xs text-gray-500">
-                            {getBorrowerType(loan)} · {getBorrowerNumber(loan)}
-                          </p>
-                          <p className="mt-1 text-xs text-gray-400">
-                            Loan #{loan.id}
-                          </p>
-                        </td>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="rounded-lg bg-slate-50 p-2.5">
+                        <p className="text-[11px] text-slate-500">
+                          Cumulative paid
+                        </p>
+                        <p className="mt-1 break-words text-sm font-semibold text-slate-800">
+                          {formatCurrency(row.cumulativePaid)}
+                        </p>
+                      </div>
 
-                        <td className="whitespace-nowrap px-4 py-4 text-right text-gray-700">
-                          {formatCurrency(toNumber(loan.loan_amount))}
-                        </td>
+                      <div className="rounded-lg bg-amber-50 p-2.5">
+                        <p className="text-[11px] text-amber-700">
+                          Balance after payment
+                        </p>
+                        <p className="mt-1 break-words text-sm font-semibold text-amber-800">
+                          {row.loan
+                            ? formatCurrency(row.balanceAfterPayment)
+                            : "-"}
+                        </p>
+                      </div>
+                    </div>
 
-                        <td className="whitespace-nowrap px-4 py-4 text-right font-semibold text-gray-900">
-                          {formatCurrency(total)}
-                        </td>
+                    <div className="flex items-center justify-between gap-3 border-t border-slate-100 pt-3">
+                      <span
+                        className={`rounded-full px-2.5 py-1 text-xs font-medium ${
+                          getPaymentMethod(row.payment) === "Cash"
+                            ? "bg-violet-50 text-violet-700"
+                            : "bg-blue-50 text-blue-700"
+                        }`}
+                      >
+                        {getPaymentMethod(row.payment)}
+                      </span>
 
-                        <td className="whitespace-nowrap px-4 py-4 text-right font-semibold text-emerald-700">
-                          {formatCurrency(paid)}
-                        </td>
+                      <span className="max-w-[60%] truncate text-right text-xs text-slate-500">
+                        {row.payment.description || "No description"}
+                      </span>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
 
-                        <td className="whitespace-nowrap px-4 py-4 text-right font-semibold text-amber-700">
-                          {formatCurrency(balance)}
-                        </td>
+            {/* Desktop/tablet transaction table */}
+            <div className="hidden overflow-x-auto md:block">
+              <table className="w-full min-w-[1450px] text-left text-sm">
+                <thead className="bg-slate-800 text-xs uppercase tracking-wide text-white">
+                  <tr>
+                    <th className="px-4 py-3.5">No.</th>
+                    <th className="px-4 py-3.5">Payment Date</th>
+                    <th className="px-4 py-3.5">Borrower</th>
+                    <th className="px-4 py-3.5">Payment / Loan ID</th>
+                    <th className="px-4 py-3.5 text-right">
+                      Total Loan
+                      <span className="mt-1 block text-[10px] font-normal normal-case text-slate-300">
+                        Incl. interest
+                      </span>
+                    </th>
+                    <th className="px-4 py-3.5 text-right">This Payment</th>
+                    <th className="px-4 py-3.5 text-right">Cumulative Paid</th>
+                    <th className="px-4 py-3.5 text-right">
+                      Balance After Payment
+                    </th>
+                    <th className="px-4 py-3.5">Method</th>
+                    <th className="px-4 py-3.5">Status After Payment</th>
+                    <th className="px-4 py-3.5">Description</th>
+                  </tr>
+                </thead>
 
-                        <td className="whitespace-nowrap px-4 py-4">
+                <tbody className="divide-y divide-slate-100">
+                  {filteredRows.map((row, index) => (
+                    <tr
+                      key={row.payment.id}
+                      className="transition hover:bg-blue-50/40"
+                    >
+                      <td className="px-4 py-4 text-slate-500">{index + 1}</td>
+
+                      <td className="whitespace-nowrap px-4 py-4 text-slate-700">
+                        {formatDate(row.payment.payment_date)}
+                      </td>
+
+                      <td className="px-4 py-4">
+                        <p className="font-semibold text-slate-900">
+                          {row.borrowerName}
+                        </p>
+                        <p className="mt-1 text-xs text-slate-500">
+                          {row.borrowerType} · {row.borrowerNumber}
+                        </p>
+                      </td>
+
+                      <td className="whitespace-nowrap px-4 py-4">
+                        <p className="font-medium text-slate-800">
+                          Payment #{row.payment.id}
+                        </p>
+                        <p className="mt-1 text-xs text-slate-500">
+                          Loan #{row.payment.loan_id}
+                        </p>
+                      </td>
+
+                      <td className="whitespace-nowrap px-4 py-4 text-right font-medium text-slate-800">
+                        {row.loan ? formatCurrency(row.loanTotal) : "-"}
+                      </td>
+
+                      <td className="whitespace-nowrap px-4 py-4 text-right font-bold text-emerald-700">
+                        {formatCurrency(toNumber(row.payment.amount))}
+                      </td>
+
+                      <td className="whitespace-nowrap px-4 py-4 text-right text-slate-700">
+                        {formatCurrency(row.cumulativePaid)}
+                      </td>
+
+                      <td className="whitespace-nowrap px-4 py-4 text-right font-semibold text-amber-700">
+                        {row.loan
+                          ? formatCurrency(row.balanceAfterPayment)
+                          : "-"}
+                      </td>
+
+                      <td className="whitespace-nowrap px-4 py-4">
+                        <span
+                          className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${
+                            getPaymentMethod(row.payment) === "Cash"
+                              ? "bg-violet-50 text-violet-700"
+                              : "bg-blue-50 text-blue-700"
+                          }`}
+                        >
+                          {getPaymentMethod(row.payment)}
+                        </span>
+                      </td>
+
+                      <td className="whitespace-nowrap px-4 py-4">
+                        {row.loan ? (
                           <span
-                            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${
-                              fullyPaid
+                            className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
+                              row.statusAfterPayment === "Fully Paid"
                                 ? "bg-emerald-100 text-emerald-700"
                                 : "bg-amber-100 text-amber-700"
                             }`}
                           >
-                            <span
-                              className={`h-1.5 w-1.5 rounded-full ${
-                                fullyPaid ? "bg-emerald-500" : "bg-amber-500"
-                              }`}
-                            />
-                            {fullyPaid ? "Fully Paid" : "Outstanding"}
+                            {row.statusAfterPayment}
                           </span>
-                        </td>
-
-                        <td className="px-4 py-4 text-center">
-                          <span className="inline-flex min-w-8 items-center justify-center rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-700">
-                            {loan.reportPayments.length}
+                        ) : (
+                          <span className="text-xs text-slate-400">
+                            Loan unavailable
                           </span>
-                        </td>
+                        )}
+                      </td>
 
-                        <td className="px-4 py-4 print:hidden">
-                          <button
-                            type="button"
-                            onClick={() => toggleLoan(loan.id)}
-                            aria-expanded={expanded}
-                            className="whitespace-nowrap rounded-lg border border-blue-200 bg-white px-3 py-2 text-xs font-semibold text-blue-700 transition hover:border-blue-500 hover:bg-blue-50 cursor-pointer"
-                          >
-                            {expanded ? "Hide Payments ↑" : "View Payments ↓"}
-                          </button>
-                        </td>
-                      </tr>
+                      <td className="max-w-56 px-4 py-4 text-slate-600">
+                        <span className="block truncate">
+                          {row.payment.description || "-"}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
 
-                      {expanded && (
-                        <tr>
-                          <td colSpan={10} className="bg-gray-50 px-4 py-5">
-                            <div className="mb-3 flex flex-col justify-between gap-2 sm:flex-row sm:items-center">
-                              <div>
-                                <h3 className="font-semibold text-gray-900">
-                                  Payment History — Loan #{loan.id}
-                                </h3>
-                                <p className="mt-1 text-xs text-gray-500">
-                                  {getBorrowerName(loan)} ·{" "}
-                                  {loan.reportPayments.length} payment(s)
-                                </p>
-                              </div>
+                <tfoot className="border-t-2 border-slate-200 bg-slate-50 font-bold text-slate-900">
+                  <tr>
+                    <td colSpan={5} className="px-4 py-4">
+                      TOTAL FOR FILTERED PAYMENTS
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-4 text-right text-emerald-700">
+                      {formatCurrency(summary.totalCollected)}
+                    </td>
+                    <td
+                      colSpan={5}
+                      className="px-4 py-4 text-xs font-medium text-slate-500"
+                    >
+                      {summary.transactionCount} payment transaction(s)
+                    </td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
 
-                              <p className="text-sm font-semibold text-emerald-700">
-                                Total received: {formatCurrency(paid)}
-                              </p>
-                            </div>
-
-                            {loan.reportPayments.length === 0 ? (
-                              <div className="rounded-lg border border-dashed border-gray-300 bg-white px-4 py-8 text-center text-sm text-gray-500">
-                                No payments recorded for this loan yet.
-                              </div>
-                            ) : (
-                              <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
-                                <table className="w-full min-w-[700px] text-left text-sm">
-                                  <thead className="bg-gray-100 text-xs uppercase text-gray-500">
-                                    <tr className="border-b border-gray-200">
-                                      <th className="px-4 py-3">No.</th>
-                                      <th className="px-4 py-3">
-                                        Payment Date
-                                      </th>
-                                      <th className="px-4 py-3 text-right">
-                                        Amount
-                                      </th>
-                                      <th className="px-4 py-3">Method</th>
-                                      <th className="px-4 py-3">Description</th>
-                                    </tr>
-                                  </thead>
-
-                                  <tbody className="divide-y divide-gray-100">
-                                    {loan.reportPayments.map(
-                                      (payment, paymentIndex) => (
-                                        <tr
-                                          key={`${loan.id}-${payment.id}`}
-                                          className="transition hover:bg-gray-50"
-                                        >
-                                          <td className="px-4 py-3 text-gray-500">
-                                            {paymentIndex + 1}
-                                          </td>
-
-                                          <td className="whitespace-nowrap px-4 py-3 text-gray-700">
-                                            {formatDate(payment.payment_date)}
-                                          </td>
-
-                                          <td className="whitespace-nowrap px-4 py-3 text-right font-semibold text-emerald-700">
-                                            {formatCurrency(
-                                              toNumber(payment.amount),
-                                            )}
-                                          </td>
-
-                                          <td className="px-4 py-3">
-                                            <span className="inline-flex rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-700">
-                                              {getPaymentMethod(payment)}
-                                            </span>
-                                          </td>
-
-                                          <td className="px-4 py-3 text-gray-600">
-                                            {payment.description || "-"}
-                                          </td>
-                                        </tr>
-                                      ),
-                                    )}
-                                  </tbody>
-
-                                  <tfoot className="border-t-2 border-gray-200 bg-gray-50">
-                                    <tr>
-                                      <td
-                                        colSpan={2}
-                                        className="px-4 py-3 font-semibold text-gray-800"
-                                      >
-                                        Total Payments
-                                      </td>
-                                      <td className="px-4 py-3 text-right font-bold text-emerald-700">
-                                        {formatCurrency(paid)}
-                                      </td>
-                                      <td colSpan={2} />
-                                    </tr>
-                                  </tfoot>
-                                </table>
-                              </div>
-                            )}
-
-                            <div className="mt-3 flex flex-wrap justify-end gap-4 text-sm">
-                              <span className="text-gray-600">
-                                Total loan:{" "}
-                                <strong>{formatCurrency(total)}</strong>
-                              </span>
-                              <span className="text-amber-700">
-                                Remaining:{" "}
-                                <strong>{formatCurrency(balance)}</strong>
-                              </span>
-                            </div>
-                          </td>
-                        </tr>
-                      )}
-                    </Fragment>
-                  );
-                })}
-              </tbody>
-
-              <tfoot className="border-t-2 border-gray-200 bg-gray-100 font-bold text-gray-900">
-                <tr>
-                  <td colSpan={3} className="px-4 py-4">
-                    TOTAL
-                  </td>
-
-                  <td className="whitespace-nowrap px-4 py-4 text-right">
-                    {formatCurrency(summary.principal)}
-                  </td>
-
-                  <td className="whitespace-nowrap px-4 py-4 text-right">
-                    {formatCurrency(summary.totalLoan)}
-                  </td>
-
-                  <td className="whitespace-nowrap px-4 py-4 text-right text-emerald-700">
-                    {formatCurrency(summary.totalPaid)}
-                  </td>
-
-                  <td className="whitespace-nowrap px-4 py-4 text-right text-amber-700">
-                    {formatCurrency(summary.balance)}
-                  </td>
-
-                  <td colSpan={3} className="px-4 py-4" />
-                </tr>
-              </tfoot>
-            </table>
-          </div>
-        )}
-
-        {!loading && (
-          <div className="border-t border-gray-200 px-5 py-3 text-xs text-gray-500">
-            Showing {filteredLoans.length} of {loans.length} loan records ·{" "}
-            {summary.paymentCount} payment transactions
-          </div>
+            <div className="border-t border-slate-100 bg-slate-50 px-4 py-3 text-xs text-slate-500 sm:px-5">
+              Showing {filteredRows.length} of {payments.length} payment
+              transactions. Total collected reflects only the payments matching
+              the selected filters.
+            </div>
+          </>
         )}
       </section>
 
-      {/* Print Styling */}
       <style>{`
         @media print {
           @page {
@@ -810,7 +1068,7 @@ export default function LoanPayReport() {
             print-color-adjust: exact;
           }
 
-          .print\\:hidden {
+          .print\\\\:hidden {
             display: none !important;
           }
 
@@ -820,19 +1078,23 @@ export default function LoanPayReport() {
           }
 
           table {
-            font-size: 10px !important;
+            font-size: 9px !important;
           }
 
           thead {
             display: table-header-group;
           }
 
-          tfoot {
-            display: table-row-group;
-          }
-
           tr {
             break-inside: avoid;
+          }
+
+          .md\\\\:hidden {
+            display: none !important;
+          }
+
+          .md\\\\:block {
+            display: block !important;
           }
         }
       `}</style>
@@ -843,50 +1105,67 @@ export default function LoanPayReport() {
 interface SummaryCardProps {
   title: string;
   value: string;
-  description: string;
-  icon: string;
-  accent: string;
-  iconBg: string;
-  iconColor: string;
-  valueColor: string;
+  subtitle: string;
+  icon: React.ReactNode;
+  color: "blue" | "green" | "violet" | "amber";
 }
 
 function SummaryCard({
   title,
   value,
-  description,
+  subtitle,
   icon,
-  accent,
-  iconBg,
-  iconColor,
-  valueColor,
+  color,
 }: SummaryCardProps) {
+  const colors = {
+    blue: {
+      accent: "bg-blue-500",
+      icon: "bg-blue-50 text-blue-600",
+      value: "text-slate-900",
+    },
+    green: {
+      accent: "bg-emerald-500",
+      icon: "bg-emerald-50 text-emerald-600",
+      value: "text-emerald-700",
+    },
+    violet: {
+      accent: "bg-violet-500",
+      icon: "bg-violet-50 text-violet-600",
+      value: "text-violet-700",
+    },
+    amber: {
+      accent: "bg-amber-500",
+      icon: "bg-amber-50 text-amber-600",
+      value: "text-amber-700",
+    },
+  };
+
+  const style = colors[color];
+
   return (
-    <div className="group relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md">
-      <div className={`absolute inset-x-0 top-0 h-1 ${accent}`} />
+    <article className="relative min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:shadow-md sm:p-5">
+      <div className={`absolute inset-x-0 top-0 h-1 ${style.accent}`} />
 
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium text-gray-500">{title}</p>
-
+          <p className="text-sm font-medium text-slate-500">{title}</p>
           <p
-            className={`mt-3 break-words text-xl font-bold tracking-tight sm:text-2xl ${valueColor}`}
+            className={`mt-3 break-words text-xl font-bold tracking-tight sm:text-2xl ${style.value}`}
           >
             {value}
           </p>
         </div>
 
         <div
-          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-xl font-bold ${iconBg} ${iconColor}`}
-          aria-hidden="true"
+          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${style.icon}`}
         >
           {icon}
         </div>
       </div>
 
-      <div className="mt-4 border-t border-gray-100 pt-3">
-        <p className="text-xs leading-5 text-gray-500">{description}</p>
-      </div>
-    </div>
+      <p className="mt-4 border-t border-slate-100 pt-3 text-xs leading-5 text-slate-500">
+        {subtitle}
+      </p>
+    </article>
   );
 }
