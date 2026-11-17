@@ -47,6 +47,13 @@ interface LoanPayment {
   loan?: Loan | null;
 }
 
+interface PaymentProgress {
+  total: number;
+  paid: number;
+  balance: number;
+  fullyPaid: boolean;
+}
+
 interface PaymentForm {
   borrower_type: BorrowerType | "";
   borrower_number: string;
@@ -152,7 +159,9 @@ const getBorrowerName = (loan: Loan): string => {
   if (loan.member?.full_name) return loan.member.full_name;
   if (loan.nonmember?.full_name) return loan.nonmember.full_name;
 
-  if (loan.member_number) return `Member ${loan.member_number}`;
+  if (loan.member_number) {
+    return `Member ${loan.member_number}`;
+  }
 
   if (loan.non_member_number) {
     return `Non-Member ${loan.non_member_number}`;
@@ -198,7 +207,9 @@ const getLoanTotal = (loan: Loan): number => {
   }
 
   const calculatedInterest = roundMoney((principal * rate) / 100);
+
   const savedInterest = toNumber(loan.interest_amount ?? loan.interest);
+
   const interest = savedInterest > 0 ? savedInterest : calculatedInterest;
 
   return roundMoney(principal + interest);
@@ -208,6 +219,7 @@ const getPaymentLoan = (payment: LoanPayment, loans: Loan[]): Loan | null => {
   const listedLoan = loans.find(
     (item) => Number(item.id) === Number(payment.loan_id),
   );
+
   const relatedLoan = payment.loan;
 
   if (!listedLoan) return relatedLoan || null;
@@ -236,23 +248,66 @@ const getLoanPaid = (loan: Loan, payments: LoanPayment[]): number => {
   );
 
   if (loanPayments.length > 0) {
-    return loanPayments.reduce(
-      (sum, payment) => sum + toNumber(payment.amount),
-      0,
+    return roundMoney(
+      loanPayments.reduce((sum, payment) => sum + toNumber(payment.amount), 0),
     );
   }
 
-  return (loan.payments || []).reduce(
-    (sum, payment) => sum + toNumber(payment.amount),
-    0,
+  return roundMoney(
+    (loan.payments || []).reduce(
+      (sum, payment) => sum + toNumber(payment.amount),
+      0,
+    ),
   );
 };
 
 const getLoanBalance = (loan: Loan, paid: number): number =>
-  Math.max(0, getLoanTotal(loan) - paid);
+  Math.max(0, roundMoney(getLoanTotal(loan) - paid));
 
 const isFullyPaid = (loan: Loan, paid: number): boolean =>
   getLoanBalance(loan, paid) <= 0.009;
+
+/**
+ * Calculates the payment progress at the date and position
+ * of the individual transaction.
+ *
+ * Older transactions do not include payments made later.
+ * Integer cents are used to avoid floating-point errors.
+ */
+const getPaymentProgress = (
+  payment: LoanPayment,
+  loan: Loan,
+  payments: LoanPayment[],
+): PaymentProgress => {
+  const loanTotal = getLoanTotal(loan);
+  const currentDate = (payment.payment_date || "").slice(0, 10);
+
+  const paidCents = payments.reduce((sum, item) => {
+    if (Number(item.loan_id) !== Number(payment.loan_id)) {
+      return sum;
+    }
+
+    const itemDate = (item.payment_date || "").slice(0, 10);
+
+    const occurredBeforeOrAt =
+      itemDate < currentDate ||
+      (itemDate === currentDate && Number(item.id) <= Number(payment.id));
+
+    if (!occurredBeforeOrAt) return sum;
+
+    return sum + Math.round(toNumber(item.amount) * 100);
+  }, 0);
+
+  const totalCents = Math.round(loanTotal * 100);
+  const balanceCents = Math.max(0, totalCents - paidCents);
+
+  return {
+    total: totalCents / 100,
+    paid: paidCents / 100,
+    balance: balanceCents / 100,
+    fullyPaid: balanceCents <= 0,
+  };
+};
 
 export default function LoanPayment() {
   const [payments, setPayments] = useState<LoanPayment[]>([]);
@@ -273,6 +328,7 @@ export default function LoanPayment() {
   const [editingPayment, setEditingPayment] = useState<LoanPayment | null>(
     null,
   );
+
   const [form, setForm] = useState<PaymentForm>(emptyForm);
   const [formError, setFormError] = useState("");
 
@@ -302,6 +358,7 @@ export default function LoanPayment() {
     try {
       const response = await api.get("/loanpayments");
       const data = getResponseData<LoanPayment[]>(response);
+
       setPayments(Array.isArray(data) ? data : []);
     } catch (error) {
       showMessage("error", "Unable to Load Payments", getErrorMessage(error));
@@ -312,6 +369,7 @@ export default function LoanPayment() {
     try {
       const response = await api.get("/loans");
       const data = getResponseData<Loan[]>(response);
+
       setLoans(Array.isArray(data) ? data : []);
     } catch (error) {
       showMessage("error", "Unable to Load Loans", getErrorMessage(error));
@@ -341,8 +399,12 @@ export default function LoanPayment() {
 
   const refreshData = useCallback(async () => {
     setLoading(true);
-    await Promise.all([fetchPayments(), fetchLoans()]);
-    setLoading(false);
+
+    try {
+      await Promise.all([fetchPayments(), fetchLoans()]);
+    } finally {
+      setLoading(false);
+    }
   }, [fetchPayments, fetchLoans]);
 
   useEffect(() => {
@@ -361,41 +423,34 @@ export default function LoanPayment() {
 
     return {
       count: payments.length,
-      total: payments.reduce(
-        (sum, payment) => sum + toNumber(payment.amount),
-        0,
+      total: roundMoney(
+        payments.reduce((sum, payment) => sum + toNumber(payment.amount), 0),
       ),
-      cash,
-      bankTransfer,
+      cash: roundMoney(cash),
+      bankTransfer: roundMoney(bankTransfer),
     };
   }, [payments]);
-
-  const loanProgress = useMemo(() => {
-    const result: Record<
-      number,
-      { paid: number; balance: number; total: number }
-    > = {};
-
-    loans.forEach((loan) => {
-      const paid = getLoanPaid(loan, payments);
-      const total = getLoanTotal(loan);
-
-      result[loan.id] = {
-        paid,
-        total,
-        balance: getLoanBalance(loan, paid),
-      };
-    });
-
-    return result;
-  }, [loans, payments]);
 
   const filteredPayments = useMemo(() => {
     const keyword = search.trim().toLowerCase();
 
-    return payments.filter((payment) => {
+    // Newest transaction first; ID breaks ties on the same date.
+    const orderedPayments = [...payments].sort((a, b) => {
+      const dateA = (a.payment_date || "").slice(0, 10);
+      const dateB = (b.payment_date || "").slice(0, 10);
+
+      if (dateA !== dateB) {
+        return dateB.localeCompare(dateA);
+      }
+
+      return Number(b.id) - Number(a.id);
+    });
+
+    return orderedPayments.filter((payment) => {
       const loan = getPaymentLoan(payment, loans);
+
       const borrowerName = loan ? getBorrowerName(loan) : "";
+
       const borrowerNumber = loan ? getBorrowerNumber(loan) : "";
 
       const matchesSearch =
@@ -410,8 +465,11 @@ export default function LoanPayment() {
       const matchesMethod =
         methodFilter === "All" || payment.payment_method === methodFilter;
 
-      const loanPaid = loan ? getLoanPaid(loan, payments) : 0;
-      const fullyPaid = loan ? isFullyPaid(loan, loanPaid) : false;
+      const progress = loan
+        ? getPaymentProgress(payment, loan, payments)
+        : null;
+
+      const fullyPaid = progress?.fullyPaid ?? false;
 
       const matchesStatus =
         statusFilter === "All" ||
@@ -445,7 +503,9 @@ export default function LoanPayment() {
   }, [form.borrower_type, members, nonmembers]);
 
   const availableLoans = useMemo(() => {
-    if (!form.borrower_type || !form.borrower_number) return [];
+    if (!form.borrower_type || !form.borrower_number) {
+      return [];
+    }
 
     return loans.filter((loan) => {
       if (form.borrower_type === "member") {
@@ -464,7 +524,12 @@ export default function LoanPayment() {
 
   const selectedLoanProgress = useMemo(() => {
     if (!selectedLoan) {
-      return { paid: 0, balance: 0, total: 0, fullyPaid: false };
+      return {
+        paid: 0,
+        balance: 0,
+        total: 0,
+        fullyPaid: false,
+      };
     }
 
     const paid = getLoanPaid(selectedLoan, payments);
@@ -479,7 +544,6 @@ export default function LoanPayment() {
     };
   }, [selectedLoan, payments]);
 
-  // Add the existing payment back when editing, because it is already counted.
   const previousPaymentAmount = editingPayment
     ? toNumber(editingPayment.amount)
     : 0;
@@ -501,7 +565,10 @@ export default function LoanPayment() {
     field: K,
     value: PaymentForm[K],
   ) => {
-    setForm((previous) => ({ ...previous, [field]: value }));
+    setForm((previous) => ({
+      ...previous,
+      [field]: value,
+    }));
     setFormError("");
   };
 
@@ -513,7 +580,10 @@ export default function LoanPayment() {
   };
 
   const openCreateForm = () => {
-    setForm({ ...emptyForm, payment_date: today() });
+    setForm({
+      ...emptyForm,
+      payment_date: today(),
+    });
     setEditingPayment(null);
     setFormError("");
     setShowForm(true);
@@ -536,6 +606,7 @@ export default function LoanPayment() {
     }
 
     setEditingPayment(payment);
+
     setForm({
       borrower_type: borrowerType,
       borrower_number: borrowerNumber,
@@ -545,6 +616,7 @@ export default function LoanPayment() {
       payment_method: payment.payment_method,
       description: payment.description || "",
     });
+
     setFormError("");
     setShowForm(true);
   };
@@ -578,13 +650,13 @@ export default function LoanPayment() {
   const handleLoanChange = (value: string) => {
     const loan = loans.find((item) => String(item.id) === value);
 
+    const paid = loan ? getLoanPaid(loan, payments) : 0;
+    const balance = loan ? getLoanBalance(loan, paid) : 0;
+
     setForm((previous) => ({
       ...previous,
       loan_id: value,
-      amount:
-        loan && !isFullyPaid(loan, getLoanPaid(loan, payments))
-          ? String(getLoanBalance(loan, getLoanPaid(loan, payments)).toFixed(2))
-          : "",
+      amount: loan && balance > 0.009 ? balance.toFixed(2) : "",
     }));
 
     setFormError("");
@@ -634,7 +706,7 @@ export default function LoanPayment() {
 
     if (!editingPayment && remaining <= 0.009) {
       setFormError(
-        "This loan is already fully paid. You can still view the borrower, but another payment cannot be added.",
+        "This loan is already fully paid. No additional payment can be recorded.",
       );
       return;
     }
@@ -648,7 +720,7 @@ export default function LoanPayment() {
 
     const payload = {
       loan_id: Number(form.loan_id),
-      amount,
+      amount: roundMoney(amount),
       payment_date: form.payment_date,
       payment_method: form.payment_method,
       description: form.description.trim() || null,
@@ -676,6 +748,7 @@ export default function LoanPayment() {
 
   const openDeleteConfirmation = (payment: LoanPayment) => {
     setSelectedPayment(payment);
+
     showMessage(
       "confirm",
       "Delete Payment?",
@@ -746,7 +819,7 @@ export default function LoanPayment() {
         </div>
       )}
 
-      {/* Updated Summary Cards */}
+      {/* Summary cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {[
           {
@@ -801,7 +874,6 @@ export default function LoanPayment() {
                 <p className="text-sm font-medium text-gray-500">
                   {item.title}
                 </p>
-
                 <p
                   className={`mt-3 break-words text-xl font-bold tracking-tight sm:text-2xl ${item.valueColor}`}
                 >
@@ -867,7 +939,7 @@ export default function LoanPayment() {
                 type="button"
                 onClick={() => void refreshData()}
                 disabled={loading}
-                className="inline-flex items-center cursor-pointer justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <svg
                   className={`h-4 w-4 ${loading ? "animate-spin" : ""}`}
@@ -888,7 +960,6 @@ export default function LoanPayment() {
                     d="M5.6 9a7 7 0 0 1 11.7-2L20 12M4 12l2.7 5a7 7 0 0 0 11.7-2"
                   />
                 </svg>
-
                 {loading ? "Refreshing..." : "Refresh"}
               </button>
             </div>
@@ -975,7 +1046,7 @@ export default function LoanPayment() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[1050px] text-left text-sm">
+            <table className="w-full min-w-[1150px] text-left text-sm">
               <thead className="bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
                 <tr className="bg-slate-800 text-white">
                   <th className="px-5 py-3.5 font-semibold">No.</th>
@@ -984,6 +1055,9 @@ export default function LoanPayment() {
                   <th className="px-5 py-3.5 text-right font-semibold">
                     Loan Amount
                     <p>(incl. interest)</p>
+                  </th>
+                  <th className="px-5 py-3.5 text-right font-semibold">
+                    Payment Amount
                   </th>
                   <th className="px-5 py-3.5 text-right font-semibold">
                     Total Paid
@@ -1003,20 +1077,13 @@ export default function LoanPayment() {
                 {filteredPayments.map((payment, index) => {
                   const loan = getPaymentLoan(payment, loans);
 
+                  // Calculate the progress at this transaction,
+                  // not the loan's final progress.
                   const progress = loan
-                    ? loanProgress[loan.id] || {
-                        total: getLoanTotal(loan),
-                        paid: getLoanPaid(loan, payments),
-                        balance: getLoanBalance(
-                          loan,
-                          getLoanPaid(loan, payments),
-                        ),
-                      }
+                    ? getPaymentProgress(payment, loan, payments)
                     : null;
 
-                  const fullyPaid = progress
-                    ? progress.balance <= 0.009
-                    : false;
+                  const fullyPaid = progress?.fullyPaid ?? false;
 
                   return (
                     <tr
@@ -1046,10 +1113,17 @@ export default function LoanPayment() {
                         {progress ? formatCurrency(progress.total) : "-"}
                       </td>
 
+                      {/* The amount received in this individual transaction */}
+                      <td className="whitespace-nowrap px-5 py-4 text-right font-semibold text-blue-700">
+                        {formatCurrency(payment.amount)}
+                      </td>
+
+                      {/* Cumulative amount paid up to this transaction */}
                       <td className="whitespace-nowrap px-5 py-4 text-right font-semibold text-green-700">
                         {progress ? formatCurrency(progress.paid) : "-"}
                       </td>
 
+                      {/* Balance remaining after this transaction */}
                       <td className="whitespace-nowrap px-5 py-4 text-right font-semibold text-gray-900">
                         {progress ? formatCurrency(progress.balance) : "-"}
                       </td>
@@ -1186,11 +1260,11 @@ export default function LoanPayment() {
                       onClick={() => handleBorrowerTypeChange("member")}
                       disabled={Boolean(editingPayment)}
                       aria-pressed={form.borrower_type === "member"}
-                      className={`rounded-xl border-2 p-4 text-left transition ${
+                      className={`cursor-pointer rounded-xl border-2 p-4 text-left transition ${
                         form.borrower_type === "member"
                           ? "border-blue-600 bg-blue-50 ring-2 ring-blue-100"
                           : "border-gray-200 bg-white hover:border-blue-300 hover:bg-gray-50"
-                      } disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer`}
+                      } disabled:cursor-not-allowed disabled:opacity-60`}
                     >
                       <div className="flex items-start gap-3">
                         <div
@@ -1230,11 +1304,11 @@ export default function LoanPayment() {
                       onClick={() => handleBorrowerTypeChange("nonmember")}
                       disabled={Boolean(editingPayment)}
                       aria-pressed={form.borrower_type === "nonmember"}
-                      className={`rounded-xl border-2 p-4 text-left transition ${
+                      className={`cursor-pointer rounded-xl border-2 p-4 text-left transition ${
                         form.borrower_type === "nonmember"
                           ? "border-blue-600 bg-blue-50 ring-2 ring-blue-100"
                           : "border-gray-200 bg-white hover:border-blue-300 hover:bg-gray-50"
-                      } disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer`}
+                      } disabled:cursor-not-allowed disabled:opacity-60`}
                     >
                       <div className="flex items-start gap-3">
                         <div
@@ -1460,7 +1534,7 @@ export default function LoanPayment() {
                         }
                         disabled={
                           !selectedLoan ||
-                          selectedLoanProgress.fullyPaid ||
+                          (selectedLoanProgress.fullyPaid && !editingPayment) ||
                           submitting
                         }
                         required
@@ -1469,11 +1543,13 @@ export default function LoanPayment() {
                       />
                     </div>
 
-                    {selectedLoan && !selectedLoanProgress.fullyPaid && (
-                      <p className="mt-1.5 text-xs text-gray-500">
-                        Maximum payment: {formatCurrency(maximumAllowedPayment)}
-                      </p>
-                    )}
+                    {selectedLoan &&
+                      (!selectedLoanProgress.fullyPaid || editingPayment) && (
+                        <p className="mt-1.5 text-xs text-gray-500">
+                          Maximum payment:{" "}
+                          {formatCurrency(maximumAllowedPayment)}
+                        </p>
+                      )}
 
                     {paymentExceedsBalance && (
                       <p
@@ -1629,7 +1705,7 @@ export default function LoanPayment() {
                     type="button"
                     onClick={() => void handleDelete()}
                     disabled={deleting}
-                    className="rounded-lg cursor-pointer bg-red-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-60"
+                    className="cursor-pointer rounded-lg bg-red-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-60"
                   >
                     {deleting ? "Deleting..." : "Delete Payment"}
                   </button>

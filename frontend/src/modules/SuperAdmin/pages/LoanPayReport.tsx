@@ -534,10 +534,6 @@ export default function LoanPayReport() {
           <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
             Loan Payment Report
           </h1>
-
-          <p className="mt-1 text-sm text-slate-500">
-            Review payment transactions by payment date, borrower, and method.
-          </p>
         </div>
 
         <div className="flex flex-wrap gap-2 print:hidden">
@@ -604,7 +600,7 @@ export default function LoanPayReport() {
         <SummaryCard
           title="Payment Transactions"
           value={String(summary.transactionCount)}
-          subtitle="Transactions matching filters"
+          subtitle=""
           icon={<ReceiptText size={21} />}
           color="blue"
         />
@@ -612,7 +608,7 @@ export default function LoanPayReport() {
         <SummaryCard
           title="Total Collected"
           value={formatCurrency(summary.totalCollected)}
-          subtitle={`${summary.loanCount} loan(s) represented`}
+          subtitle=""
           icon={<Wallet size={21} />}
           color="green"
         />
@@ -620,7 +616,7 @@ export default function LoanPayReport() {
         <SummaryCard
           title="Cash Payments"
           value={formatCurrency(summary.cash)}
-          subtitle="Cash transactions in this report"
+          subtitle=""
           icon={<CreditCard size={21} />}
           color="violet"
         />
@@ -628,7 +624,7 @@ export default function LoanPayReport() {
         <SummaryCard
           title="Bank Transfers"
           value={formatCurrency(summary.bankTransfer)}
-          subtitle="Bank transfer transactions"
+          subtitle=""
           icon={<Landmark size={21} />}
           color="amber"
         />
@@ -641,9 +637,6 @@ export default function LoanPayReport() {
             <h2 className="text-base font-bold text-slate-900">
               Payment Transaction Records
             </h2>
-            <p className="text-sm text-slate-500">
-              Each row represents one recorded payment, not one loan.
-            </p>
           </div>
 
           <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-6">
@@ -682,6 +675,7 @@ export default function LoanPayReport() {
                 value={selectedMonth}
                 onChange={(event) => setSelectedMonth(event.target.value)}
                 className={inputClass}
+
               >
                 <option value="All">All months</option>
                 {monthOptions.map((month) => (

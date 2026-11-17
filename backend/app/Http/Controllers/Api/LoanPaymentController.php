@@ -44,12 +44,16 @@ class LoanpaymentController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return ApiMessage::error($validator->errors(), 400);
+            return ApiMessage::error(
+                $validator->errors(),
+                400
+            );
         }
 
         $result = DB::transaction(function () use ($validator) {
             $data = $validator->validated();
 
+            // Lock the loan to prevent simultaneous overpayments.
             $loan = Loan::where('id', $data['loan_id'])
                 ->lockForUpdate()
                 ->first();
@@ -61,17 +65,23 @@ class LoanpaymentController extends Controller
                 ];
             }
 
+            // Calculate the full loan amount, including interest.
             $loanTotal = $this->getLoanTotal($loan);
 
-            $alreadyPaid = Loanpayment::where(
+            // Calculate all payments already recorded for this loan.
+            $alreadyPaid = (float) Loanpayment::where(
                 'loan_id',
                 $loan->id
             )->sum('amount');
 
-            $remaining = max(0, $loanTotal - (float) $alreadyPaid);
-            $amount = (float) $data['amount'];
+            $remaining = round(
+                max(0, $loanTotal - $alreadyPaid),
+                2
+            );
 
-            if ($amount > $remaining + 0.009) {
+            $amount = round((float) $data['amount'], 2);
+
+            if ($amount > $remaining) {
                 return [
                     'error' => sprintf(
                         'Payment exceeds the remaining balance of $%.2f.',
@@ -81,6 +91,8 @@ class LoanpaymentController extends Controller
                 ];
             }
 
+            $data['amount'] = $amount;
+
             $payment = Loanpayment::create($data);
 
             $payment->load([
@@ -88,7 +100,9 @@ class LoanpaymentController extends Controller
                 'loan.nonmember',
             ]);
 
-            return ['payment' => $payment];
+            return [
+                'payment' => $payment,
+            ];
         });
 
         if (isset($result['error'])) {
@@ -118,10 +132,16 @@ class LoanpaymentController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return ApiMessage::error($validator->errors(), 400);
+            return ApiMessage::error(
+                $validator->errors(),
+                400
+            );
         }
 
-        $result = DB::transaction(function () use ($validator, $id) {
+        $result = DB::transaction(function () use (
+            $validator,
+            $id
+        ) {
             $payment = Loanpayment::where('id', $id)
                 ->lockForUpdate()
                 ->first();
@@ -135,7 +155,8 @@ class LoanpaymentController extends Controller
 
             $data = $validator->validated();
 
-            $targetLoanId = $data['loan_id'] ?? $payment->loan_id;
+            $targetLoanId = $data['loan_id']
+                ?? $payment->loan_id;
 
             $loan = Loan::where('id', $targetLoanId)
                 ->lockForUpdate()
@@ -148,26 +169,28 @@ class LoanpaymentController extends Controller
                 ];
             }
 
+            // Calculate the full amount, including interest.
             $loanTotal = $this->getLoanTotal($loan);
 
-            // Exclude the current payment when calculating the balance.
-            $otherPayments = Loanpayment::where(
+            // Exclude this payment when checking the new balance.
+            $otherPayments = (float) Loanpayment::where(
                 'loan_id',
                 $targetLoanId
             )
                 ->where('id', '!=', $payment->id)
                 ->sum('amount');
 
-            $remaining = max(
-                0,
-                $loanTotal - (float) $otherPayments
+            $remaining = round(
+                max(0, $loanTotal - $otherPayments),
+                2
             );
 
-            $newAmount = (float) (
-                $data['amount'] ?? $payment->amount
+            $newAmount = round(
+                (float) ($data['amount'] ?? $payment->amount),
+                2
             );
 
-            if ($newAmount > $remaining + 0.009) {
+            if ($newAmount > $remaining) {
                 return [
                     'error' => sprintf(
                         'Payment exceeds the remaining balance of $%.2f.',
@@ -177,6 +200,8 @@ class LoanpaymentController extends Controller
                 ];
             }
 
+            $data['amount'] = $newAmount;
+
             $payment->fill($data);
             $payment->save();
 
@@ -185,7 +210,9 @@ class LoanpaymentController extends Controller
                 'loan.nonmember',
             ]);
 
-            return ['payment' => $payment];
+            return [
+                'payment' => $payment,
+            ];
         });
 
         if (isset($result['error'])) {
@@ -226,29 +253,101 @@ class LoanpaymentController extends Controller
     /**
      * Calculate the full loan total, including interest.
      *
-     * Supports older records where total_amount or interest_amount
-     * may not have been saved correctly.
+     * Priority:
+     * 1. Use total_amount when it is greater than principal.
+     * 2. Otherwise use a saved interest_amount.
+     * 3. Otherwise calculate from a saved interest_rate.
+     * 4. If no rate exists, calculate using the C-HTM tiers.
      */
     private function getLoanTotal(Loan $loan): float
     {
-        $principal = (float) ($loan->loan_amount ?? 0);
-        $storedTotal = (float) ($loan->total_amount ?? 0);
-        $interest = (float) ($loan->interest_amount ?? 0);
+        $principal = round(
+            (float) ($loan->loan_amount ?? 0),
+            2
+        );
+
+        $storedTotal = round(
+            (float) ($loan->total_amount ?? 0),
+            2
+        );
+
+        $interest = round(
+            (float) ($loan->interest_amount ?? 0),
+            2
+        );
+
         $rate = (float) ($loan->interest_rate ?? 0);
 
-        // Use a saved total when it already includes interest.
+        // The saved total already includes interest.
         if ($storedTotal > $principal) {
-            return round($storedTotal, 2);
+            return $storedTotal;
         }
 
-        // Calculate interest if the saved interest amount is missing.
-        if ($interest <= 0 && $rate > 0) {
-            $interest = round($principal * $rate / 100, 2);
+        // Use a positive saved interest amount.
+        if ($interest > 0) {
+            return round($principal + $interest, 2);
         }
 
-        $calculatedTotal = round($principal + $interest, 2);
+        // Support rates saved as 4 or 0.04 for 4%.
+        if ($rate > 0 && $rate < 1) {
+            $rate *= 100;
+        }
 
-        // Keep a higher saved total if one exists.
-        return round(max($calculatedTotal, $storedTotal), 2);
+        // Use the stored interest rate when available.
+        if ($rate > 0) {
+            $interest = round(
+                $principal * $rate / 100,
+                2
+            );
+
+            return round($principal + $interest, 2);
+        }
+
+        // Determine the loan owner type.
+        $ownerType = strtolower(
+            (string) ($loan->owner_type ?? '')
+        );
+
+        if ($ownerType === 'member') {
+            $isMember = true;
+        } elseif ($ownerType === 'nonmember') {
+            $isMember = false;
+        } else {
+            // Fallback to the member relationship.
+            $isMember = $loan->member()->exists();
+        }
+
+        // C-HTM member interest tiers.
+        if ($isMember) {
+            if ($principal < 1000) {
+                $rate = 4;
+            } elseif ($principal < 3000) {
+                $rate = 3.5;
+            } elseif ($principal < 5000) {
+                $rate = 2.75;
+            } elseif ($principal < 7500) {
+                $rate = 2;
+            } elseif ($principal < 10000) {
+                $rate = 1.5;
+            } else {
+                $rate = 1;
+            }
+        } else {
+            // C-HTM non-member interest tiers.
+            if ($principal < 5000) {
+                $rate = 5;
+            } elseif ($principal < 10000) {
+                $rate = 4;
+            } else {
+                $rate = 3.5;
+            }
+        }
+
+        $interest = round(
+            $principal * $rate / 100,
+            2
+        );
+
+        return round($principal + $interest, 2);
     }
 }
