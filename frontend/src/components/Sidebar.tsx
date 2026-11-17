@@ -203,9 +203,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         {/* Fixed footer */}
         <div className="shrink-0 border-t border-white/10 px-3 py-2">
           <div className="flex items-center gap-2.5 rounded-lg bg-white/[0.06] px-2.5 py-2">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-400/20 text-xs font-bold text-blue-100 ring-1 ring-white/10">
+            {/* <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-400/20 text-xs font-bold text-blue-100 ring-1 ring-white/10">
               SA
-            </div>
+            </div> */}
 
             <div className="min-w-0">
               <p className="truncate text-xs font-semibold">Administrator</p>
