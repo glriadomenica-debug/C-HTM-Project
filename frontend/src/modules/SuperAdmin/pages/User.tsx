@@ -1,11 +1,10 @@
-import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useState, type FormEvent, type ChangeEvent } from "react";
 import api from "../../../services/api";
 
 interface Role {
   id: number;
   role_name: string;
 }
-
 interface User {
   id: number;
   name: string;
@@ -14,7 +13,6 @@ interface User {
   role_id: number;
   role?: Role;
 }
-
 interface UserForm {
   name: string;
   email: string;
@@ -23,1180 +21,312 @@ interface UserForm {
   password: string;
   password_confirmation: string;
 }
-
 type NoticeType = "success" | "error" | "warning";
 type ActionType = "load" | "create" | "update" | "delete";
+interface Notice { type: NoticeType; title: string; message: string; }
 
-interface Notice {
-  type: NoticeType;
-  title: string;
-  message: string;
-}
-
-const initialForm: UserForm = {
-  name: "",
-  email: "",
-  phone_number: "",
-  role_id: "",
-  password: "",
-  password_confirmation: "",
+const emptyForm: UserForm = {
+  name: "", email: "", phone_number: "", role_id: "", password: "", password_confirmation: "",
 };
+const inputClass = "mt-1 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-100";
+const labelClass = "block text-sm font-semibold text-slate-700";
 
 function getList<T>(response: any): T[] {
   const body = response?.data;
-
   if (Array.isArray(body)) return body;
   if (Array.isArray(body?.data)) return body.data;
   if (Array.isArray(body?.data?.data)) return body.data.data;
-
   return [];
 }
-
 function getFriendlyError(error: any, action: ActionType): string {
   const status = error?.response?.status;
   const data = error?.response?.data;
-
-  const serverMessage =
-    typeof data?.message === "string" ? data.message.toLowerCase() : "";
-
-  // Network errors
-  if (!error?.response) {
-    return "We couldn't connect to the server. Please check your connection and try again.";
-  }
-
-  // Authentication and permission errors
-  if (status === 401) {
-    return "Your session may have expired. Please sign in again.";
-  }
-
-  if (status === 403) {
-    return "You don't have permission to perform this action. Please contact your administrator if you need access.";
-  }
-
-  // Resource not found
-  if (status === 404) {
-    return action === "delete" || action === "update"
-      ? "This user could not be found. The user may have already been removed. Please refresh the list."
-      : "The requested information is currently unavailable. Please try again.";
-  }
-
-  // Duplicate email
-  if (
-    serverMessage.includes("email_in_use") ||
-    serverMessage.includes("email already exists") ||
-    serverMessage.includes("email has already been taken")
-  ) {
+  const serverMessage = typeof data?.message === "string" ? data.message.toLowerCase() : "";
+  if (!error?.response) return "We couldn't connect to the server. Please check your connection and try again.";
+  if (status === 401) return "Your session may have expired. Please sign in again.";
+  if (status === 403) return "You don't have permission to perform this action. Please contact your administrator if you need access.";
+  if (status === 404) return action === "delete" || action === "update" ? "This user could not be found. Please refresh the list." : "The requested information is currently unavailable. Please try again.";
+  if (serverMessage.includes("email_in_use") || serverMessage.includes("email already exists") || serverMessage.includes("email has already been taken")) {
     return "This email address is already registered. Please use a different email address.";
   }
-
-  // Laravel validation errors
   const errors = data?.errors;
-
   if (errors && typeof errors === "object") {
     const entries = Object.entries(errors) as [string, unknown][];
-
     const emailError = entries.find(([key]) => key === "email");
-    const passwordError = entries.find(([key]) =>
-      ["password", "password_confirmation"].includes(key),
-    );
+    const passwordError = entries.find(([key]) => ["password", "password_confirmation"].includes(key));
     const roleError = entries.find(([key]) => key === "role_id");
-    const firstError = entries
-      .flatMap(([, value]) => (Array.isArray(value) ? value : [value]))
-      .find((value) => typeof value === "string" && value.trim());
-
+    const firstError = entries.flatMap(([, value]) => Array.isArray(value) ? value : [value]).find((v) => typeof v === "string" && v.trim());
     if (emailError) {
-      const message = String(
-        Array.isArray(emailError[1]) ? emailError[1][0] : emailError[1],
-      ).toLowerCase();
-
-      if (message.includes("taken") || message.includes("already exists")) {
-        return "This email address is already registered. Please use a different email address.";
-      }
-
-      return "Please check the email address and enter a valid email.";
+      const message = String(Array.isArray(emailError[1]) ? emailError[1][0] : emailError[1]).toLowerCase();
+      return message.includes("taken") || message.includes("already exists") ? "This email address is already registered. Please use a different email address." : "Please check the email address and enter a valid email.";
     }
-
-    if (passwordError) {
-      return "Please check your password. It must meet the password requirements and match the confirmation.";
-    }
-
-    if (roleError) {
-      return "Please select a valid role from the available options.";
-    }
-
-    if (firstError) {
-      const message = String(firstError).toLowerCase();
-
-      if (message.includes("required")) {
-        return "Some required information is missing. Please complete all required fields.";
-      }
-
-      if (message.includes("unique") || message.includes("taken")) {
-        return "Some information is already in use. Please check your entries and try again.";
-      }
-
-      return "Some information is invalid. Please review the form and try again.";
-    }
+    if (passwordError) return "Please check your password. It must contain at least 8 characters and match the confirmation.";
+    if (roleError) return "Please select a valid role from the available options.";
+    if (firstError) return String(firstError).toLowerCase().includes("required") ? "Some required information is missing. Please complete all required fields." : "Some information is invalid. Please review the form and try again.";
   }
-
-  // Common HTTP status codes
-  if (status === 409) {
-    return "This action conflicts with existing information. Please refresh the list and try again.";
-  }
-
-  if (status === 422) {
-    if (action === "delete") {
-      return "This user cannot be deleted at the moment because of a data restriction. Please contact your administrator.";
-    }
-
-    return "We couldn't save this user. Please check the information you entered and try again.";
-  }
-
-  if (status >= 500) {
-    return "Something went wrong while processing your request. Please try again later.";
-  }
-
-  switch (action) {
-    case "load":
-      return "We couldn't load the information. Please try again.";
-    case "create":
-      return "We couldn't create this user. Please try again.";
-    case "update":
-      return "We couldn't update this user. Please try again.";
-    case "delete":
-      return "We couldn't delete this user. Please try again.";
+  if (status === 409) return "This action conflicts with existing information. Please refresh the list and try again.";
+  if (status === 422) return action === "delete" ? "This user cannot be deleted because of a data restriction." : "We couldn't save this user. Please check the information you entered.";
+  if (status >= 500) return "Something went wrong while processing your request. Please try again later.";
+  return ({ load: "We couldn't load the information. Please try again.", create: "We couldn't create this user. Please try again.", update: "We couldn't update this user. Please try again.", delete: "We couldn't delete this user. Please try again." })[action];
+}
+function Icon({ name }: { name: string }) {
+  const common = { className: "h-5 w-5", fill: "none", stroke: "currentColor", strokeWidth: 1.8, viewBox: "0 0 24 24", "aria-hidden": true as const };
+  switch (name) {
+    case "plus": return <svg {...common}><path strokeLinecap="round" d="M12 5v14M5 12h14" /></svg>;
+    case "search": return <svg {...common}><circle cx="10.5" cy="10.5" r="6.5" /><path strokeLinecap="round" strokeLinejoin="round" d="m16 16 4 4" /></svg>;
+    case "edit": return <svg {...common}><path strokeLinecap="round" strokeLinejoin="round" d="m16.86 4.49 2.65 2.65M4 20l4.5-1 11-11a2.12 2.12 0 0 0-3-3l-11 11L4 20Z" /></svg>;
+    case "trash": return <svg {...common}><path strokeLinecap="round" strokeLinejoin="round" d="M3 6h18m-2 0-1 14H6L5 6m3 0V4h8v2m-7 4v6m4-6v6" /></svg>;
+    case "refresh": return <svg {...common}><path strokeLinecap="round" strokeLinejoin="round" d="M20 7v5h-5M4 17v-5h5M5.6 9A7 7 0 0 1 18 6l2 6M4 12l2 6a7 7 0 0 0 12.4-3" /></svg>;
+    case "users": return <svg {...common}><path strokeLinecap="round" strokeLinejoin="round" d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2m6-10a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm10 10v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" /></svg>;
+    case "check": return <svg {...common}><path strokeLinecap="round" strokeLinejoin="round" d="m5 12 4 4L19 6" /></svg>;
+    default: return <svg {...common}><circle cx="12" cy="12" r="9" /><path d="M12 8v4m0 4h.01" /></svg>;
   }
 }
-
-function Spinner({ small = false }: { small?: boolean }) {
-  return (
-    <span
-      aria-hidden="true"
-      className={`inline-block animate-spin rounded-full border-2 border-current border-r-transparent ${
-        small ? "h-4 w-4" : "h-9 w-9"
-      }`}
-    />
-  );
-}
-
-function NoticeToast({
-  notice,
-  onClose,
-}: {
-  notice: Notice;
-  onClose: () => void;
-}) {
-  const styles = {
-    success: {
-      icon: "✓",
-      iconStyle: "bg-emerald-100 text-emerald-700",
-      border: "border-emerald-200",
-    },
-    error: {
-      icon: "!",
-      iconStyle: "bg-red-100 text-red-700",
-      border: "border-red-200",
-    },
-    warning: {
-      icon: "!",
-      iconStyle: "bg-amber-100 text-amber-700",
-      border: "border-amber-200",
-    },
+function SummaryCard({ title, value, icon, color }: { title: string; value: number; icon: string; color: "blue" | "green" | "purple" }) {
+  const colors = {
+    blue: "bg-blue-50 text-blue-700 ring-blue-100",
+    green: "bg-emerald-50 text-emerald-700 ring-emerald-100",
+    purple: "bg-purple-50 text-purple-700 ring-purple-100",
   };
-
-  const style = styles[notice.type];
-
-  return (
-    <div
-      role={notice.type === "error" ? "alert" : "status"}
-      aria-live="polite"
-      className={`fixed right-4 top-4 z-[100] flex w-[calc(100%-2rem)] max-w-md items-start gap-3 rounded-xl border bg-white p-4 shadow-xl sm:right-6 sm:top-6 ${style.border}`}
-    >
-      <div
-        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-lg font-bold ${style.iconStyle}`}
-      >
-        {style.icon}
-      </div>
-
-      <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold text-gray-900">{notice.title}</p>
-        <p className="mt-1 text-sm leading-5 text-gray-600">{notice.message}</p>
-      </div>
-
-      <button
-        type="button"
-        onClick={onClose}
-        aria-label="Close notification"
-        className="rounded-lg p-1 text-gray-400 transition hover:bg-gray-100 hover:text-gray-700"
-      >
-        <svg
-          viewBox="0 0 24 24"
-          className="h-5 w-5"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-        >
-          <path d="m18 6-12 12M6 6l12 12" />
-        </svg>
-      </button>
+  return <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+    <div className="flex items-center justify-between gap-3">
+      <p className="text-sm font-medium text-slate-500">{title}</p>
+      <span className={`flex h-10 w-10 items-center justify-center rounded-xl ring-1 ring-inset ${colors[color]}`}><Icon name={icon} /></span>
     </div>
-  );
+    <p className="mt-3 text-3xl font-bold tracking-tight text-slate-900">{value}</p>
+  </div>;
 }
-
+function RoleBadge({ role }: { role: string }) {
+  return <span className="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-1 text-xs font-bold capitalize text-blue-700 ring-1 ring-inset ring-blue-100">{role || "Unassigned"}</span>;
+}
+function NoticeToast({ notice, onClose }: { notice: Notice; onClose: () => void }) {
+  const style = notice.type === "success" ? "border-emerald-200 bg-emerald-50 text-emerald-800" : notice.type === "warning" ? "border-amber-200 bg-amber-50 text-amber-900" : "border-red-200 bg-red-50 text-red-800";
+  return <div role={notice.type === "error" ? "alert" : "status"} aria-live="polite" className={`fixed right-4 top-4 z-[100] flex w-[calc(100%-2rem)] max-w-md items-start gap-3 rounded-xl border bg-white p-4 shadow-xl ${style}`}>
+    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/80 font-bold">{notice.type === "success" ? "✓" : "!"}</span>
+    <div className="min-w-0 flex-1"><p className="text-sm font-bold">{notice.title}</p><p className="mt-1 text-sm leading-5">{notice.message}</p></div>
+    <button type="button" onClick={onClose} aria-label="Close notification" className="rounded-lg px-2 text-lg opacity-60 hover:bg-black/5">×</button>
+  </div>;
+}
 function FieldError({ children }: { children: string }) {
-  return (
-    <p className="mt-1.5 text-xs font-medium text-red-600" role="alert">
-      {children}
-    </p>
-  );
+  return <p role="alert" className="mt-1.5 text-xs font-medium text-red-600">{children}</p>;
+}
+function MobileField({ label, value }: { label: string; value?: string | null }) {
+  return <div className="min-w-0"><p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">{label}</p><p className="mt-1 break-words text-sm font-medium text-slate-700">{value || "-"}</p></div>;
 }
 
 export default function Users() {
   const [users, setUsers] = useState<User[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
-  const [form, setForm] = useState<UserForm>(initialForm);
-
+  const [form, setForm] = useState<UserForm>(emptyForm);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [usersLoadFailed, setUsersLoadFailed] = useState(false);
   const [rolesLoadFailed, setRolesLoadFailed] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
-
   const [search, setSearch] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [notice, setNotice] = useState<Notice | null>(null);
-
   const [deleteUser, setDeleteUser] = useState<User | null>(null);
   const [deleteError, setDeleteError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof UserForm, string>>>({});
 
-  const [fieldErrors, setFieldErrors] = useState<
-    Partial<Record<keyof UserForm, string>>
-  >({});
-
-  const showNotice = (type: NoticeType, title: string, message: string) => {
-    setNotice({ type, title, message });
-  };
-
+  const showNotice = (type: NoticeType, title: string, message: string) => setNotice({ type, title, message });
   useEffect(() => {
     if (!notice) return;
-
-    const timer = window.setTimeout(() => {
-      setNotice(null);
-    }, 4500);
-
+    const timer = window.setTimeout(() => setNotice(null), 4500);
     return () => window.clearTimeout(timer);
   }, [notice]);
 
-  const fetchData = async (showSpinner = true) => {
+  const fetchData = useCallback(async (showSpinner = true) => {
     if (showSpinner) setLoading(true);
-
     setUsersLoadFailed(false);
     setRolesLoadFailed(false);
-
     try {
-      // Load independently so one failed request does not hide
-      // successfully retrieved data from the other endpoint.
-      const [usersResult, rolesResult] = await Promise.allSettled([
-        api.get("/users"),
-        api.get("/roles"),
-      ]);
-
-      if (usersResult.status === "fulfilled") {
-        setUsers(getList<User>(usersResult.value));
-      } else {
+      const [usersResult, rolesResult] = await Promise.allSettled([api.get("/users"), api.get("/roles")]);
+      if (usersResult.status === "fulfilled") setUsers(getList<User>(usersResult.value));
+      else {
         setUsersLoadFailed(true);
-        showNotice(
-          "error",
-          "Unable to load users",
-          getFriendlyError(usersResult.reason, "load"),
-        );
+        showNotice("error", "Unable to load users", getFriendlyError(usersResult.reason, "load"));
       }
-
-      if (rolesResult.status === "fulfilled") {
-        setRoles(getList<Role>(rolesResult.value));
-      } else {
+      if (rolesResult.status === "fulfilled") setRoles(getList<Role>(rolesResult.value));
+      else {
         setRolesLoadFailed(true);
-        showNotice(
-          "error",
-          "Unable to load roles",
-          "We couldn't retrieve the available roles. Please try again before creating or editing a user.",
-        );
+        showNotice("error", "Unable to load roles", "We couldn't retrieve the available roles. Please try again before creating or editing a user.");
       }
     } finally {
       if (showSpinner) setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    void fetchData();
-
-    // Load data when the page is opened.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  useEffect(() => { void fetchData(); }, [fetchData]);
 
-  const resetForm = () => {
-    setForm(initialForm);
-    setEditingId(null);
-    setShowForm(false);
-    setFieldErrors({});
+  const filteredUsers = useMemo(() => {
+    const keyword = search.trim().toLowerCase();
+    return users.filter((user) => {
+      const roleName = user.role?.role_name ?? roles.find((role) => role.id === user.role_id)?.role_name ?? "";
+      return !keyword || [user.name, user.email, user.phone_number, roleName].some((value) => String(value ?? "").toLowerCase().includes(keyword));
+    });
+  }, [users, roles, search]);
+  const activeRoles = useMemo(() => roles.length, [roles]);
+  const resetForm = () => { setForm(emptyForm); setEditingId(null); setShowForm(false); setFieldErrors({}); };
+  const handleChange = (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = event.target;
+    setForm((previous) => ({ ...previous, [name]: value }));
+    setFieldErrors((previous) => ({ ...previous, [name]: undefined }));
   };
-
-  const handleChange = (
-    e: ChangeEvent<HTMLInputElement | HTMLSelectElement>,
-  ) => {
-    const { name, value } = e.target;
-
-    setForm((previous) => ({
-      ...previous,
-      [name]: value,
-    }));
-
-    setFieldErrors((previous) => ({
-      ...previous,
-      [name]: undefined,
-    }));
-  };
-
   const handleEdit = (user: User) => {
     setEditingId(user.id);
-
-    setForm({
-      name: user.name ?? "",
-      email: user.email ?? "",
-      phone_number: user.phone_number ?? "",
-      role_id: String(user.role_id ?? user.role?.id ?? ""),
-      password: "",
-      password_confirmation: "",
-    });
-
+    setForm({ name: user.name ?? "", email: user.email ?? "", phone_number: user.phone_number ?? "", role_id: String(user.role_id ?? user.role?.id ?? ""), password: "", password_confirmation: "" });
     setFieldErrors({});
     setShowForm(true);
-
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
-
-  const validateForm = (): boolean => {
+  const validateForm = () => {
     const errors: Partial<Record<keyof UserForm, string>> = {};
-
-    if (!form.name.trim()) {
-      errors.name = "Please enter the user's full name.";
-    }
-
-    if (!form.email.trim()) {
-      errors.email = "Please enter an email address.";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
-      errors.email = "Please enter a valid email address.";
-    }
-
-    if (!form.phone_number.trim()) {
-      errors.phone_number = "Please enter a phone number.";
-    }
-
-    if (!form.role_id) {
-      errors.role_id = "Please select a role for this user.";
-    } else if (!roles.some((role) => String(role.id) === form.role_id)) {
-      errors.role_id = "Please select an available role.";
-    }
-
+    if (!form.name.trim()) errors.name = "Please enter the user's full name.";
+    if (!form.email.trim()) errors.email = "Please enter an email address.";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) errors.email = "Please enter a valid email address.";
+    if (!form.phone_number.trim()) errors.phone_number = "Please enter a phone number.";
+    if (!form.role_id) errors.role_id = "Please select a role for this user.";
+    else if (!roles.some((role) => String(role.id) === form.role_id)) errors.role_id = "Please select an available role.";
     if (editingId === null || form.password || form.password_confirmation) {
-      if (form.password.length < 8) {
-        errors.password = "Your password must contain at least 8 characters.";
-      }
-
-      if (form.password !== form.password_confirmation) {
-        errors.password_confirmation = "The passwords do not match.";
-      }
+      if (form.password.length < 8) errors.password = "Your password must contain at least 8 characters.";
+      if (form.password !== form.password_confirmation) errors.password_confirmation = "The passwords do not match.";
     }
-
     setFieldErrors(errors);
-
-    if (Object.keys(errors).length > 0) {
-      showNotice(
-        "warning",
-        "Check the information",
-        "Some information is missing or incorrect. Please review the highlighted fields.",
-      );
-
+    if (Object.keys(errors).length) {
+      showNotice("warning", "Check the information", "Some information is missing or incorrect. Please review the highlighted fields.");
       return false;
     }
-
     return true;
   };
-
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
     if (saving || deletingId !== null) return;
-
     if (rolesLoadFailed || roles.length === 0) {
-      showNotice(
-        "warning",
-        "Role selection unavailable",
-        "You need an available role to create or update a user. Please reload the roles and try again.",
-      );
+      showNotice("warning", "Role selection unavailable", "You need an available role to create or update a user. Please reload the roles and try again.");
       return;
     }
-
     if (!validateForm()) return;
-
     const isEditing = editingId !== null;
-
-    const payload: Record<string, string | number> = {
-      name: form.name.trim(),
-      email: form.email.trim(),
-      phone_number: form.phone_number.trim(),
-      role_id: Number(form.role_id),
-    };
-
+    const payload: Record<string, string | number> = { name: form.name.trim(), email: form.email.trim(), phone_number: form.phone_number.trim(), role_id: Number(form.role_id) };
     if (!isEditing || form.password) {
       payload.password = form.password;
       payload.password_confirmation = form.password_confirmation;
     }
-
     setSaving(true);
-
     try {
-      if (isEditing) {
-        await api.put(`/users/${editingId}`, payload);
-      } else {
-        await api.post("/users", payload);
-      }
-
-      showNotice(
-        "success",
-        isEditing ? "User updated successfully" : "User created successfully",
-        isEditing
-          ? `${form.name.trim()}'s information has been updated.`
-          : `${form.name.trim()} has been added to the user list.`,
-      );
-
+      if (isEditing) await api.put(`/users/${editingId}`, payload);
+      else await api.post("/users", payload);
+      showNotice("success", isEditing ? "User updated successfully" : "User created successfully", isEditing ? `${form.name.trim()}'s information has been updated.` : `${form.name.trim()} has been added to the user list.`);
       resetForm();
       await fetchData(false);
     } catch (error: any) {
-      showNotice(
-        "error",
-        isEditing ? "Update unsuccessful" : "User not created",
-        getFriendlyError(error, isEditing ? "update" : "create"),
-      );
-    } finally {
-      setSaving(false);
-    }
+      showNotice("error", isEditing ? "Update unsuccessful" : "User not created", getFriendlyError(error, isEditing ? "update" : "create"));
+    } finally { setSaving(false); }
   };
-
-  const openDeleteModal = (user: User) => {
-    setDeleteUser(user);
-    setDeleteError("");
-  };
-
-  const closeDeleteModal = () => {
-    if (deletingId !== null) return;
-
-    setDeleteUser(null);
-    setDeleteError("");
-  };
-
+  const openDeleteModal = (user: User) => { setDeleteUser(user); setDeleteError(""); };
+  const closeDeleteModal = () => { if (deletingId !== null) return; setDeleteUser(null); setDeleteError(""); };
   const confirmDelete = async () => {
     if (!deleteUser || deletingId !== null || saving) return;
-
     const user = deleteUser;
     setDeletingId(user.id);
     setDeleteError("");
-
     try {
       await api.delete(`/users/${user.id}`);
-
       setDeleteUser(null);
-
-      if (editingId === user.id) {
-        resetForm();
-      }
-
-      showNotice(
-        "success",
-        "User deleted successfully",
-        `${user.name} has been removed from the user list.`,
-      );
-
+      if (editingId === user.id) resetForm();
+      showNotice("success", "User deleted successfully", `${user.name} has been removed from the user list.`);
       await fetchData(false);
     } catch (error: any) {
       setDeleteError(getFriendlyError(error, "delete"));
-    } finally {
-      setDeletingId(null);
-    }
+    } finally { setDeletingId(null); }
   };
+  const roleFor = (user: User) => user.role?.role_name ?? roles.find((role) => role.id === user.role_id)?.role_name ?? "-";
 
-  const filteredUsers = users.filter((user) => {
-    const keyword = search.trim().toLowerCase();
+  return <div className="min-h-full space-y-5 bg-slate-50/80 p-3 sm:space-y-6 sm:p-5 lg:p-6">
+    {notice && <NoticeToast notice={notice} onClose={() => setNotice(null)} />}
 
-    const roleName =
-      user.role?.role_name ??
-      roles.find((role) => role.id === user.role_id)?.role_name ??
-      "";
+    <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between print:hidden">
+      <div>
+        <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-700">C-HTM / User Management</p>
+        <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">Users</h1>
+      </div>
+      <button type="button" disabled={loading || usersLoadFailed || rolesLoadFailed || saving || deletingId !== null}
+        onClick={() => showForm ? resetForm() : (setForm(emptyForm), setEditingId(null), setFieldErrors({}), setShowForm(true))}
+        className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 hover:shadow-md focus:outline-none focus:ring-4 focus:ring-blue-200 disabled:cursor-not-allowed cursor-pointer disabled:opacity-50">
+        <Icon name="plus" /> {showForm ? "Cancel" : "Add User"}
+      </button>
+    </header>
 
-    return (
-      user.name?.toLowerCase().includes(keyword) ||
-      user.email?.toLowerCase().includes(keyword) ||
-      user.phone_number?.toLowerCase().includes(keyword) ||
-      roleName.toLowerCase().includes(keyword)
-    );
-  });
+    {/* <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 print:hidden">
+      <SummaryCard title="Total Users" value={users.length} color="blue" icon="users" />
+      <SummaryCard title="Users Shown" value={filteredUsers.length} color="green" icon="check" />
+      <SummaryCard title="Available Roles" value={activeRoles} color="purple" icon="users" />
+    </div> */}
 
-  return (
-    <div className="min-w-0 space-y-5 sm:space-y-6">
-      {notice && (
-        <NoticeToast notice={notice} onClose={() => setNotice(null)} />
-      )}
-
-      {/* Page heading */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">
-            User Management
-          </h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Manage users and their roles.
-          </p>
+    {showForm && <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
+      <div className="mb-5"><h2 className="text-lg font-bold text-slate-900">{editingId !== null ? "Edit User" : "Add New User"}</h2><p className="mt-1 text-sm text-slate-500">{editingId !== null ? "Update user information and access permissions." : "Enter the user's details to create an account."}</p></div>
+      {rolesLoadFailed && <div role="alert" className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">Roles could not be loaded. <button type="button" onClick={() => void fetchData()} className="font-semibold underline">Try again</button></div>}
+      <form onSubmit={handleSubmit} noValidate className="space-y-5">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div><label className={labelClass} htmlFor="user-name">Full Name <span className="text-red-500">*</span></label><input id="user-name" name="name" value={form.name} onChange={handleChange} placeholder="Enter full name" maxLength={255} disabled={saving} className={inputClass} aria-invalid={!!fieldErrors.name} />{fieldErrors.name && <FieldError>{fieldErrors.name}</FieldError>}</div>
+          <div><label className={labelClass} htmlFor="user-email">Email Address <span className="text-red-500">*</span></label><input id="user-email" type="email" name="email" value={form.email} onChange={handleChange} placeholder="name@example.com" maxLength={255} autoComplete="email" disabled={saving} className={inputClass} aria-invalid={!!fieldErrors.email} />{fieldErrors.email && <FieldError>{fieldErrors.email}</FieldError>}</div>
+          <div><label className={labelClass} htmlFor="user-phone">Phone Number <span className="text-red-500">*</span></label><input id="user-phone" type="tel" name="phone_number" value={form.phone_number} onChange={handleChange} placeholder="Enter phone number" maxLength={15} autoComplete="tel" disabled={saving} className={inputClass} aria-invalid={!!fieldErrors.phone_number} />{fieldErrors.phone_number && <FieldError>{fieldErrors.phone_number}</FieldError>}</div>
+          <div><label className={labelClass} htmlFor="user-role">Role <span className="text-red-500">*</span></label><select id="user-role" name="role_id" value={form.role_id} onChange={handleChange} disabled={saving || rolesLoadFailed || roles.length === 0} className={inputClass} aria-invalid={!!fieldErrors.role_id}><option value="">{rolesLoadFailed ? "Unable to load roles" : roles.length ? "Select a role" : "No roles available"}</option>{roles.map((role) => <option key={role.id} value={role.id}>{role.role_name}</option>)}</select>{fieldErrors.role_id && <FieldError>{fieldErrors.role_id}</FieldError>}</div>
+          <div><label className={labelClass} htmlFor="user-password">{editingId !== null ? "New Password" : "Password"} {editingId === null && <span className="text-red-500">*</span>}</label><input id="user-password" type="password" name="password" value={form.password} onChange={handleChange} placeholder={editingId !== null ? "Leave blank to keep current password" : "At least 8 characters"} minLength={8} autoComplete="new-password" disabled={saving} className={inputClass} aria-invalid={!!fieldErrors.password} />{fieldErrors.password && <FieldError>{fieldErrors.password}</FieldError>}{editingId !== null && <p className="mt-1 text-xs text-slate-500">Leave blank if you don't want to change the password.</p>}</div>
+          <div><label className={labelClass} htmlFor="user-password-confirmation">Confirm Password {editingId === null && <span className="text-red-500">*</span>}</label><input id="user-password-confirmation" type="password" name="password_confirmation" value={form.password_confirmation} onChange={handleChange} placeholder="Re-enter password" minLength={8} autoComplete="new-password" disabled={saving} className={inputClass} aria-invalid={!!fieldErrors.password_confirmation} />{fieldErrors.password_confirmation && <FieldError>{fieldErrors.password_confirmation}</FieldError>}</div>
         </div>
+        <div className="flex flex-col-reverse gap-3 border-t border-slate-100 pt-4 sm:flex-row sm:justify-end">
+          <button type="button" onClick={resetForm} disabled={saving} className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50">Cancel</button>
+          <button type="submit" disabled={saving || deletingId !== null || rolesLoadFailed || roles.length === 0} className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60">{saving && <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />}{saving ? "Saving..." : editingId !== null ? "Save Changes" : "Create User"}</button>
+        </div>
+      </form>
+    </section>}
 
-        <button
-          type="button"
-          disabled={
-            loading ||
-            usersLoadFailed ||
-            rolesLoadFailed ||
-            saving ||
-            deletingId !== null
-          }
-          onClick={() => {
-            if (showForm) {
-              resetForm();
-            } else {
-              setForm(initialForm);
-              setEditingId(null);
-              setFieldErrors({});
-              setShowForm(true);
-            }
-          }}
-          className="inline-flex w-full items-center justify-center rounded-lg bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition cursor-pointer hover:bg-blue-700 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
-        >
-          {showForm ? "Cancel" : "+ Add User"}
-        </button>
+    <section className="min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <div className="border-b border-slate-200 bg-white p-4 sm:p-5 print:hidden">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+          <div><div className="flex flex-wrap items-center gap-2"><h2 className="text-lg font-bold tracking-tight text-slate-900">User List</h2><span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-700 ring-1 ring-inset ring-blue-100">{filteredUsers.length}</span></div><p className="mt-1 text-sm text-slate-500">Manage user accounts and access roles.</p></div>
+          <div className="relative w-full sm:w-72"><span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-400"><Icon name="search" /></span><input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search users..." aria-label="Search users" disabled={loading || usersLoadFailed} className="w-full rounded-xl border border-slate-300 bg-slate-50 py-2.5 pl-10 pr-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-100 disabled:bg-slate-100" /></div>
+        </div>
+        <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-slate-100 pt-3 text-xs text-slate-500"><span className="inline-flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-blue-500" />Showing: <strong className="text-slate-800">{filteredUsers.length}</strong> of {users.length}</span><span>Roles available: <strong className="text-slate-800">{roles.length}</strong></span></div>
       </div>
 
-      {/* Add / edit form */}
-      {showForm && (
-        <section className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:p-6">
-          <div className="mb-5">
-            <h2 className="text-lg font-semibold text-gray-900">
-              {editingId !== null ? "Edit User" : "Add New User"}
-            </h2>
-            <p className="mt-1 text-sm text-gray-500">
-              {editingId !== null
-                ? "Update user information and access permissions."
-                : "Enter the user's details to create an account."}
-            </p>
-          </div>
-
-          {rolesLoadFailed && (
-            <div
-              role="alert"
-              className="mb-5 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4"
-            >
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-100 font-bold text-amber-700">
-                !
-              </span>
-              <div className="flex-1">
-                <p className="text-sm font-semibold text-amber-900">
-                  Roles could not be loaded
-                </p>
-                <p className="mt-1 text-sm text-amber-800">
-                  Please reload the role list before saving this user.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => void fetchData()}
-                  className="mt-2 text-sm font-semibold text-amber-900 underline underline-offset-2"
-                >
-                  Try again
-                </button>
-              </div>
-            </div>
-          )}
-
-          {!rolesLoadFailed && roles.length === 0 && (
-            <div className="mb-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-              <p className="font-semibold">No roles available</p>
-              <p className="mt-1">Create a role before adding a user.</p>
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} noValidate className="space-y-4">
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              {/* Full name */}
-              <div>
-                <label
-                  htmlFor="user-name"
-                  className="mb-1.5 block text-sm font-medium text-gray-700"
-                >
-                  Full Name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  id="user-name"
-                  name="name"
-                  value={form.name}
-                  onChange={handleChange}
-                  placeholder="Enter full name"
-                  required
-                  maxLength={255}
-                  disabled={saving}
-                  aria-invalid={Boolean(fieldErrors.name)}
-                  className={`w-full rounded-lg border px-3 py-2.5 text-sm outline-none transition focus:ring-2 disabled:bg-gray-100 ${
-                    fieldErrors.name
-                      ? "border-red-400 focus:border-red-500 focus:ring-red-100"
-                      : "border-gray-300 focus:border-blue-500 focus:ring-blue-100"
-                  }`}
-                />
-                {fieldErrors.name && (
-                  <FieldError>{fieldErrors.name}</FieldError>
-                )}
-              </div>
-
-              {/* Email */}
-              <div>
-                <label
-                  htmlFor="user-email"
-                  className="mb-1.5 block text-sm font-medium text-gray-700"
-                >
-                  Email Address <span className="text-red-500">*</span>
-                </label>
-                <input
-                  id="user-email"
-                  type="email"
-                  name="email"
-                  value={form.email}
-                  onChange={handleChange}
-                  placeholder="name@example.com"
-                  required
-                  maxLength={255}
-                  disabled={saving}
-                  autoComplete="email"
-                  aria-invalid={Boolean(fieldErrors.email)}
-                  className={`w-full rounded-lg border px-3 py-2.5 text-sm outline-none transition focus:ring-2 disabled:bg-gray-100 ${
-                    fieldErrors.email
-                      ? "border-red-400 focus:border-red-500 focus:ring-red-100"
-                      : "border-gray-300 focus:border-blue-500 focus:ring-blue-100"
-                  }`}
-                />
-                {fieldErrors.email && (
-                  <FieldError>{fieldErrors.email}</FieldError>
-                )}
-              </div>
-
-              {/* Phone */}
-              <div>
-                <label
-                  htmlFor="user-phone"
-                  className="mb-1.5 block text-sm font-medium text-gray-700"
-                >
-                  Phone Number <span className="text-red-500">*</span>
-                </label>
-                <input
-                  id="user-phone"
-                  type="tel"
-                  name="phone_number"
-                  value={form.phone_number}
-                  onChange={handleChange}
-                  placeholder="Enter phone number"
-                  required
-                  maxLength={15}
-                  disabled={saving}
-                  autoComplete="tel"
-                  aria-invalid={Boolean(fieldErrors.phone_number)}
-                  className={`w-full rounded-lg border px-3 py-2.5 text-sm outline-none transition focus:ring-2 disabled:bg-gray-100 ${
-                    fieldErrors.phone_number
-                      ? "border-red-400 focus:border-red-500 focus:ring-red-100"
-                      : "border-gray-300 focus:border-blue-500 focus:ring-blue-100"
-                  }`}
-                />
-                {fieldErrors.phone_number && (
-                  <FieldError>{fieldErrors.phone_number}</FieldError>
-                )}
-              </div>
-
-              {/* Role */}
-              <div>
-                <label
-                  htmlFor="user-role"
-                  className="mb-1.5 block text-sm font-medium text-gray-700"
-                >
-                  Role <span className="text-red-500">*</span>
-                </label>
-                <select
-                  id="user-role"
-                  name="role_id"
-                  value={form.role_id}
-                  onChange={handleChange}
-                  required
-                  disabled={saving || rolesLoadFailed || roles.length === 0}
-                  aria-invalid={Boolean(fieldErrors.role_id)}
-                  className={`w-full rounded-lg border bg-white px-3 py-2.5 text-sm outline-none transition focus:ring-2 disabled:bg-gray-100 ${
-                    fieldErrors.role_id
-                      ? "border-red-400 focus:border-red-500 focus:ring-red-100"
-                      : "border-gray-300 focus:border-blue-500 focus:ring-blue-100"
-                  }`}
-                >
-                  <option value="">
-                    {rolesLoadFailed
-                      ? "Unable to load roles"
-                      : roles.length === 0
-                        ? "No roles available"
-                        : "Select a role"}
-                  </option>
-                  {roles.map((role) => (
-                    <option key={role.id} value={role.id}>
-                      {role.role_name}
-                    </option>
-                  ))}
-                </select>
-                {fieldErrors.role_id && (
-                  <FieldError>{fieldErrors.role_id}</FieldError>
-                )}
-              </div>
-
-              {/* Password */}
-              <div>
-                <label
-                  htmlFor="user-password"
-                  className="mb-1.5 block text-sm font-medium text-gray-700"
-                >
-                  {editingId !== null ? "New Password" : "Password"}
-                  {editingId === null && (
-                    <span className="text-red-500"> *</span>
-                  )}
-                </label>
-                <input
-                  id="user-password"
-                  type="password"
-                  name="password"
-                  value={form.password}
-                  onChange={handleChange}
-                  placeholder={
-                    editingId !== null
-                      ? "Leave blank to keep current password"
-                      : "At least 8 characters"
-                  }
-                  required={editingId === null}
-                  minLength={8}
-                  autoComplete="new-password"
-                  disabled={saving}
-                  aria-invalid={Boolean(fieldErrors.password)}
-                  className={`w-full rounded-lg border px-3 py-2.5 text-sm outline-none transition focus:ring-2 disabled:bg-gray-100 ${
-                    fieldErrors.password
-                      ? "border-red-400 focus:border-red-500 focus:ring-red-100"
-                      : "border-gray-300 focus:border-blue-500 focus:ring-blue-100"
-                  }`}
-                />
-                {fieldErrors.password && (
-                  <FieldError>{fieldErrors.password}</FieldError>
-                )}
-                {editingId !== null && (
-                  <p className="mt-1.5 text-xs text-gray-500">
-                    Leave blank if you don't want to change the password.
-                  </p>
-                )}
-              </div>
-
-              {/* Confirm password */}
-              <div>
-                <label
-                  htmlFor="user-password-confirmation"
-                  className="mb-1.5 block text-sm font-medium text-gray-700"
-                >
-                  Confirm Password
-                  {editingId === null && (
-                    <span className="text-red-500"> *</span>
-                  )}
-                </label>
-                <input
-                  id="user-password-confirmation"
-                  type="password"
-                  name="password_confirmation"
-                  value={form.password_confirmation}
-                  onChange={handleChange}
-                  placeholder="Re-enter password"
-                  required={editingId === null || Boolean(form.password)}
-                  minLength={8}
-                  autoComplete="new-password"
-                  disabled={saving}
-                  aria-invalid={Boolean(fieldErrors.password_confirmation)}
-                  className={`w-full rounded-lg border px-3 py-2.5 text-sm outline-none transition focus:ring-2 disabled:bg-gray-100 ${
-                    fieldErrors.password_confirmation
-                      ? "border-red-400 focus:border-red-500 focus:ring-red-100"
-                      : "border-gray-300 focus:border-blue-500 focus:ring-blue-100"
-                  }`}
-                />
-                {fieldErrors.password_confirmation && (
-                  <FieldError>{fieldErrors.password_confirmation}</FieldError>
-                )}
-              </div>
-            </div>
-
-            <div className="flex flex-col-reverse gap-3 border-t border-gray-100 pt-4 sm:flex-row sm:justify-end">
-              <button
-                type="button"
-                onClick={resetForm}
-                disabled={saving}
-                className="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 transition cursor-pointer hover:bg-gray-50 disabled:opacity-50"
-              >
-                Cancel
-              </button>
-
-              <button
-                type="submit"
-                disabled={
-                  saving ||
-                  deletingId !== null ||
-                  rolesLoadFailed ||
-                  roles.length === 0
-                }
-                className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition cursor-pointer hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {saving && <Spinner small />}
-                {saving
-                  ? "Saving..."
-                  : editingId !== null
-                    ? "Save Changes"
-                    : "Create User"}
-              </button>
-            </div>
-          </form>
-        </section>
-      )}
-
-      {/* Users list */}
-      <section className="min-w-0 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-        <div className="flex flex-col gap-3 border-b border-gray-200 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
-          <div>
-            <h2 className="text-base font-semibold text-gray-900">
-              Users List
-            </h2>
-            <p className="mt-1 text-sm text-gray-500">
-              {loading
-                ? "Retrieving users"
-                : `${filteredUsers.length} ${
-                    filteredUsers.length === 1 ? "user" : "users"
-                  } found`}
-            </p>
-          </div>
-
-          <input
-            type="search"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search users..."
-            aria-label="Search users"
-            disabled={loading || usersLoadFailed}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:bg-gray-100 sm:max-w-xs"
-          />
+      {loading ? <div className="flex min-h-64 flex-col items-center justify-center gap-4 px-4 py-12" role="status"><span className="h-9 w-9 animate-spin rounded-full border-4 border-blue-100 border-t-blue-600" /><p className="text-sm font-medium text-slate-700">Loading users...</p></div>
+      : usersLoadFailed ? <div className="flex min-h-56 flex-col items-center justify-center px-4 py-10 text-center"><div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-50 text-red-600"><Icon name="warning" /></div><h3 className="mt-3 text-sm font-semibold text-slate-900">We couldn't load your users</h3><p className="mt-1 max-w-sm text-sm text-slate-500">Your user list is temporarily unavailable. Please try again.</p><button type="button" onClick={() => void fetchData()} className="mt-5 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700">Try Again</button></div>
+      : filteredUsers.length === 0 ? <div className="px-4 py-16 text-center"><div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-500"><Icon name="users" /></div><h3 className="mt-4 font-semibold text-slate-900">{search.trim() ? "No matching users" : "No users registered"}</h3><p className="mx-auto mt-1 max-w-sm text-sm leading-6 text-slate-500">{search.trim() ? "No users match your search. Try another name, email, phone number, or role." : "Add a user to start managing system access."}</p>{search.trim() && <button type="button" onClick={() => setSearch("")} className="mt-4 rounded-lg px-3 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50">Clear search</button>}</div>
+      : <>
+        <div className="divide-y divide-slate-100 md:hidden print:hidden">
+          {filteredUsers.map((user, index) => <article key={user.id} className="p-4 transition hover:bg-blue-50/40">
+            <div className="flex items-start gap-3"><div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-100 text-base font-bold text-blue-700">{user.name?.trim().charAt(0).toUpperCase() || "U"}</div><div className="min-w-0 flex-1"><div className="flex flex-wrap items-start justify-between gap-2"><div className="min-w-0"><h3 className="break-words font-semibold text-slate-900">{user.name || "-"}</h3><p className="mt-1 break-all text-xs text-slate-500">{user.email || "-"}</p></div><RoleBadge role={roleFor(user)} /></div></div></div>
+            <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-4 rounded-xl bg-slate-50 p-3"><MobileField label="Phone number" value={user.phone_number} /><MobileField label="Role" value={roleFor(user)} /></div>
+            <div className="mt-3 flex items-center justify-between gap-3"><span className="text-xs text-slate-400">Record {index + 1}</span><div className="flex items-center gap-2"><button type="button" onClick={() => handleEdit(user)} disabled={saving || deletingId !== null} aria-label={`Edit ${user.name}`} className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-white px-3 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-50 disabled:opacity-50"><Icon name="edit" /> Edit</button><button type="button" onClick={() => openDeleteModal(user)} disabled={saving || deletingId !== null} aria-label={`Delete ${user.name}`} className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50"><Icon name="trash" /> Delete</button></div></div>
+          </article>)}
         </div>
+        <div className="hidden w-full overflow-x-auto md:block">
+          <table className="w-full min-w-[1050px] border-collapse text-left text-sm">
+            <thead className="bg-slate-800 text-xs uppercase tracking-wider text-slate-100"><tr><th className="w-16 whitespace-nowrap px-4 py-4 text-center font-semibold">No.</th><th className="min-w-56 px-4 py-4 font-semibold">User Details</th><th className="min-w-64 px-4 py-4 font-semibold">Email Address</th><th className="whitespace-nowrap px-4 py-4 font-semibold">Phone Number</th><th className="whitespace-nowrap px-4 py-4 font-semibold">Role</th><th className="sticky right-0 z-10 whitespace-nowrap bg-slate-800 px-4 py-4 text-center font-semibold">Actions</th></tr></thead>
+            <tbody className="divide-y divide-slate-100">
+              {filteredUsers.map((user, index) => <tr key={user.id} className="group transition-colors odd:bg-white even:bg-slate-50/70 hover:bg-blue-50">
+                <td className="px-4 py-4 text-center tabular-nums text-slate-400">{index + 1}</td>
+                <td className="px-4 py-4"><div className="flex min-w-0 items-center gap-3"><div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 font-bold text-slate-600 group-hover:bg-blue-100 group-hover:text-blue-700">{user.name?.trim().charAt(0).toUpperCase() || "U"}</div><div className="min-w-0"><p className="break-words font-semibold text-slate-900">{user.name || "-"}</p><p className="mt-1 text-xs text-slate-500">User account</p></div></div></td>
+                <td className="break-all px-4 py-4 text-slate-600">{user.email || "-"}</td><td className="whitespace-nowrap px-4 py-4 text-slate-600">{user.phone_number || "-"}</td><td className="whitespace-nowrap px-4 py-4"><RoleBadge role={roleFor(user)} /></td>
+                <td className="sticky right-0 bg-white/95 px-3 py-4 text-center shadow-[-8px_0_12px_-12px_rgba(15,23,42,0.5)] group-hover:bg-blue-50 print:hidden"><div className="flex items-center justify-center gap-1"><button type="button" onClick={() => handleEdit(user)} disabled={saving || deletingId !== null} title="Edit user" aria-label={`Edit ${user.name}`} className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-blue-100 bg-white text-blue-700 transition hover:border-blue-300 hover:bg-blue-600 hover:text-white disabled:opacity-50"><Icon name="edit" /></button><button type="button" onClick={() => openDeleteModal(user)} disabled={saving || deletingId !== null} title="Delete user" aria-label={`Delete ${user.name}`} className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-red-100 bg-white text-red-600 transition hover:border-red-300 hover:bg-red-600 hover:text-white disabled:opacity-50"><Icon name="trash" /></button></div></td>
+              </tr>)}
+            </tbody>
+          </table>
+        </div>
+      </>}
 
-        {loading ? (
-          <div
-            className="flex min-h-64 flex-col items-center justify-center gap-4 px-4 py-12"
-            role="status"
-            aria-live="polite"
-          >
-            <div className="relative flex h-12 w-12 items-center justify-center">
-              <div className="absolute inset-0 animate-spin rounded-full border-4 border-blue-100 border-t-blue-600" />
-              <div className="h-2 w-2 rounded-full bg-blue-600" />
-            </div>
-            <div className="text-center">
-              <p className="text-sm font-semibold text-gray-800">
-                Loading users
-              </p>
-              <p className="mt-1 text-xs text-gray-500">
-                Please wait while we retrieve your data.
-              </p>
-            </div>
-          </div>
-        ) : usersLoadFailed ? (
-          <div className="flex min-h-56 flex-col items-center justify-center px-4 py-10 text-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-50 text-red-600">
-              <svg
-                viewBox="0 0 24 24"
-                className="h-6 w-6"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-              >
-                <path d="M12 8v4m0 4h.01M10.3 3.9 2.7 17a2 2 0 0 0 1.7 3h15.2a2 2 0 0 0 1.7-3l-7.6-13.1a2 2 0 0 0-3.4 0Z" />
-              </svg>
-            </div>
-            <h3 className="mt-3 text-sm font-semibold text-gray-900">
-              We couldn't load your users
-            </h3>
-            <p className="mt-1 max-w-sm text-sm text-gray-500">
-              Your user list is temporarily unavailable. Please try again.
-            </p>
-            <button
-              type="button"
-              onClick={() => void fetchData()}
-              className="mt-5 inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
-            >
-              Try Again
-            </button>
-          </div>
-        ) : (
-          <div className="w-full overflow-x-auto">
-            <table className="w-full min-w-[760px] text-left text-sm">
-              <thead className="bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
-                <tr>
-                  <th className="px-4 py-3 font-semibold sm:px-5">#</th>
-                  <th className="px-4 py-3 font-semibold sm:px-5">Name</th>
-                  <th className="px-4 py-3 font-semibold sm:px-5">Email</th>
-                  <th className="px-4 py-3 font-semibold sm:px-5">Phone</th>
-                  <th className="px-4 py-3 font-semibold sm:px-5">Role</th>
-                  <th className="px-4 py-3 text-right font-semibold sm:px-5">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
+      <footer className="flex flex-col gap-3 border-t border-slate-200 bg-slate-50 px-4 py-3.5 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between print:hidden"><p>Showing <strong className="text-slate-800">{filteredUsers.length}</strong> of <strong className="text-slate-800">{users.length}</strong> users</p><button type="button" onClick={() => void fetchData()} disabled={loading} className="inline-flex items-center justify-center gap-2 self-start rounded-lg border border-slate-200 bg-white px-3 py-2 font-semibold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50 sm:self-auto"><Icon name="refresh" /> Refresh list</button></footer>
+    </section>
 
-              <tbody className="divide-y divide-gray-100">
-                {filteredUsers.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="px-5 py-14 text-center">
-                      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 text-gray-400">
-                        <svg
-                          viewBox="0 0 24 24"
-                          className="h-6 w-6"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="1.7"
-                        >
-                          <circle cx="11" cy="11" r="7" />
-                          <path d="m16 16 4 4" />
-                        </svg>
-                      </div>
-                      <p className="mt-3 text-sm font-semibold text-gray-800">
-                        {search.trim() ? "No matching users" : "No users yet"}
-                      </p>
-                      <p className="mt-1 text-sm text-gray-500">
-                        {search.trim()
-                          ? "Try a different search term."
-                          : "Add a user to get started."}
-                      </p>
-                    </td>
-                  </tr>
-                ) : (
-                  filteredUsers.map((user, index) => {
-                    const roleName =
-                      user.role?.role_name ??
-                      roles.find((role) => role.id === user.role_id)
-                        ?.role_name ??
-                      "-";
-
-                    return (
-                      <tr key={user.id} className="transition hover:bg-gray-50">
-                        <td className="whitespace-nowrap px-4 py-4 text-gray-500 sm:px-5">
-                          {index + 1}
-                        </td>
-                        <td className="whitespace-nowrap px-4 py-4 font-medium text-gray-900 sm:px-5">
-                          {user.name}
-                        </td>
-                        <td className="whitespace-nowrap px-4 py-4 text-gray-600 sm:px-5">
-                          {user.email}
-                        </td>
-                        <td className="whitespace-nowrap px-4 py-4 text-gray-600 sm:px-5">
-                          {user.phone_number || "-"}
-                        </td>
-                        <td className="whitespace-nowrap px-4 py-4 sm:px-5">
-                          <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700">
-                            {roleName}
-                          </span>
-                        </td>
-                        <td className="whitespace-nowrap px-4 py-4 text-right sm:px-5">
-                          <div className="flex justify-end gap-2">
-                            <button
-                              type="button"
-                              onClick={() => handleEdit(user)}
-                              disabled={saving || deletingId !== null}
-                              className="px-3 py-2 text-xs font-semibold text-blue-700 transition hover:bg-blue-50 disabled:cursor-not-allowed cursor-pointer disabled:opacity-50"
-                            >
-                              <svg
-                                className="h-7 w-5"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2.8"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  d="m16.86 4.49 2.65 2.65M4 20l4.5-1 11-11a2.12 2.12 0 0 0-3-3l-11 11L4 20Z"
-                                />
-                              </svg>
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => openDeleteModal(user)}
-                              disabled={saving || deletingId !== null}
-                              className="px-3 py-2 text-xs font-semibold text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed cursor-pointer disabled:opacity-50"
-                            >
-                              <svg
-                                className="h-7 w-5"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2.8"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  d="M3 6h18m-2 0-1 14H6L5 6m3 0V4h8v2m-7 4v6m4-6v6"
-                                />
-                              </svg>
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
+    {deleteUser && <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-slate-950/60 p-4 backdrop-blur-sm" onMouseDown={(event) => { if (event.target === event.currentTarget) closeDeleteModal(); }}>
+      <section role="dialog" aria-modal="true" aria-labelledby="delete-user-title" className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl">
+        <div className="p-6 sm:p-7"><div className={`mx-auto flex h-14 w-14 items-center justify-center rounded-2xl ${deleteError ? "bg-red-100 text-red-600" : "bg-amber-100 text-amber-700"}`}><Icon name={deleteError ? "warning" : "trash"} /></div><div className="mt-5 text-center"><h2 id="delete-user-title" className="text-lg font-bold text-slate-900">{deleteError ? "Unable to delete user" : "Delete this user?"}</h2>{deleteError ? <div role="alert" className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-left text-sm leading-6 text-red-800">{deleteError}</div> : <><p className="mt-2 text-sm leading-6 text-slate-500">Are you sure you want to remove <strong className="text-slate-900">{deleteUser.name}</strong> from the user list?</p><div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-left text-xs leading-5 text-amber-900">This action will remove the user account and cannot be undone through this screen.</div></>}</div></div>
+        <div className="flex flex-col-reverse gap-3 border-t border-slate-100 bg-slate-50/80 px-6 py-4 sm:flex-row sm:justify-end"><button type="button" onClick={closeDeleteModal} disabled={deletingId !== null} className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50">{deleteError ? "Close" : "Cancel"}</button>{!deleteError && <button type="button" onClick={() => void confirmDelete()} disabled={deletingId !== null} className="inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60">{deletingId === deleteUser.id && <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />}{deletingId === deleteUser.id ? "Deleting..." : "Yes, Delete User"}</button>}</div>
       </section>
-
-      {/* Custom delete confirmation modal */}
-      {deleteUser && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-gray-950/50 p-4 backdrop-blur-[2px]"
-          onMouseDown={(e) => {
-            if (e.target === e.currentTarget) closeDeleteModal();
-          }}
-        >
-          <section
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="delete-user-title"
-            className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl"
-          >
-            <div className="p-6 sm:p-7">
-              <div
-                className={`mx-auto flex h-14 w-14 items-center justify-center rounded-2xl ${
-                  deleteError
-                    ? "bg-red-100 text-red-600"
-                    : "bg-amber-100 text-amber-700"
-                }`}
-              >
-                {deleteError ? (
-                  <svg
-                    viewBox="0 0 24 24"
-                    className="h-7 w-7"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                  >
-                    <circle cx="12" cy="12" r="9" />
-                    <path d="M12 7v6m0 4h.01" />
-                  </svg>
-                ) : (
-                  <svg
-                    viewBox="0 0 24 24"
-                    className="h-7 w-7"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                  >
-                    <path d="M3 6h18M8 6V4h8v2m-9 0 1 14h8l1-14M10 10v6m4-6v6" />
-                  </svg>
-                )}
-              </div>
-
-              <div className="mt-5 text-center">
-                <h2
-                  id="delete-user-title"
-                  className="text-lg font-bold text-gray-900"
-                >
-                  {deleteError ? "Unable to delete user" : "Delete this user?"}
-                </h2>
-
-                {deleteError ? (
-                  <div
-                    role="alert"
-                    className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-left"
-                  >
-                    <p className="text-sm leading-6 text-red-800">
-                      {deleteError}
-                    </p>
-                    <p className="mt-2 text-xs leading-5 text-red-700">
-                      The user has not been confirmed as deleted. You can close
-                      this message and try again later.
-                    </p>
-                  </div>
-                ) : (
-                  <>
-                    <p className="mt-2 text-sm leading-6 text-gray-500">
-                      Are you sure you want to remove{" "}
-                      <span className="font-semibold text-gray-900">
-                        {deleteUser.name}
-                      </span>{" "}
-                      from the user list?
-                    </p>
-
-                    <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-left">
-                      <div className="flex items-start gap-2.5">
-                        <svg
-                          viewBox="0 0 24 24"
-                          className="mt-0.5 h-5 w-5 shrink-0 text-amber-700"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="1.8"
-                        >
-                          <circle cx="12" cy="12" r="9" />
-                          <path d="M12 8v4m0 4h.01" />
-                        </svg>
-                        <p className="text-xs leading-5 text-amber-900">
-                          This action will remove the user account and cannot be
-                          undone through this screen.
-                        </p>
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-
-            <div className="flex flex-col-reverse gap-3 border-t border-gray-100 bg-gray-50/80 px-6 py-4 sm:flex-row sm:justify-end sm:px-7">
-              <button
-                type="button"
-                onClick={closeDeleteModal}
-                disabled={deletingId !== null}
-                className="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition cursor-pointer hover:bg-gray-50 disabled:opacity-50"
-              >
-                {deleteError ? "Close" : "Cancel"}
-              </button>
-
-              {!deleteError && (
-                <button
-                  type="button"
-                  onClick={() => void confirmDelete()}
-                  disabled={deletingId !== null}
-                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {deletingId === deleteUser.id && <Spinner small />}
-                  {deletingId === deleteUser.id
-                    ? "Deleting..."
-                    : "Yes, Delete User"}
-                </button>
-              )}
-            </div>
-          </section>
-        </div>
-      )}
-    </div>
-  );
+    </div>}
+  </div>;
 }
