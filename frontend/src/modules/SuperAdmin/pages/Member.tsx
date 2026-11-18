@@ -1008,8 +1008,6 @@ const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
         </footer>
       </section>
 
-   
-      {/* Create / Edit modal */}
       {showForm && (
         <div className="fixed inset-0 z-40 flex items-center justify-center overflow-y-auto bg-slate-950/60 p-3 backdrop-blur-sm sm:p-5 print:hidden">
           <div className="my-auto w-full max-w-3xl overflow-hidden rounded-2xl border border-white/20 bg-white shadow-2xl">
@@ -1018,11 +1016,6 @@ const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
                 <h2 className="text-lg font-bold text-slate-900">
                   {editingMember ? "Edit Member" : "Add New Member"}
                 </h2>
-                <p className="mt-1 text-sm text-slate-500">
-                  {editingMember
-                    ? "Update the member's information below."
-                    : "Complete the form to register a new member."}
-                </p>
               </div>
 
               <button
