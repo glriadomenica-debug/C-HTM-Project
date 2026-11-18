@@ -194,8 +194,6 @@ const getErrorMessage = (error: unknown) => {
   );
 };
 
-const getYearMonth = (date?: string | null) => date?.slice(0, 7) || "";
-
 const currentYear = String(new Date().getFullYear());
 
 const monthOptions = [
@@ -809,7 +807,7 @@ export default function LoanPayReport() {
           <>
             {/* Mobile transaction cards */}
             <div className="space-y-3 p-3 md:hidden">
-              {filteredRows.map((row, index) => (
+              {filteredRows.map((row) => (
                 <article
                   key={row.payment.id}
                   className="overflow-hidden rounded-xl border border-slate-200 bg-white"
