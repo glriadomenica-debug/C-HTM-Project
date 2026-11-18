@@ -316,9 +316,7 @@ export default function DepositReport() {
             <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
               Monthly Deposit Report
             </h1>
-            <p className="mt-1 max-w-xl text-sm leading-5 text-slate-500">
-              Review member deposits and withdrawals for your selected month.
-            </p>
+        
           </div>
         </div>
 
@@ -326,7 +324,7 @@ export default function DepositReport() {
           <button
             type="button"
             onClick={() => window.history.back()}
-            className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-100"
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition cursor-pointer hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-100"
           >
             <Icon name="back" />
             Back
@@ -336,7 +334,7 @@ export default function DepositReport() {
             type="button"
             onClick={() => window.print()}
             disabled={loading || Boolean(error)}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition cursor-pointer hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Icon name="print" />
             Print Report
@@ -393,7 +391,7 @@ export default function DepositReport() {
               id="report-month"
               value={selectedMonth}
               onChange={(event) => setSelectedMonth(event.target.value)}
-              className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-800 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+              className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-800 outline-none transition cursor-pointer focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
             >
               {MONTHS.map((month) => (
                 <option key={month.value} value={month.value}>
@@ -414,7 +412,7 @@ export default function DepositReport() {
               id="report-year"
               value={selectedYear}
               onChange={(event) => setSelectedYear(event.target.value)}
-              className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-800 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+              className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-800 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100 cursor-pointer"
             >
               {years.map((year) => (
                 <option key={year} value={year}>
@@ -431,7 +429,7 @@ export default function DepositReport() {
               setSelectedYear(String(today.getFullYear()));
               clearFilters();
             }}
-            className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 focus:outline-none focus:ring-4 focus:ring-slate-100"
+            className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-semibold text-slate-700 cursor-pointer transition hover:bg-slate-100 focus:outline-none focus:ring-4 focus:ring-slate-100"
           >
             Reset filters
           </button>
@@ -520,7 +518,7 @@ export default function DepositReport() {
                 onChange={(event) =>
                   setTransactionFilter(event.target.value as TransactionFilter)
                 }
-                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition cursor-pointer focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
               >
                 <option value="all">All transaction types</option>
                 <option value="deposit">Deposits only</option>
@@ -532,7 +530,7 @@ export default function DepositReport() {
               type="button"
               onClick={clearFilters}
               disabled={!hasActiveFilters}
-              className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+              className="rounded-xl border border-slate-200 cursor-pointer bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
             >
               Clear search
             </button>
@@ -590,7 +588,7 @@ export default function DepositReport() {
               <button
                 type="button"
                 onClick={clearFilters}
-                className="mt-4 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
+                className="mt-4 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 cursor-pointer"
               >
                 Clear search and filters
               </button>
