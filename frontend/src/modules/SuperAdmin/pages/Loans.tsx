@@ -973,10 +973,10 @@ export default function Loan() {
                         "No.",
                         "Loan Date",
                         "Borrower",
-                        "Principal",
+                        "Loan Amount",
                         "Interest Rate",
-                        "Interest",
-                        "Total Loan",
+                        "Interest in $",
+                        "Total Loan (inc. interest)",
                         "Payments",
                         "Outstanding",
                         "Actions",
@@ -1230,24 +1230,49 @@ export default function Loan() {
           )}
         </div>
       </div>
-
+    
       {/* Create/Edit Loan Modal */}
       {showForm && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/50 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-slate-950/50 p-3 backdrop-blur-[2px] sm:p-5"
           onMouseDown={(event) => {
             if (event.target === event.currentTarget) closeForm();
           }}
         >
-          <div className="my-8 w-full max-w-2xl overflow-hidden rounded-2xl bg-white shadow-xl">
-            <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
-              <div>
-                <h2 className="text-lg font-bold text-gray-900">
-                  {editingLoan ? "Edit Loan" : "Add Loan"}
-                </h2>
-                <p className="mt-1 text-sm text-gray-500">
-                  Enter the borrower and principal loan amount.
-                </p>
+          <div className="my-auto flex max-h-[calc(100dvh-1.5rem)] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl sm:max-h-[calc(100dvh-2.5rem)]">
+            {/* Modal Header */}
+            <div className="flex shrink-0 items-center justify-between gap-4 border-b border-slate-200 px-5 py-4 sm:px-6">
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                  <svg
+                    className="h-5 w-5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    aria-hidden="true"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M7 3.75h7l4.25 4.5v12H7a2 2 0 0 1-2-2v-12a2.5 2.5 0 0 1 2-2.5Z"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M14 4v5h4M8.5 13h6M8.5 16.5h4"
+                    />
+                  </svg>
+                </div>
+
+                <div className="min-w-0">
+                  <h2 className="text-lg font-bold text-slate-900">
+                    {editingLoan ? "Edit Loan" : "Add Loan"}
+                  </h2>
+                  {/* <p className="mt-0.5 text-xs text-slate-500">
+                    Borrower information and loan details
+                  </p> */}
+                </div>
               </div>
 
               <button
@@ -1255,7 +1280,7 @@ export default function Loan() {
                 onClick={closeForm}
                 disabled={submitting}
                 aria-label="Close form"
-                className="rounded-lg p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-700 disabled:opacity-50"
+                className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <svg
                   className="h-5 w-5"
@@ -1270,62 +1295,131 @@ export default function Loan() {
               </button>
             </div>
 
-            <form onSubmit={handleSubmit}>
-              <div className="space-y-5 px-6 py-5">
+            <form
+              onSubmit={handleSubmit}
+              className="flex min-h-0 flex-1 flex-col overflow-hidden"
+            >
+              {/* Scrollable Form Content */}
+              <div className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain px-5 py-5 sm:px-6">
                 {formError && (
                   <div
                     role="alert"
-                    className="whitespace-pre-line rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+                    className="whitespace-pre-line rounded-lg border border-red-200 bg-red-50 px-3.5 py-3 text-sm text-red-700"
                   >
-                    {formError}
+                    <div className="flex items-start gap-2">
+                      <svg
+                        className="mt-0.5 h-4 w-4 shrink-0"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        aria-hidden="true"
+                      >
+                        <circle cx="12" cy="12" r="9" />
+                        <path d="M12 8v5m0 3h.01" />
+                      </svg>
+                      <span>{formError}</span>
+                    </div>
                   </div>
                 )}
 
                 {loadingOwners && (
-                  <div className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700">
-                    Loading members and non-members...
+                  <div className="flex items-center gap-2 rounded-lg border border-blue-100 bg-blue-50 px-3.5 py-3 text-sm text-blue-700">
+                    <svg
+                      className="h-4 w-4 shrink-0 animate-spin"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      aria-hidden="true"
+                    >
+                      <circle
+                        cx="12"
+                        cy="12"
+                        r="9"
+                        strokeOpacity="0.25"
+                      />
+                      <path d="M21 12a9 9 0 0 0-9-9" />
+                    </svg>
+                    Loading borrower information...
                   </div>
                 )}
 
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-gray-700">
-                    Borrower Type <span className="text-red-500">*</span>
+                {/* Borrower Type */}
+                <section>
+                  <label className="mb-2 block text-sm font-semibold text-slate-700">
+                    Borrower Type{" "}
+                    <span className="text-red-500">*</span>
                   </label>
 
                   <div className="grid grid-cols-2 gap-3">
                     <button
                       type="button"
                       onClick={() => handleOwnerTypeChange("member")}
-                      className={`rounded-lg border px-4 py-3 text-sm font-semibold transition ${
+                      aria-pressed={form.owner_type === "member"}
+                      className={`flex cursor-pointer items-center justify-center gap-2 rounded-xl border px-3 py-3 text-sm font-semibold transition ${
                         form.owner_type === "member"
-                          ? "border-blue-600 bg-blue-50 text-blue-700 ring-1 ring-blue-600"
-                          : "border-gray-300 text-gray-600 hover:bg-gray-50 cursor-pointer"
+                          ? "border-blue-500 bg-blue-50 text-blue-700 ring-1 ring-blue-500"
+                          : "border-slate-200 bg-white text-slate-600 hover:border-blue-300 hover:bg-slate-50"
                       }`}
                     >
+                      <svg
+                        className="h-5 w-5"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        aria-hidden="true"
+                      >
+                        <circle cx="12" cy="8" r="3.5" />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M5 20v-1.5a7 7 0 0 1 14 0V20Z"
+                        />
+                      </svg>
                       Member
                     </button>
 
                     <button
                       type="button"
                       onClick={() => handleOwnerTypeChange("nonmember")}
-                      className={`rounded-lg border px-4 py-3 text-sm font-semibold transition ${
+                      aria-pressed={form.owner_type === "nonmember"}
+                      className={`flex cursor-pointer items-center justify-center gap-2 rounded-xl border px-3 py-3 text-sm font-semibold transition ${
                         form.owner_type === "nonmember"
-                          ? "border-purple-600 bg-purple-50 text-purple-700 ring-1 ring-purple-600"
-                          : "border-gray-300 text-gray-600 hover:bg-gray-50 cursor-pointer"
+                          ? "border-violet-500 bg-violet-50 text-violet-700 ring-1 ring-violet-500"
+                          : "border-slate-200 bg-white text-slate-600 hover:border-violet-300 hover:bg-slate-50"
                       }`}
                     >
+                      <svg
+                        className="h-5 w-5"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        aria-hidden="true"
+                      >
+                        <circle cx="12" cy="8" r="3.5" />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M5 20v-1.5a7 7 0 0 1 14 0V20Z"
+                        />
+                      </svg>
                       Non-Member
                     </button>
                   </div>
-                </div>
+                </section>
 
+                {/* Borrower Selection */}
                 {form.owner_type === "member" ? (
                   <div>
                     <label
                       htmlFor="loan-member"
-                      className="mb-1.5 block text-sm font-medium text-gray-700"
+                      className="mb-1.5 block text-sm font-semibold text-slate-700"
                     >
-                      Select Member <span className="text-red-500">*</span>
+                      Select Member{" "}
+                      <span className="text-red-500">*</span>
                     </label>
 
                     <select
@@ -1338,10 +1432,10 @@ export default function Loan() {
                         }))
                       }
                       required
-                      disabled={loadingOwners}
-                      className="w-full cursor-pointer rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:bg-gray-100"
+                      disabled={loadingOwners || submitting}
+                      className="w-full cursor-pointer rounded-lg border border-slate-300 bg-white px-3.5 py-3 text-sm text-slate-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-50"
                     >
-                      <option value="">-- Select Member --</option>
+                      <option value="">-- Select a member --</option>
                       {members.map((member) => (
                         <option key={member.id} value={member.member_number}>
                           {member.full_name} ({member.member_number})
@@ -1359,9 +1453,10 @@ export default function Loan() {
                   <div>
                     <label
                       htmlFor="loan-nonmember"
-                      className="mb-1.5 block text-sm font-medium text-gray-700"
+                      className="mb-1.5 block text-sm font-semibold text-slate-700"
                     >
-                      Select Non-Member <span className="text-red-500">*</span>
+                      Select Non-Member{" "}
+                      <span className="text-red-500">*</span>
                     </label>
 
                     <select
@@ -1374,16 +1469,17 @@ export default function Loan() {
                         }))
                       }
                       required
-                      disabled={loadingOwners}
-                      className="w-full cursor-pointer rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:bg-gray-100"
+                      disabled={loadingOwners || submitting}
+                      className="w-full cursor-pointer rounded-lg border border-slate-300 bg-white px-3.5 py-3 text-sm text-slate-800 outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-100 disabled:cursor-not-allowed disabled:bg-slate-50"
                     >
-                      <option value="">-- Select Non-Member --</option>
+                      <option value="">-- Select a non-member --</option>
                       {nonmembers.map((nonmember) => (
                         <option
                           key={nonmember.id}
                           value={nonmember.non_member_number}
                         >
-                          {nonmember.full_name} ({nonmember.non_member_number})
+                          {nonmember.full_name} (
+                          {nonmember.non_member_number})
                         </option>
                       ))}
                     </select>
@@ -1396,13 +1492,14 @@ export default function Loan() {
                   </div>
                 )}
 
-                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
                     <label
                       htmlFor="loan-date"
-                      className="mb-1.5 block text-sm font-medium text-gray-700"
+                      className="mb-1.5 block text-sm font-semibold text-slate-700"
                     >
-                      Loan Date <span className="text-red-500">*</span>
+                      Loan Date{" "}
+                      <span className="text-red-500">*</span>
                     </label>
 
                     <input
@@ -1416,16 +1513,17 @@ export default function Loan() {
                         }))
                       }
                       required
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                      disabled={submitting}
+                      className="w-full rounded-lg border border-slate-300 bg-white px-3 py-3 text-sm text-slate-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:bg-slate-50"
                     />
                   </div>
 
                   <div>
                     <label
                       htmlFor="loan-amount"
-                      className="mb-1.5 block text-sm font-medium text-gray-700"
+                      className="mb-1.5 block text-sm font-semibold text-slate-700"
                     >
-                      Principal Amount (USD){" "}
+                      Loan Amount (USD){" "}
                       <span className="text-red-500">*</span>
                     </label>
 
@@ -1441,82 +1539,103 @@ export default function Loan() {
                           loan_amount: event.target.value,
                         }))
                       }
-                      placeholder="e.g. 2000.00"
+                      placeholder="0.00"
                       required
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                      disabled={submitting}
+                      className="w-full rounded-lg border border-slate-300 bg-white px-3 py-3 text-sm text-slate-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:bg-slate-50"
                     />
-
-                    <p className="mt-1 text-xs text-gray-500">
-                      Minimum loan amount: $1.00
+                    <p className="mt-1.5 text-xs text-slate-500">
+                      Minimum amount: $1.00
                     </p>
                   </div>
                 </div>
 
-                {/* Interest Preview */}
-                <div className="rounded-xl border border-blue-200 bg-blue-50 p-4">
-                  <div className="mb-3">
-                    <h3 className="font-semibold text-gray-900">
-                      Loan Calculation Preview
-                    </h3>
-                    <p className="mt-1 text-xs text-gray-600">
-                      Based on the borrower type and principal amount.
-                    </p>
+                {/* Compact Loan Calculation Preview */}
+                <section className="overflow-hidden rounded-xl border border-blue-100 bg-slate-50">
+                  <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-4 py-3">
+                    <div>
+                      <h3 className="text-sm font-bold text-slate-800">
+                        Loan Summary
+                      </h3>
+                      <p className="mt-0.5 text-xs text-slate-500">
+                        Estimated one-time flat interest
+                      </p>
+                    </div>
+
+                    <span className="shrink-0 rounded-lg bg-blue-100 px-2.5 py-1 text-xs font-bold text-blue-700">
+                      {preview.rate.toFixed(2)}%
+                    </span>
                   </div>
 
-                  <div className="space-y-3 text-sm">
-                    <div className="flex items-center justify-between gap-4">
-                      <span className="text-gray-600">Principal Amount</span>
-                      <span className="font-medium text-gray-900">
+                  <div className="grid grid-cols-2 gap-px bg-slate-200 sm:grid-cols-3">
+                    <div className="bg-white p-3.5">
+                      <p className="text-xs font-medium text-slate-500">
+                        Loan Amount
+                      </p>
+                      <p className="mt-1.5 break-words text-base font-bold tabular-nums text-slate-800">
                         {formatCurrency(
                           preview.valid ? toNumber(form.loan_amount) : 0,
                         )}
-                      </span>
+                      </p>
                     </div>
 
-                    <div className="flex items-center justify-between gap-4">
-                      <span className="text-gray-600">Interest Rate</span>
-                      <span className="font-semibold text-blue-700">
-                        {preview.rate.toFixed(2)}%
-                      </span>
+                    <div className="bg-white p-3.5">
+                      <p className="text-xs font-medium text-slate-500">
+                        Interest
+                      </p>
+                      <p className="mt-1.5 break-words text-base font-bold tabular-nums text-amber-700">
+                        {formatCurrency(
+                          preview.valid ? preview.interest : 0,
+                        )}
+                      </p>
                     </div>
 
-                    <div className="flex items-center justify-between gap-4">
-                      <span className="text-gray-600">Interest Amount</span>
-                      <span className="font-medium text-amber-700">
-                        {formatCurrency(preview.interest)}
-                      </span>
-                    </div>
-
-                    <div className="border-t border-blue-200 pt-3">
-                      <div className="flex items-center justify-between gap-4">
-                        <span className="font-semibold text-gray-900">
-                          Total Loan Amount
-                        </span>
-                        <span className="text-lg font-bold text-blue-800">
-                          {formatCurrency(preview.total)}
-                        </span>
-                      </div>
+                    <div className="col-span-2 bg-blue-50 p-3.5 sm:col-span-1">
+                      <p className="text-xs font-semibold text-blue-700">
+                        Total Loan
+                      </p>
+                      <p className="mt-1.5 break-words text-lg font-bold tabular-nums text-blue-800">
+                        {formatCurrency(
+                          preview.valid ? preview.total : 0,
+                        )}
+                      </p>
                     </div>
                   </div>
 
-                  <p className="mt-3 text-xs leading-5 text-gray-600">
-                    The interest is a one-time flat rate. The final rate and
-                    amount are calculated and saved by the Laravel backend.
+                  <p className="px-4 py-2.5 text-xs leading-5 text-slate-500">
+                    Final interest and total are calculated and saved by the
+                    Laravel backend.
                   </p>
-                </div>
+                </section>
 
-                <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                  <strong>Important:</strong> Payments must be counted against
-                  the total loan amount, including interest.
+                {/* Payment Information */}
+                <div className="flex items-start gap-2.5 rounded-lg border border-amber-200 bg-amber-50 px-3.5 py-3">
+                  <svg
+                    className="mt-0.5 h-4 w-4 shrink-0 text-amber-600"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    aria-hidden="true"
+                  >
+                    <circle cx="12" cy="12" r="9" />
+                    <path d="M12 8v5m0 3h.01" />
+                  </svg>
+
+                  <p className="text-xs leading-5 text-amber-800">
+                    Payments are applied to the total loan amount, including
+                    interest.
+                  </p>
                 </div>
               </div>
 
-              <div className="flex flex-col-reverse gap-3 border-t border-gray-200 bg-gray-50 px-6 py-4 sm:flex-row sm:justify-end">
+              {/* Fixed Footer */}
+              <div className="flex shrink-0 flex-col-reverse gap-2.5 border-t border-slate-200 bg-white px-5 py-4 sm:flex-row sm:justify-end sm:px-6">
                 <button
                   type="button"
                   onClick={closeForm}
                   disabled={submitting}
-                  className="cursor-pointer rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
+                  className="w-full cursor-pointer rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
                 >
                   Cancel
                 </button>
@@ -1524,19 +1643,54 @@ export default function Loan() {
                 <button
                   type="submit"
                   disabled={submitting || loadingOwners}
-                  className="cursor-pointer rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
                 >
-                  {submitting
-                    ? "Saving..."
-                    : editingLoan
-                      ? "Save Changes"
-                      : "Add Loan"}
+                  {submitting ? (
+                    <>
+                      <svg
+                        className="h-4 w-4 animate-spin"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        aria-hidden="true"
+                      >
+                        <circle
+                          cx="12"
+                          cy="12"
+                          r="9"
+                          strokeOpacity="0.25"
+                        />
+                        <path d="M21 12a9 9 0 0 0-9-9" />
+                      </svg>
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <svg
+                        className="h-4 w-4"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        aria-hidden="true"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M5 12h14m-7-7 7 7-7 7"
+                        />
+                      </svg>
+                      {editingLoan ? "Save Changes" : "Add Loan"}
+                    </>
+                  )}
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
+
 
       {/* Confirmation and Feedback Modal */}
       {modalTitle && (
