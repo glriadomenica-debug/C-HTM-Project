@@ -465,8 +465,8 @@ export default function LoanPayReport() {
       "Borrower Number",
       "Loan ID",
       "Total Loan Amount Including Interest",
-      "This Payment",
-      "Cumulative Paid After Payment",
+      "Payment Amount",
+      "Total Paid",
       "Balance After Payment",
       "Payment Method",
       "Status After Payment",
@@ -765,10 +765,7 @@ export default function LoanPayReport() {
           </div>
 
           <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-            <p className="text-xs text-slate-500">
-              Period is based on the date the payment was made.
-            </p>
-
+          
             <button
               type="button"
               onClick={resetFilters}
@@ -857,7 +854,7 @@ export default function LoanPayReport() {
 
                     <div className="flex items-center justify-between gap-3 rounded-lg bg-emerald-50 px-3 py-2.5">
                       <span className="text-xs font-medium text-emerald-800">
-                        This payment
+                        Payment Amount
                       </span>
                       <span className="text-base font-bold text-emerald-700">
                         {formatCurrency(toNumber(row.payment.amount))}
@@ -867,7 +864,7 @@ export default function LoanPayReport() {
                     <div className="grid grid-cols-2 gap-3">
                       <div className="rounded-lg bg-slate-50 p-2.5">
                         <p className="text-[11px] text-slate-500">
-                          Cumulative paid
+                          Total Paid
                         </p>
                         <p className="mt-1 break-words text-sm font-semibold text-slate-800">
                           {formatCurrency(row.cumulativePaid)}
@@ -914,15 +911,14 @@ export default function LoanPayReport() {
                     <th className="px-4 py-3.5">No.</th>
                     <th className="px-4 py-3.5">Payment Date</th>
                     <th className="px-4 py-3.5">Borrower</th>
-                    <th className="px-4 py-3.5">Payment / Loan ID</th>
                     <th className="px-4 py-3.5 text-right">
                       Total Loan
                       <span className="mt-1 block text-[10px] font-normal normal-case text-slate-300">
                         Incl. interest
                       </span>
                     </th>
-                    <th className="px-4 py-3.5 text-right">This Payment</th>
-                    <th className="px-4 py-3.5 text-right">Cumulative Paid</th>
+                    <th className="px-4 py-3.5 text-right">Payment Amount</th>
+                    <th className="px-4 py-3.5 text-right">Total Paid</th>
                     <th className="px-4 py-3.5 text-right">
                       Balance After Payment
                     </th>
@@ -950,15 +946,6 @@ export default function LoanPayReport() {
                         </p>
                         <p className="mt-1 text-xs text-slate-500">
                           {row.borrowerType} · {row.borrowerNumber}
-                        </p>
-                      </td>
-
-                      <td className="whitespace-nowrap px-4 py-4">
-                        <p className="font-medium text-slate-800">
-                          Payment #{row.payment.id}
-                        </p>
-                        <p className="mt-1 text-xs text-slate-500">
-                          Loan #{row.payment.loan_id}
                         </p>
                       </td>
 
@@ -1040,8 +1027,7 @@ export default function LoanPayReport() {
 
             <div className="border-t border-slate-100 bg-slate-50 px-4 py-3 text-xs text-slate-500 sm:px-5">
               Showing {filteredRows.length} of {payments.length} payment
-              transactions. Total collected reflects only the payments matching
-              the selected filters.
+              transactions.
             </div>
           </>
         )}
