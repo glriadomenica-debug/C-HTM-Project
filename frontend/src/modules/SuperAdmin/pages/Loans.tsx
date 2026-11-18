@@ -975,7 +975,7 @@ export default function Loan() {
                         "Borrower",
                         "Loan Amount",
                         "Interest Rate",
-                        "Interest in $",
+                        "Interest Range",
                         "Total Loan (inc. interest)",
                         "Payments",
                         "Outstanding",
