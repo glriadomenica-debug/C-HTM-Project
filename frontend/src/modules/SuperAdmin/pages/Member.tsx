@@ -765,7 +765,7 @@ export default function Member() {
           <>
             {/* Mobile cards */}
             <div className="divide-y divide-slate-100 md:hidden print:hidden">
-              {filteredMembers.map((member, index) => (
+              {filteredMembers.map((member) => (
                 <article
                   key={member.id}
                   className="p-4 transition hover:bg-blue-50/40"
