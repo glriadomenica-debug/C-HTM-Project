@@ -766,9 +766,7 @@ export default function Deposit() {
                   {filteredDeposits.length}
                 </span>
               </div>
-              <p className="mt-1 text-sm text-slate-500">
-                Transactions are sorted by date, newest first
-              </p>
+             
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row">
