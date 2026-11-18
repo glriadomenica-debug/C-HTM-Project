@@ -1089,8 +1089,7 @@ useEffect(() => {
                 disabled={saving}
                 aria-label="Close form"
                 className="rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 disabled:opacity-50"
-              >
-                <Icon name="warning" />
+              ><Icon name="warning" />
               </button>
             </div>
 
