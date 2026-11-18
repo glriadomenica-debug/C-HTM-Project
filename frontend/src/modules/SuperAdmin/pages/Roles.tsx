@@ -167,17 +167,17 @@ export default function Roles() {
       </div>
       <button type="button" disabled={loading || loadFailed || !canInteract} onClick={() => { if (showForm) resetForm(); else { setRoleName(""); setEditingId(null); setShowForm(true); } }} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"><Icon name="plus" />{showForm ? "Cancel" : "Add Role"}</button>
     </div>
-
+{/* 
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
       <SummaryCard title="Total Roles" value={roles.length} icon="shield" color="blue" />
       <SummaryCard title="Roles Shown" value={filteredRoles.length} icon="search" color="green" />
       <SummaryCard title="Role Names" value={new Set(roles.map((role) => role.role_name.trim().toLowerCase())).size} icon="check" color="purple" />
-    </div>
+    </div> */}
 
     {showForm && <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
-      <div className="mb-5"><h2 className="text-lg font-bold text-slate-900">{editingId !== null ? "Edit Role" : "Add New Role"}</h2><p className="mt-1 text-sm text-slate-500">{editingId !== null ? "Update the name for this application role." : "Enter a clear name for the new application role."}</p></div>
+      <div className="mb-5"><h2 className="text-lg font-bold text-slate-900">{editingId !== null ? "Edit Role" : "Add New Role"}</h2></div>
       <form onSubmit={handleSubmit} className="flex flex-col gap-4 sm:flex-row sm:items-end">
-        <div className="min-w-0 flex-1"><label htmlFor="role_name" className={labelClass}>Role Name <span className="text-red-500">*</span></label><input id="role_name" name="role_name" type="text" value={roleName} onChange={(event) => setRoleName(event.target.value)} placeholder="e.g. Manager" maxLength={255} required disabled={saving} autoFocus className={inputClass} /><p className="mt-1.5 text-xs text-slate-400">Use a name that clearly describes the role.</p></div>
+        <div className="min-w-0 flex-1"><label htmlFor="role_name" className={labelClass}>Role Name <span className="text-red-500">*</span></label><input id="role_name" name="role_name" type="text" value={roleName} onChange={(event) => setRoleName(event.target.value)} placeholder="e.g. Manager" maxLength={255} required disabled={saving} autoFocus className={inputClass} /></div>
         <div className="flex flex-col gap-2 sm:flex-row"><button type="button" onClick={resetForm} disabled={saving} className="rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50">Cancel</button><button type="submit" disabled={!canInteract} className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60">{saving && <Spinner />}{saving ? "Saving..." : editingId !== null ? "Save Changes" : "Create Role"}</button></div>
       </form>
     </section>}
