@@ -82,20 +82,20 @@ function Icon({ name }: { name: string }) {
     default: return <svg {...common}><circle cx="12" cy="12" r="9" /><path d="M12 8v4m0 4h.01" /></svg>;
   }
 }
-function SummaryCard({ title, value, icon, color }: { title: string; value: number; icon: string; color: "blue" | "green" | "purple" }) {
-  const colors = {
-    blue: "bg-blue-50 text-blue-700 ring-blue-100",
-    green: "bg-emerald-50 text-emerald-700 ring-emerald-100",
-    purple: "bg-purple-50 text-purple-700 ring-purple-100",
-  };
-  return <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-    <div className="flex items-center justify-between gap-3">
-      <p className="text-sm font-medium text-slate-500">{title}</p>
-      <span className={`flex h-10 w-10 items-center justify-center rounded-xl ring-1 ring-inset ${colors[color]}`}><Icon name={icon} /></span>
-    </div>
-    <p className="mt-3 text-3xl font-bold tracking-tight text-slate-900">{value}</p>
-  </div>;
-}
+// function SummaryCard({ title, value, icon, color }: { title: string; value: number; icon: string; color: "blue" | "green" | "purple" }) {
+//   const colors = {
+//     blue: "bg-blue-50 text-blue-700 ring-blue-100",
+//     green: "bg-emerald-50 text-emerald-700 ring-emerald-100",
+//     purple: "bg-purple-50 text-purple-700 ring-purple-100",
+//   };
+//   return <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+//     <div className="flex items-center justify-between gap-3">
+//       <p className="text-sm font-medium text-slate-500">{title}</p>
+//       <span className={`flex h-10 w-10 items-center justify-center rounded-xl ring-1 ring-inset ${colors[color]}`}><Icon name={icon} /></span>
+//     </div>
+//     <p className="mt-3 text-3xl font-bold tracking-tight text-slate-900">{value}</p>
+//   </div>;
+// }
 function RoleBadge({ role }: { role: string }) {
   return <span className="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-1 text-xs font-bold capitalize text-blue-700 ring-1 ring-inset ring-blue-100">{role || "Unassigned"}</span>;
 }
@@ -167,7 +167,6 @@ export default function Users() {
       return !keyword || [user.name, user.email, user.phone_number, roleName].some((value) => String(value ?? "").toLowerCase().includes(keyword));
     });
   }, [users, roles, search]);
-  const activeRoles = useMemo(() => roles.length, [roles]);
   const resetForm = () => { setForm(emptyForm); setEditingId(null); setShowForm(false); setFieldErrors({}); };
   const handleChange = (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = event.target;
