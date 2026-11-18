@@ -299,7 +299,7 @@ export default function MemberSavingsReport() {
           </div>
 
           <h1 className="mt-2 text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">
-            Member Savings Summary
+            Member Savings 
           </h1>
 
           {/* <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-500">
@@ -435,9 +435,9 @@ export default function MemberSavingsReport() {
       {/* Summary cards */}
       <section>
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-base font-bold text-gray-900 sm:text-lg">
+          {/* <h2 className="text-base font-bold text-gray-900 sm:text-lg">
             Member Savings Summary
-          </h2>
+          </h2> */}
 
           <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700 ring-1 ring-inset ring-blue-100">
             {members.length} members
@@ -550,28 +550,27 @@ export default function MemberSavingsReport() {
         </div>
       </div>
 
-      {/* Individual member savings */}
       <section className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
         <div className="border-b border-gray-100 p-5 sm:p-6">
           <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="text-lg font-bold text-gray-900">
-                  Individual Member Savings
+                  Member Savings
                 </h2>
 
-                {!loading && !error && (
+                {/* {!loading && !error && (
                   <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-600">
                     {filteredMembers.length} results
                   </span>
-                )}
+                )} */}
               </div>
-
+{/* 
               <p className="mt-1 text-sm text-gray-500">
                 {loading
                   ? "Retrieving member records..."
                   : `Showing ${filteredMembers.length} of ${members.length} members`}
-              </p>
+              </p> */}
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row print:hidden">
