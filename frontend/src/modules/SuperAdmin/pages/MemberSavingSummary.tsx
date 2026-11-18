@@ -302,17 +302,17 @@ export default function MemberSavingsReport() {
             Member Savings Summary
           </h1>
 
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-500">
+          {/* <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-500">
             View each C-HTM member&apos;s accumulated savings across all
             recorded deposit and withdrawal transactions.
-          </p>
+          </p> */}
         </div>
 
         <div className="flex flex-col gap-2 sm:flex-row print:hidden">
           <button
             type="button"
             onClick={() => window.history.back()}
-            className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:bg-gray-50"
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:bg-gray-50 cursor-pointer"
           >
             <svg
               className="h-4 w-4"
@@ -335,7 +335,7 @@ export default function MemberSavingsReport() {
             type="button"
             onClick={() => void fetchData()}
             disabled={loading}
-            className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition hover:border-blue-200 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition hover:border-blue-200 hover:bg-blue-50 disabled:cursor-not-allowed cursor-pointer disabled:opacity-50"
           >
             <svg
               className={`h-4 w-4 ${loading ? "animate-spin" : ""}`}
@@ -363,7 +363,7 @@ export default function MemberSavingsReport() {
             type="button"
             onClick={() => window.print()}
             disabled={loading || Boolean(error)}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
           >
             <svg
               className="h-4 w-4"
@@ -448,7 +448,7 @@ export default function MemberSavingsReport() {
           <SummaryCard
             title="Net Savings of All Members"
             value={formatMoney(totalSavings)}
-            description="All recorded deposits minus withdrawals."
+            description=""
             color={totalSavings < 0 ? "purple" : "blue"}
             icon={
               <svg
@@ -471,7 +471,7 @@ export default function MemberSavingsReport() {
           <SummaryCard
             title="Total Members"
             value={members.length.toLocaleString("en-US")}
-            description={`${activeMembers} active and ${inactiveMembers} inactive members.`}
+            description=""
             color="purple"
             icon={
               <svg
@@ -494,7 +494,7 @@ export default function MemberSavingsReport() {
           <SummaryCard
             title="Positive Member Balances"
             value={formatMoney(totalPositiveSavings)}
-            description="Sum of member balances above zero."
+            description=""
             color="green"
             icon={
               <svg
