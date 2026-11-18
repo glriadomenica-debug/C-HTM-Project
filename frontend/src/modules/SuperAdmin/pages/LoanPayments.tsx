@@ -480,27 +480,57 @@ export default function LoanPayment() {
     });
   }, [payments, loans, search, methodFilter, statusFilter]);
 
-  const borrowerOptions = useMemo(() => {
-    if (form.borrower_type === "member") {
-      return members
-        .filter((member) => Boolean(member.member_number))
-        .map((member) => ({
-          number: String(member.member_number),
-          name: member.full_name,
-        }));
-    }
+  
+const borrowerOptions = useMemo(() => {
+  if (form.borrower_type === "member") {
+    return members
+      .filter((member) => {
+        if (!member.member_number) return false;
 
-    if (form.borrower_type === "nonmember") {
-      return nonmembers
-        .filter((member) => Boolean(member.non_member_number))
-        .map((member) => ({
-          number: String(member.non_member_number),
-          name: member.full_name,
-        }));
-    }
+        // Include members who have at least one outstanding loan.
+        return loans.some((loan) => {
+          if (loan.member_number !== String(member.member_number)) {
+            return false;
+          }
 
-    return [];
-  }, [form.borrower_type, members, nonmembers]);
+          const paid = getLoanPaid(loan, payments);
+          const remaining = getLoanBalance(loan, paid);
+
+          return remaining > 0.009;
+        });
+      })
+      .map((member) => ({
+        number: String(member.member_number),
+        name: member.full_name,
+      }));
+  }
+
+  if (form.borrower_type === "nonmember") {
+    return nonmembers
+      .filter((member) => {
+        if (!member.non_member_number) return false;
+
+        // Include non-members who have at least one outstanding loan.
+        return loans.some((loan) => {
+          if (loan.non_member_number !== String(member.non_member_number)) {
+            return false;
+          }
+
+          const paid = getLoanPaid(loan, payments);
+          const remaining = getLoanBalance(loan, paid);
+
+          return remaining > 0.009;
+        });
+      })
+      .map((member) => ({
+        number: String(member.non_member_number),
+        name: member.full_name,
+      }));
+  }
+
+  return [];
+}, [form.borrower_type, members, nonmembers, loans, payments]);
+
 
   const availableLoans = useMemo(() => {
     if (!form.borrower_type || !form.borrower_number) {
@@ -1050,8 +1080,8 @@ export default function LoanPayment() {
               <thead className="bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
                 <tr className="bg-slate-800 text-white">
                   <th className="px-5 py-3.5 font-semibold">No.</th>
-                  <th className="px-5 py-3.5 font-semibold">Borrower</th>
                   <th className="px-5 py-3.5 font-semibold">Payment Date</th>
+                  <th className="px-5 py-3.5 font-semibold">Borrower</th>
                   <th className="px-5 py-3.5 text-right font-semibold">
                     Loan Amount
                     <p>(incl. interest)</p>
@@ -1095,7 +1125,11 @@ export default function LoanPayment() {
                           {index + 1}
                         </div>
                       </td>
-
+                      
+                      <td className="whitespace-nowrap px-5 py-4 text-gray-600">
+                        {formatDate(payment.payment_date)}
+                      </td>
+                      
                       <td className="px-5 py-4">
                         <div className="font-medium text-gray-900">
                           {loan ? getBorrowerName(loan) : "Unknown borrower"}
@@ -1105,9 +1139,7 @@ export default function LoanPayment() {
                         </div>
                       </td>
 
-                      <td className="whitespace-nowrap px-5 py-4 text-gray-600">
-                        {formatDate(payment.payment_date)}
-                      </td>
+                      
 
                       <td className="whitespace-nowrap px-5 py-4 text-right font-medium text-gray-900">
                         {progress ? formatCurrency(progress.total) : "-"}
@@ -1377,8 +1409,8 @@ export default function LoanPayment() {
                         : !form.borrower_type
                           ? "Select a borrower type first"
                           : borrowerOptions.length === 0
-                            ? "No borrowers available"
-                            : "Choose a borrower"}
+                          ? "No borrowers with outstanding loans"
+                          : "Choose a borrower"}
                     </option>
 
                     {borrowerOptions.map((borrower) => (
@@ -1388,15 +1420,12 @@ export default function LoanPayment() {
                     ))}
                   </select>
 
-                  {form.borrower_type && !loadingBorrowers && (
-                    <p className="mt-1.5 text-xs text-gray-500">
-                      {borrowerOptions.length}{" "}
-                      {form.borrower_type === "member"
-                        ? "members"
-                        : "non-members"}{" "}
-                      available. Borrowers remain visible even when their loans
-                      are fully paid.
-                    </p>
+                 {form.borrower_type && !loadingBorrowers && (
+                  <p className="mt-1.5 text-xs text-gray-500">
+                    {borrowerOptions.length}{" "}
+                    {form.borrower_type === "member" ? "members" : "non-members"}{" "}
+                    with outstanding loans available.
+                  </p>
                   )}
                 </div>
 
