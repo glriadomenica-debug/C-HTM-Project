@@ -63,13 +63,13 @@ function Icon({ name, className = "h-5 w-5" }: { name: string; className?: strin
     default: return <svg {...common}><circle cx="12" cy="12" r="9" /><path d="M12 8v4m0 4h.01" /></svg>;
   }
 }
-function SummaryCard({ title, value, icon, color }: { title: string; value: number; icon: string; color: "blue" | "green" | "purple" }) {
-  const colors = { blue: "bg-blue-50 text-blue-700 ring-blue-100", green: "bg-emerald-50 text-emerald-700 ring-emerald-100", purple: "bg-purple-50 text-purple-700 ring-purple-100" };
-  return <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-    <div className="flex items-center justify-between gap-3"><p className="text-sm font-medium text-slate-500">{title}</p><span className={`flex h-10 w-10 items-center justify-center rounded-xl ring-1 ring-inset ${colors[color]}`}><Icon name={icon} /></span></div>
-    <p className="mt-3 text-3xl font-bold tracking-tight text-slate-900">{value}</p>
-  </div>;
-}
+// function SummaryCard({ title, value, icon, color }: { title: string; value: number; icon: string; color: "blue" | "green" | "purple" }) {
+//   const colors = { blue: "bg-blue-50 text-blue-700 ring-blue-100", green: "bg-emerald-50 text-emerald-700 ring-emerald-100", purple: "bg-purple-50 text-purple-700 ring-purple-100" };
+//   return <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+//     <div className="flex items-center justify-between gap-3"><p className="text-sm font-medium text-slate-500">{title}</p><span className={`flex h-10 w-10 items-center justify-center rounded-xl ring-1 ring-inset ${colors[color]}`}><Icon name={icon} /></span></div>
+//     <p className="mt-3 text-3xl font-bold tracking-tight text-slate-900">{value}</p>
+//   </div>;
+// }
 function NoticeToast({ notice, onClose }: { notice: Notice; onClose: () => void }) {
   const style = notice.type === "success" ? "border-emerald-200 bg-emerald-50 text-emerald-800" : notice.type === "warning" ? "border-amber-200 bg-amber-50 text-amber-800" : "border-red-200 bg-red-50 text-red-800";
   return <div role="status" aria-live="polite" className={`fixed right-4 top-4 z-[100] flex w-[calc(100%-2rem)] max-w-md items-start gap-3 rounded-2xl border p-4 shadow-xl ${style}`}>
