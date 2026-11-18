@@ -26,11 +26,11 @@ class MemberController extends Controller
         }
     }
 
+   
     public function store(Request $request)
     {
         try {
             $validator = Validator::make($request->all(), [
-                'member_number' => 'required|string|max:255|unique:members,member_number',
                 'full_name' => 'required|string|max:255',
                 'gender' => 'required|in:Male,Female',
                 'id_card_number' => 'required|string|max:255',
@@ -40,11 +40,10 @@ class MemberController extends Controller
                 'work_location' => 'required|string|max:255',
                 'membership_status' => 'sometimes|in:Active,Inactive',
             ], [
-                'member_number.required' => 'Member number is required',
-                'member_number.unique' => 'Member number already exists',
                 'full_name.required' => 'Full name is required',
                 'gender.in' => 'Gender must be Male or Female',
-                'membership_status.in' => 'Membership status must be Active or Inactive',
+                'membership_status.in' =>
+                    'Membership status must be Active or Inactive',
             ]);
 
             if ($validator->fails()) {
@@ -52,9 +51,39 @@ class MemberController extends Controller
             }
 
             $member = DB::transaction(function () use ($request) {
+                $sequence = DB::table('member_number_sequences')
+                    ->where('id', 1)
+                    ->lockForUpdate()
+                    ->first();
+
+                if (!$sequence) {
+                    throw new \RuntimeException(
+                        'Member number sequence is not configured.'
+                    );
+                }
+
+                $nextNumber = (int) $sequence->current_number;
+
+                do {
+                    $nextNumber++;
+
+                    $memberNumber = 'CHTM-' . str_pad(
+                        (string) $nextNumber,
+                        4,
+                        '0',
+                        STR_PAD_LEFT
+                    );
+                } while (
+                    Member::where('member_number', $memberNumber)->exists()
+                );
+
+                DB::table('member_number_sequences')
+                    ->where('id', 1)
+                    ->update(['current_number' => $nextNumber]);
+
                 $member = new Member();
+
                 $member->fill($request->only([
-                    'member_number',
                     'full_name',
                     'gender',
                     'id_card_number',
@@ -64,16 +93,28 @@ class MemberController extends Controller
                     'work_location',
                     'membership_status',
                 ]));
+
+                $member->member_number = $memberNumber;
                 $member->save();
 
                 return $member;
             });
 
-            return ApiMessage::success('Member created successfully',$member,201);
+            return ApiMessage::success(
+                'Member created successfully',
+                $member,
+                201
+            );
         } catch (\Throwable $th) {
-            return ApiMessage::error($th->getMessage(), 500);
+            report($th);
+
+            return ApiMessage::error(
+                'Unable to create member. Please try again.',
+                500
+            );
         }
     }
+
 
     public function show(string $id)
     {
@@ -89,7 +130,7 @@ class MemberController extends Controller
             return ApiMessage::error($th->getMessage(), 500);
         }
     }
-
+   
     public function update(Request $request, string $id)
     {
         try {
@@ -100,7 +141,6 @@ class MemberController extends Controller
             }
 
             $validator = Validator::make($request->all(), [
-                'member_number' => 'sometimes|required|string|max:255|unique:members,member_number,' . $id,
                 'full_name' => 'sometimes|required|string|max:255',
                 'gender' => 'sometimes|required|in:Male,Female',
                 'id_card_number' => 'sometimes|required|string|max:255',
@@ -109,14 +149,19 @@ class MemberController extends Controller
                 'employer' => 'sometimes|required|string|max:255',
                 'work_location' => 'sometimes|required|string|max:255',
                 'membership_status' => 'sometimes|required|in:Active,Inactive',
+            ], [
+                'gender.in' => 'Gender must be Male or Female',
+                'membership_status.in' =>
+                    'Membership status must be Active or Inactive',
             ]);
 
             if ($validator->fails()) {
                 return ApiMessage::error($validator->errors(), 400);
             }
 
+            // Only update editable member details.
+            // The generated member_number remains unchanged.
             $member->fill($request->only([
-                'member_number',
                 'full_name',
                 'gender',
                 'id_card_number',
@@ -135,7 +180,12 @@ class MemberController extends Controller
                 200
             );
         } catch (\Throwable $th) {
-            return ApiMessage::error($th->getMessage(), 500);
+            report($th);
+
+            return ApiMessage::error(
+                'Unable to update member. Please try again.',
+                500
+            );
         }
     }
 
