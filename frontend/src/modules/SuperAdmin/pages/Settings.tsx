@@ -287,7 +287,7 @@ function AppModal({
             }}
             disabled={busy}
             autoFocus
-            className={`inline-flex items-center justify-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-60 ${style.buttonClass}`}
+            className={`inline-flex items-center justify-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold text-white transition disabled:cursor-not-allowed cursor-pointer disabled:opacity-60 ${style.buttonClass}`}
           >
             {busy && <Spinner small />}
             {busy
