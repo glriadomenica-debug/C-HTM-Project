@@ -31,7 +31,6 @@ interface Member {
 }
 
 interface MemberForm {
-  member_number: string;
   full_name: string;
   gender: Gender;
   id_card_number: string;
@@ -43,7 +42,6 @@ interface MemberForm {
 }
 
 const emptyForm: MemberForm = {
-  member_number: "",
   full_name: "",
   gender: "Male",
   id_card_number: "",
@@ -284,80 +282,83 @@ export default function Member() {
     [members],
   );
 
-  const openCreateForm = () => {
-    setEditingMember(null);
-    setForm({ ...emptyForm });
-    setShowForm(true);
-  };
+  
+const openCreateForm = () => {
+  setEditingMember(null);
+  setForm({ ...emptyForm });
+  setShowForm(true);
+};
 
-  const openEditForm = (member: Member) => {
-    setEditingMember(member);
+const openEditForm = (member: Member) => {
+  setEditingMember(member);
 
-    setForm({
-      member_number: member.member_number ?? "",
-      full_name: member.full_name ?? "",
-      gender: member.gender ?? "Male",
-      id_card_number: member.id_card_number ?? "",
-      phone_number: member.phone_number ?? "",
-      address: member.address ?? "",
-      employer: member.employer ?? "",
-      work_location: member.work_location ?? "",
-      membership_status: member.membership_status ?? "Active",
-    });
+  setForm({
+    full_name: member.full_name ?? "",
+    gender: member.gender ?? "Male",
+    id_card_number: member.id_card_number ?? "",
+    phone_number: member.phone_number ?? "",
+    address: member.address ?? "",
+    employer: member.employer ?? "",
+    work_location: member.work_location ?? "",
+    membership_status: member.membership_status ?? "Active",
+  });
 
-    setShowForm(true);
-  };
+  setShowForm(true);
+};
 
-  const closeForm = () => {
-    if (saving) return;
+const closeForm = () => {
+  if (saving) return;
+
+  setShowForm(false);
+  setEditingMember(null);
+  setForm({ ...emptyForm });
+};
+
+const updateField = <K extends keyof MemberForm>(
+  field: K,
+  value: MemberForm[K],
+) => {
+  setForm((previous) => ({
+    ...previous,
+    [field]: value,
+  }));
+};
+
+const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+  event.preventDefault();
+
+  if (saving) return;
+
+  setSaving(true);
+
+  try {
+    const payload: MemberForm = { ...form };
+
+    const response = editingMember
+      ? await api.put(`/members/${editingMember.id}`, payload)
+      : await api.post("/members", payload);
+
+    setMessage(
+      response.data?.message ||
+        (editingMember
+          ? "Member updated successfully."
+          : "Member created successfully."),
+    );
 
     setShowForm(false);
     setEditingMember(null);
     setForm({ ...emptyForm });
-  };
+    setModal("success");
 
-  const updateField = <K extends keyof MemberForm>(
-    field: K,
-    value: MemberForm[K],
-  ) => {
-    setForm((previous) => ({
-      ...previous,
-      [field]: value,
-    }));
-  };
+    await fetchMembers();
+  } catch (error) {
+    setMessage(getErrorMessage(error));
+    setModal("error");
+  } finally {
+    setSaving(false);
+  }
+};
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
-    if (saving) return;
-
-    setSaving(true);
-
-    try {
-      const response = editingMember
-        ? await api.put(`/members/${editingMember.id}`, form)
-        : await api.post("/members", form);
-
-      setMessage(
-        response.data?.message ||
-          (editingMember
-            ? "Member updated successfully."
-            : "Member created successfully."),
-      );
-
-      setShowForm(false);
-      setEditingMember(null);
-      setForm({ ...emptyForm });
-      setModal("success");
-
-      await fetchMembers();
-    } catch (error) {
-      setMessage(getErrorMessage(error));
-      setModal("error");
-    } finally {
-      setSaving(false);
-    }
-  };
 
   const confirmDelete = (member: Member) => {
     setSelectedMember(member);
@@ -1007,6 +1008,7 @@ export default function Member() {
         </footer>
       </section>
 
+   
       {/* Create / Edit modal */}
       {showForm && (
         <div className="fixed inset-0 z-40 flex items-center justify-center overflow-y-auto bg-slate-950/60 p-3 backdrop-blur-sm sm:p-5 print:hidden">
@@ -1014,42 +1016,53 @@ export default function Member() {
             <div className="flex items-center justify-between border-b border-slate-200 px-4 py-4 sm:px-6">
               <div>
                 <h2 className="text-lg font-bold text-slate-900">
-                  {editingMember ? "Edit Member" : "Add Member"}
+                  {editingMember ? "Edit Member" : "Add New Member"}
                 </h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  {editingMember
+                    ? "Update the member's information below."
+                    : "Complete the form to register a new member."}
+                </p>
               </div>
 
               <button
                 type="button"
-                disabled={saving}
                 onClick={closeForm}
+                disabled={saving}
                 aria-label="Close form"
-                className="rounded-xl p-2 text-2xl leading-none text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 disabled:opacity-50"
+                className="rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 disabled:opacity-50"
               >
-                ×
+                <Icon name="warning" />
               </button>
             </div>
 
             <form onSubmit={handleSubmit}>
-              <div className="grid max-h-[65vh] grid-cols-1 gap-4 overflow-y-auto p-4 sm:grid-cols-2 sm:p-6">
-                <FormField label="Member Number" required>
-                  <input
-                    required
-                    maxLength={255}
-                    value={form.member_number}
-                    disabled={!!editingMember}
-                    onChange={(event) =>
-                      updateField("member_number", event.target.value)
-                    }
-                    placeholder="Enter member number"
-                    className={inputClass}
-                  />
-
-                  {editingMember && (
+              <div className="grid grid-cols-1 gap-4 p-4 sm:grid-cols-2 sm:gap-5 sm:p-6">
+                {/* Automatically generated or read-only member number */}
+                {editingMember ? (
+                  <FormField label="Member Number">
+                    <div className="mt-1 flex min-h-[42px] items-center rounded-xl border border-slate-200 bg-slate-100 px-3.5 py-2.5">
+                      <span className="text-sm font-bold text-blue-800">
+                        {editingMember.member_number || "-"}
+                      </span>
+                    </div>
                     <p className="mt-1 text-xs text-slate-500">
-                      Member number cannot be changed.
+                      This number cannot be changed.
                     </p>
-                  )}
-                </FormField>
+                  </FormField>
+                ) : (
+                  <FormField label="Member Number">
+                    <div className="mt-1 flex min-h-[42px] items-center gap-2 rounded-xl border border-blue-100 bg-blue-50 px-3.5 py-2.5">
+                      <Icon name="check" />
+                      <span className="text-sm font-medium text-blue-800">
+                        Automatically generated
+                      </span>
+                    </div>
+                    <p className="mt-1 text-xs text-slate-500">
+                      A unique number will be assigned when you save this member.
+                    </p>
+                  </FormField>
+                )}
 
                 <FormField label="Full Name" required>
                   <input
@@ -1151,7 +1164,6 @@ export default function Member() {
                   <label className={labelClass}>
                     Address <span className="text-red-500">*</span>
                   </label>
-
                   <textarea
                     required
                     maxLength={255}
@@ -1171,7 +1183,7 @@ export default function Member() {
                   type="button"
                   onClick={closeForm}
                   disabled={saving}
-                  className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:opacity-50 cursor-pointer"
+                  className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 cursor-pointer disabled:opacity-50"
                 >
                   Cancel
                 </button>
@@ -1182,7 +1194,6 @@ export default function Member() {
                   className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-200 disabled:cursor-not-allowed cursor-pointer disabled:opacity-60"
                 >
                   {saving && <Spinner />}
-
                   {saving
                     ? "Saving..."
                     : editingMember
@@ -1194,6 +1205,7 @@ export default function Member() {
           </div>
         </div>
       )}
+
 
       {/* Confirmation and feedback modal */}
       {modal && (
@@ -1234,7 +1246,7 @@ export default function Member() {
                     type="button"
                     onClick={closeModal}
                     disabled={deleting}
-                    className="rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50 cursor-pointer"
+                    className="rounded-xl border border-slate-300 px-4 py-2.5 cursor-pointer text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50 cursor-pointer"
                   >
                     Cancel
                   </button>
