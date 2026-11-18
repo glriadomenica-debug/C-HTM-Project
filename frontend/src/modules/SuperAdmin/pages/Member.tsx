@@ -52,8 +52,7 @@ const emptyForm: MemberForm = {
   membership_status: "Active",
 };
 
-const inputClass =
-  "mt-1 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-100";
+const inputClass = "mt-1 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-100";
 
 const labelClass = "block text-sm font-semibold text-slate-700";
 
@@ -359,7 +358,6 @@ const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
   }
 };
 
-
   const confirmDelete = (member: Member) => {
     setSelectedMember(member);
 
@@ -391,6 +389,40 @@ const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
       setDeleting(false);
     }
   };
+
+const [currentPage, setCurrentPage] = useState(1);
+const [pageSize, setPageSize] = useState(10);
+
+const totalPages = Math.max(
+  1,
+  Math.ceil(filteredMembers.length / pageSize),
+);
+
+const paginatedMembers = useMemo(() => {
+  const startIndex = (currentPage - 1) * pageSize;
+
+  return filteredMembers.slice(startIndex, startIndex + pageSize);
+}, [filteredMembers, currentPage, pageSize]);
+
+const startItem =
+  filteredMembers.length === 0
+    ? 0
+    : (currentPage - 1) * pageSize + 1;
+
+const endItem = Math.min(
+  currentPage * pageSize,
+  filteredMembers.length,
+);
+
+useEffect(() => {
+  setCurrentPage(1);
+}, [search, pageSize]);
+
+useEffect(() => {
+  if (currentPage > totalPages) {
+    setCurrentPage(totalPages);
+  }
+}, [currentPage, totalPages]);
 
   const closeModal = () => {
     if (deleting) return;
@@ -766,7 +798,7 @@ const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
           <>
             {/* Mobile cards */}
             <div className="divide-y divide-slate-100 md:hidden print:hidden">
-              {filteredMembers.map((member) => (
+              {paginatedMembers.map((member) => (
                 <article
                   key={member.id}
                   className="p-4 transition hover:bg-blue-50/40"
@@ -889,13 +921,13 @@ const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
                 </thead>
 
                 <tbody className="divide-y divide-slate-100">
-                  {filteredMembers.map((member, index) => (
+                  {paginatedMembers.map((member, index) => (
                     <tr
                       key={member.id}
                       className="group transition-colors odd:bg-white even:bg-slate-50/70 hover:bg-blue-50"
                     >
                       <td className="px-4 py-4 text-center tabular-nums text-slate-400">
-                        {index + 1}
+                        {(currentPage - 1) * pageSize + index + 1}
                       </td>
 
                       <td className="whitespace-nowrap px-4 py-4">
@@ -996,16 +1028,49 @@ const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
             members
           </p>
 
-          <button
-            type="button"
-            onClick={() => void fetchMembers()}
-            disabled={loading}
-            className="inline-flex items-center justify-center gap-2 self-start rounded-lg border border-slate-200 bg-white px-3 py-2 font-semibold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50 sm:self-auto"
-          >
-            <Icon name="refresh" />
-            Refresh list
-          </button>
-        </footer>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-wrap items-center gap-3">
+              <label htmlFor="member-page-size" className="text-xs font-medium text-slate-600">
+                Rows per page 
+              </label>
+              
+              <select id="member-page-size" value={pageSize} onChange={(event) => setPageSize(Number(event.target.value))} className="rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-xs font-medium text-slate-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
+                <option value={10}>10</option>
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
+
+              <span className="text-xs text-slate-500">
+                Showing{" "}
+                <strong className="text-slate-800">{startItem}–{endItem}</strong>
+                {" "}of{" "}
+                <strong className="text-slate-800">
+                  {filteredMembers.length}
+                </strong>
+              </span>
+            </div>
+
+          <div className="flex items-center justify-between gap-2 sm:justify-end">
+            <button type="button" onClick={() => setCurrentPage((page) => Math.max(1, page - 1))} disabled={currentPage === 1 || loading} className="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40">
+              <Icon name="chevron-left" /> Previous </button>
+              <span className="whitespace-nowrap text-xs font-medium text-slate-600">
+                Page <strong className="text-slate-900">{currentPage}</strong> of{" "}
+                <strong className="text-slate-900">{totalPages}</strong>
+              </span>
+
+            <button type="button" onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))} disabled={currentPage >= totalPages || loading} className="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40" >
+              Next 
+              <Icon name="chevron-right" />
+            </button>
+          </div>
+          </div>
+
+        <button type="button" onClick={() => void fetchMembers()} disabled={loading} className="inline-flex items-center justify-center gap-2 self-start rounded-lg border border-slate-200 bg-white px-3 py-2 font-semibold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50 sm:self-auto">
+        <Icon name="refresh" />
+        Refresh list
+        </button>
+      </footer>
       </section>
 
       {showForm && (
