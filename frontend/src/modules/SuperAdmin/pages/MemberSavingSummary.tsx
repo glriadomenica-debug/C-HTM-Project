@@ -270,12 +270,12 @@ export default function MemberSavingsReport() {
     [memberSavings],
   );
 
-  const activeMembers = useMemo(
-    () => memberSavings.filter((member) => !isInactive(member)).length,
-    [memberSavings],
-  );
+  // const activeMembers = useMemo(
+  //   () => memberSavings.filter((member) => !isInactive(member)).length,
+  //   [memberSavings],
+  // );
 
-  const inactiveMembers = members.length - activeMembers;
+  // const inactiveMembers = members.length - activeMembers;
 
   const clearFilters = () => {
     setSearch("");
