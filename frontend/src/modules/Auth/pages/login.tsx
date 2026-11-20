@@ -85,7 +85,6 @@ export default function Login() {
       // Memastikan role dikenali sebelum menyimpan sesi
       const allowedRoles = [
         "superadmin",
-        "mamager",
         "manager",
         "finance",
         "administration",
@@ -107,7 +106,6 @@ export default function Login() {
           navigate("/superadmin/dashboard", { replace: true });
           break;
 
-        case "mamager":
         case "manager":
           toast.success("Login berhasil!");
           navigate("/manager/dashboard", { replace: true });
