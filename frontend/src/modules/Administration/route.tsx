@@ -8,6 +8,7 @@ import Loan from "./pages/Loans";
 import LoanPayment from "./pages/LoanPayments";
 import Settings from "./pages/Settings";
 import LoanReport from "./pages/LoanReport";
+import LoanPayReport from "./pages/LoanPayReport";
 
 const AdministrationRoutes: RouteObject[] = [
   {
@@ -45,6 +46,10 @@ const AdministrationRoutes: RouteObject[] = [
             path: "loanreport",
             element: <LoanReport/>,
           },
+          {
+            path: "loanpayreport",
+            element: <LoanPayReport/>,
+          }
         ],
       },
     ],
