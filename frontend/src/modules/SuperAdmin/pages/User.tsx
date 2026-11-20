@@ -217,7 +217,8 @@ export default function Users() {
     try {
       if (isEditing) await api.put(`/users/${editingId}`, payload);
       else await api.post("/users", payload);
-      showNotice("success", isEditing ? "User updated successfully" : "User created successfully", isEditing ? `${form.name.trim()}'s information has been updated.` : `${form.name.trim()} has been added to the user list.`);
+      showNotice("success", isEditing ? "User updated successfully" : "User created successfully", isEditing ? `${form.name.trim()}'s information has been updated.` : 
+      `${form.name.trim()} has been added to the user list.`);
       resetForm();
       await fetchData(false);
     } catch (error: any) {
