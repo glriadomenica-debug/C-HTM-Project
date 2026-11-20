@@ -696,7 +696,7 @@ export default function Settings() {
           </h1>
 
           <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
-            Manage your personal information and C-HTM account security.
+            Maneje ita nia informasaun pessoal 
           </p>
         </header>
 
@@ -726,7 +726,7 @@ export default function Settings() {
 
             <div className="border-t border-slate-100 p-3">
               <p className="mb-2 px-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
-                Preferences
+                Preferensia
               </p>
 
               <nav className="space-y-1" aria-label="Settings navigation">
@@ -734,7 +734,7 @@ export default function Settings() {
                   active={activeTab === "profile"}
                   onClick={() => setActiveTab("profile")}
                   icon="♙"
-                  title="My Profile"
+                  title="Perfil"
                   description="Manage your account information"
                 />
 
@@ -742,7 +742,7 @@ export default function Settings() {
                   active={activeTab === "password"}
                   onClick={() => setActiveTab("password")}
                   icon="⌑"
-                  title="Change Password"
+                  title="Muda Password"
                   description="Update your account security"
                 />
               </nav>
