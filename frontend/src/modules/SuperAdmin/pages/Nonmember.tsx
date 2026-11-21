@@ -308,8 +308,8 @@ export default function NonMember() {
       setMessage(
         response.data?.message ||
           (editingNonMember
-            ? "Non-member updated successfully."
-            : "Non-member created successfully."),
+            ? "Dadus hadia ho susesu."
+          : "Dadus aumenta ho susesu."),
       );
 
       setShowForm(false);
@@ -329,7 +329,7 @@ export default function NonMember() {
   const confirmDelete = (nonMember: NonMember) => {
     setSelectedNonMember(nonMember);
     setMessage(
-      `Are you sure you want to delete "${nonMember.full_name}"? This action cannot be undone.`,
+      `Ita-boot hakarak duni atu hamoos dadus "${nonMember.full_name}"? Dadus ne'e sei hamoos permanente.`,
     );
     setModal("confirm");
   };
@@ -484,7 +484,7 @@ export default function NonMember() {
             C-HTM / Member Management
           </p>
           <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
-            Non-Members
+            Non-Membru
           </h1>
         </div>
 
@@ -494,26 +494,26 @@ export default function NonMember() {
           className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 hover:shadow-md focus:outline-none focus:ring-4 focus:ring-blue-200 active:scale-[0.98] cursor-pointer"
         >
           <Icon name="plus" />
-          Add Non-Member
+          Aumenta dadus
         </button>
       </header>
 
       {/* Summary cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 print:hidden">
         <SummaryCard
-          title="Total Non-Members"
+          title="Total Non-Membru"
           value={nonMembers.length}
           color="blue"
           icon="users"
         />
         <SummaryCard
-          title="With Loans"
+          title="Total non-membru ne'ebe empresta "
           value={nonMembersWithLoans}
           color="green"
           icon="loan"
         />
         <SummaryCard
-          title="Without Loans"
+          title="Total non-membru la empresta "
           value={nonMembersWithoutLoans}
           color="gray"
           icon="users"
@@ -527,7 +527,7 @@ export default function NonMember() {
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="text-lg font-bold tracking-tight text-slate-900">
-                  Non-Member List
+                  Lista Non-Membru
                 </h2>
                 <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-700 ring-1 ring-inset ring-blue-100">
                   {filteredNonMembers.length}
@@ -610,23 +610,23 @@ export default function NonMember() {
           <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-slate-100 pt-3 text-xs text-slate-500">
             <span className="inline-flex items-center gap-2">
               <span className="h-2 w-2 rounded-full bg-green-500" />
-              With loans:{" "}
+              Ema ne'ebe empresta:{" "}
               <strong className="text-slate-800">{nonMembersWithLoans}</strong>
             </span>
             <span className="inline-flex items-center gap-2">
               <span className="h-2 w-2 rounded-full bg-slate-400" />
-              Without loans:{" "}
+              La empresta:{" "}
               <strong className="text-slate-800">
                 {nonMembersWithoutLoans}
               </strong>
             </span>
             <span className="inline-flex items-center gap-2">
               <span className="h-2 w-2 rounded-full bg-blue-500" />
-              Showing:{" "}
+              Fo sai dadus:{" "}
               <strong className="text-slate-800">
                 {filteredNonMembers.length}
               </strong>{" "}
-              of {nonMembers.length}
+              husi {nonMembers.length}
             </span>
           </div>
         </div>
@@ -761,34 +761,34 @@ export default function NonMember() {
                 <thead className="bg-slate-800 text-xs uppercase tracking-wider text-slate-100">
                   <tr>
                     <th className="w-16 whitespace-nowrap px-4 py-4 text-center font-semibold">
-                      No.
+                      Nu.
                     </th>
                     <th className="whitespace-nowrap px-4 py-4 font-semibold">
-                      Non-Member Number
+                      Numeru Non-Membru
                     </th>
                     <th className="min-w-52 px-4 py-4 font-semibold">
-                      Non-Member Details
+                      Naran Kompletu
                     </th>
                     <th className="whitespace-nowrap px-4 py-4 font-semibold">
-                      ID Card Number
+                      BI / ELEITORAL
                     </th>
                     <th className="whitespace-nowrap px-4 py-4 font-semibold">
-                      Phone Number
+                      Numeru telfone
                     </th>
                     <th className="min-w-40 px-4 py-4 font-semibold">
-                      Address
+                      Hela-fatin
                     </th>
                     <th className="min-w-36 px-4 py-4 font-semibold">
-                      Employer
+                      Instituisaun
                     </th>
                     <th className="min-w-36 px-4 py-4 font-semibold">
-                      Work Location
+                      Fatin servisu 
                     </th>
                     <th className="whitespace-nowrap px-4 py-4 text-center font-semibold">
-                      Loans
+                      Emprestimu
                     </th>
                     <th className="sticky right-0 z-10 whitespace-nowrap bg-slate-800 px-4 py-4 text-center font-semibold print:hidden">
-                      Actions
+                      Aksaun
                     </th>
                   </tr>
                 </thead>
@@ -859,7 +859,7 @@ export default function NonMember() {
                           <button
                             type="button"
                             onClick={() => openEditForm(nonMember)}
-                            title="Edit non-member"
+                            title="Hadia dadus"
                             aria-label={`Edit ${nonMember.full_name}`}
                             className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-blue-100 bg-white text-blue-700 transition hover:border-blue-300 hover:bg-blue-600 hover:text-white focus:outline-none focus:ring-4 focus:ring-blue-100 cursor-pointer"
                           >
@@ -868,7 +868,7 @@ export default function NonMember() {
                           <button
                             type="button"
                             onClick={() => confirmDelete(nonMember)}
-                            title="Delete non-member"
+                            title="Hamoos dadus"
                             aria-label={`Delete ${nonMember.full_name}`}
                             className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-red-100 bg-white text-red-600 transition hover:border-red-300 hover:bg-red-600 hover:text-white focus:outline-none focus:ring-4 focus:ring-red-100 cursor-pointer"
                           >
@@ -914,7 +914,7 @@ export default function NonMember() {
             <div className="flex items-center justify-between border-b border-slate-200 px-4 py-4 sm:px-6">
               <div>
                 <h2 className="text-lg font-bold text-slate-900">
-                  {editingNonMember ? "Edit Non-Member" : "Add Non-Member"}
+                  {editingNonMember ? "Hadia dadus non-membru" : "Aumenta dadus foun"}
                 </h2>
               </div>
 
@@ -931,7 +931,7 @@ export default function NonMember() {
 
             <form onSubmit={handleSubmit}>
               <div className="grid max-h-[65vh] grid-cols-1 gap-4 overflow-y-auto p-4 sm:grid-cols-2 sm:p-6">
-                <FormField label="Non-Member Number" required>
+                <FormField label="Numeru non-membru" required>
                   <input
                     required
                     maxLength={255}
@@ -940,17 +940,17 @@ export default function NonMember() {
                     onChange={(event) =>
                       updateField("non_member_number", event.target.value)
                     }
-                    placeholder="Enter non-member number"
+                    placeholder="Hatama numeru non-membru"
                     className={inputClass}
                   />
                   {editingNonMember && (
                     <p className="mt-1 text-xs text-slate-500">
-                      Non-member number cannot be changed.
+                      Numeru ne'e labele muda
                     </p>
                   )}
                 </FormField>
 
-                <FormField label="Full Name" required>
+                <FormField label="Naran Kompletu" required>
                   <input
                     required
                     maxLength={255}
@@ -958,12 +958,12 @@ export default function NonMember() {
                     onChange={(event) =>
                       updateField("full_name", event.target.value)
                     }
-                    placeholder="Enter full name"
+                    placeholder="Hatama naran kompletu"
                     className={inputClass}
                   />
                 </FormField>
 
-                <FormField label="Gender" required>
+                <FormField label="Jeneru" required>
                   <select
                     required
                     value={form.gender}
@@ -972,12 +972,12 @@ export default function NonMember() {
                     }
                     className={inputClass}
                   >
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
+                    <option value="Male">Mane</option>
+                    <option value="Female">Feto</option>
                   </select>
                 </FormField>
 
-                <FormField label="ID Card Number" required>
+                <FormField label="Kartaun BI / ELEITORAL" required>
                   <input
                     required
                     maxLength={255}
@@ -985,12 +985,12 @@ export default function NonMember() {
                     onChange={(event) =>
                       updateField("id_card_number", event.target.value)
                     }
-                    placeholder="Enter ID card number"
+                    placeholder="Hatama numeru kartaun BI/ELEITORAL"
                     className={inputClass}
                   />
                 </FormField>
 
-                <FormField label="Phone Number" required>
+                <FormField label="Numeru telfone" required>
                   <input
                     required
                     maxLength={255}
@@ -998,12 +998,12 @@ export default function NonMember() {
                     onChange={(event) =>
                       updateField("phone_number", event.target.value)
                     }
-                    placeholder="Enter phone number"
+                    placeholder="Hatama numeru telfone"
                     className={inputClass}
                   />
                 </FormField>
 
-                <FormField label="Employer" required>
+                <FormField label="Instituisaun" required>
                   <input
                     required
                     maxLength={255}
@@ -1011,12 +1011,12 @@ export default function NonMember() {
                     onChange={(event) =>
                       updateField("employer", event.target.value)
                     }
-                    placeholder="Enter employer"
+                    placeholder="Hatama instituisaun nia naran"
                     className={inputClass}
                   />
                 </FormField>
 
-                <FormField label="Work Location" required>
+                <FormField label="Servisu Fatin" required>
                   <input
                     required
                     maxLength={255}
@@ -1024,14 +1024,14 @@ export default function NonMember() {
                     onChange={(event) =>
                       updateField("work_location", event.target.value)
                     }
-                    placeholder="Enter work location"
+                    placeholder="Hatama servisu fatin (distrito)"
                     className={inputClass}
                   />
                 </FormField>
 
                 <div className="sm:col-span-2">
                   <label className={labelClass}>
-                    Address <span className="text-red-500">*</span>
+                    Hela-fatin <span className="text-red-500">*</span>
                   </label>
                   <textarea
                     required
@@ -1041,7 +1041,7 @@ export default function NonMember() {
                     onChange={(event) =>
                       updateField("address", event.target.value)
                     }
-                    placeholder="Enter address"
+                    placeholder="Hatama fatin hela"
                     className={inputClass}
                   />
                 </div>
@@ -1054,7 +1054,7 @@ export default function NonMember() {
                   disabled={saving}
                   className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:opacity-50 cursor-pointer"
                 >
-                  Cancel
+                  Kansela
                 </button>
                 <button
                   type="submit"
@@ -1065,8 +1065,8 @@ export default function NonMember() {
                   {saving
                     ? "Saving..."
                     : editingNonMember
-                      ? "Update Non-Member"
-                      : "Save Non-Member"}
+                      ? "Atualiza dadus "
+                      : "Rai dadus"}
                 </button>
               </div>
             </form>
@@ -1096,8 +1096,8 @@ export default function NonMember() {
                   {modal === "success"
                     ? "Success"
                     : modal === "confirm"
-                      ? "Confirm Delete"
-                      : "Something Went Wrong"}
+                      ? "Konfirma hamoos"
+                      : "Akontese Erru ruma. Koko fila-fali!"}
                 </h3>
                 <p className="mt-2 whitespace-pre-line text-sm leading-6 text-slate-600">
                   {message}
@@ -1114,7 +1114,7 @@ export default function NonMember() {
                     disabled={deleting}
                     className="rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50 cursor-pointer"
                   >
-                    Cancel
+                    Kansela
                   </button>
                   <button
                     type="button"
@@ -1123,7 +1123,7 @@ export default function NonMember() {
                     className="inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700 focus:outline-none focus:ring-4 focus:ring-red-200 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
                   >
                     {deleting && <Spinner />}
-                    {deleting ? "Deleting..." : "Delete Non-Member"}
+                    {deleting ? "Hamoos..." : "Konfirma"}
                   </button>
                 </>
               ) : (
