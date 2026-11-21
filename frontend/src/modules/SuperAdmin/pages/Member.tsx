@@ -340,8 +340,8 @@ const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     setMessage(
       response.data?.message ||
         (editingMember
-          ? "Member updated successfully."
-          : "Member created successfully."),
+          ? "Dadus hadia ho susesu."
+          : "Dadus aumenta ho susesu."),
     );
 
     setShowForm(false);
@@ -362,7 +362,7 @@ const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     setSelectedMember(member);
 
     setMessage(
-      `Are you sure you want to delete "${member.full_name}"? This action cannot be undone.`,
+      `Ita-boot hakarak duni atu hamoos dadus "${member.full_name}"? Dadus ne'e sei hamoos permanente.`,
     );
 
     setModal("confirm");
@@ -599,7 +599,7 @@ useEffect(() => {
           </p>
 
           <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
-            Members
+            Membru
           </h1>
         </div>
 
@@ -609,28 +609,28 @@ useEffect(() => {
           className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 hover:shadow-md focus:outline-none focus:ring-4 focus:ring-blue-200 active:scale-[0.98] cursor-pointer"
         >
           <Icon name="plus" />
-          Add Member
+          Aumenta Membru
         </button>
       </header>
 
       {/* Summary cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 print:hidden">
         <SummaryCard
-          title="Total Members"
+          title="Total Membru"
           value={members.length}
           color="blue"
           icon="users"
         />
 
         <SummaryCard
-          title="Active Members"
+          title="Membru Aktivu"
           value={activeMembers}
           color="green"
           icon="check"
         />
 
         <SummaryCard
-          title="Inactive Members"
+          title="Membru La Aktivu"
           value={inactiveMembers}
           color="gray"
           icon="users"
@@ -643,7 +643,7 @@ useEffect(() => {
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="text-lg font-bold tracking-tight text-slate-900">
-                  Member List
+                  Lista Membru
                 </h2>
                 <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-700 ring-1 ring-inset ring-blue-100">
                   {filteredMembers.length}
@@ -661,7 +661,7 @@ useEffect(() => {
                   type="search"
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
-                  placeholder="Search members..."
+                  placeholder="Buka membru..."
                   aria-label="Search members"
                   className="w-full rounded-xl border border-slate-300 bg-slate-50 py-2.5 pl-10 pr-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-100 cursor-pointer"
                 />
@@ -728,21 +728,21 @@ useEffect(() => {
           <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-slate-100 pt-3 text-xs text-slate-500">
             <span className="inline-flex items-center gap-2">
               <span className="h-2 w-2 rounded-full bg-green-500" />
-              Active:{" "}
+              Aktivu:{" "}
               <strong className="text-slate-800">{activeMembers}</strong>
             </span>
             <span className="inline-flex items-center gap-2">
               <span className="h-2 w-2 rounded-full bg-slate-400" />
-              Inactive:{" "}
+              La Aktivu:{" "}
               <strong className="text-slate-800">{inactiveMembers}</strong>
             </span>
             <span className="inline-flex items-center gap-2">
               <span className="h-2 w-2 rounded-full bg-blue-500" />
-              Showing:{" "}
+              Fo sai dadus:{" "}
               <strong className="text-slate-800">
                 {filteredMembers.length}
               </strong>{" "}
-              of {members.length}
+              husi {members.length}
             </span>
           </div>
         </div>
@@ -882,40 +882,40 @@ useEffect(() => {
                 <thead className="bg-slate-800 text-xs uppercase tracking-wider text-slate-100">
                   <tr>
                     <th className="w-16 whitespace-nowrap px-4 py-4 text-center font-semibold">
-                      No.
+                      Nu.
                     </th>
                     <th className="whitespace-nowrap px-4 py-4 font-semibold">
-                      Member Number
+                      Numeru Membru
                     </th>
                     <th className="min-w-52 px-4 py-4 font-semibold">
-                      Member Details
+                      Naran
                     </th>
                     <th className="whitespace-nowrap px-4 py-4 font-semibold">
-                      ID Card Number
+                      BI/Eleitoral
                     </th>
                     <th className="whitespace-nowrap px-4 py-4 font-semibold">
-                      Phone Number
+                      Numeru telfone
                     </th>
                     <th className="min-w-40 px-4 py-4 font-semibold">
-                      Address
+                      Hela-Fatin
                     </th>
                     <th className="min-w-36 px-4 py-4 font-semibold">
-                      Employer
+                      Empregador
                     </th>
                     <th className="min-w-36 px-4 py-4 font-semibold">
-                      Work Location
+                      Servisu Fatin
                     </th>
                     <th className="whitespace-nowrap px-4 py-4 font-semibold">
                       Status
                     </th>
                     <th className="whitespace-nowrap px-4 py-4 text-center font-semibold">
-                      Deposits
+                      Depositu
                     </th>
                     <th className="whitespace-nowrap px-4 py-4 text-center font-semibold">
-                      Loans
+                      Emprestimu
                     </th>
                     <th className="sticky right-0 z-10 whitespace-nowrap bg-slate-800 px-4 py-4 text-center font-semibold print:hidden">
-                      Actions
+                      Aksaun
                     </th>
                   </tr>
                 </thead>
@@ -994,7 +994,7 @@ useEffect(() => {
                           <button
                             type="button"
                             onClick={() => openEditForm(member)}
-                            title="Edit member"
+                            title="Hadia dadus"
                             aria-label={`Edit ${member.full_name}`}
                             className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-blue-100 bg-white text-blue-700 transition hover:border-blue-300 hover:bg-blue-600 hover:text-white focus:outline-none focus:ring-4 focus:ring-blue-100 cursor-pointer"
                           >
@@ -1003,7 +1003,7 @@ useEffect(() => {
                           <button
                             type="button"
                             onClick={() => confirmDelete(member)}
-                            title="Delete member"
+                            title="Hamoos membru"
                             aria-label={`Delete ${member.full_name}`}
                             className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-red-100 bg-white text-red-600 transition hover:border-red-300 hover:bg-red-600 hover:text-white focus:outline-none focus:ring-4 focus:ring-red-100 cursor-pointer "
                           >
@@ -1079,7 +1079,7 @@ useEffect(() => {
             <div className="flex items-center justify-between border-b border-slate-200 px-4 py-4 sm:px-6">
               <div>
                 <h2 className="text-lg font-bold text-slate-900">
-                  {editingMember ? "Edit Member" : "Add New Member"}
+                  {editingMember ? "Hadia dadus membru" : "Aumenta membru foun"}
                 </h2>
               </div>
 
@@ -1097,31 +1097,30 @@ useEffect(() => {
               <div className="grid grid-cols-1 gap-4 p-4 sm:grid-cols-2 sm:gap-5 sm:p-6">
                 {/* Automatically generated or read-only member number */}
                 {editingMember ? (
-                  <FormField label="Member Number">
+                  <FormField label="Numeru Membru">
                     <div className="mt-1 flex min-h-[42px] items-center rounded-xl border border-slate-200 bg-slate-100 px-3.5 py-2.5">
                       <span className="text-sm font-bold text-blue-800">
                         {editingMember.member_number || "-"}
                       </span>
                     </div>
                     <p className="mt-1 text-xs text-slate-500">
-                      This number cannot be changed.
+                      Númeru ida-ne’e labele muda
                     </p>
                   </FormField>
                 ) : (
-                  <FormField label="Member Number">
+                  <FormField label="Numeru Membru">
                     <div className="mt-1 flex min-h-[42px] items-center gap-2 rounded-xl border border-blue-100 bg-blue-50 px-3.5 py-2.5">
                       <Icon name="check" />
                       <span className="text-sm font-medium text-blue-800">
-                        Automatically generated
+                        Sistema mak kria automatika
                       </span>
                     </div>
                     <p className="mt-1 text-xs text-slate-500">
-                      A unique number will be assigned when you save this member.
-                    </p>
+                      Sistema sei fó númeru úniku ba membru ne’e bainhira ita rai ona dadus membru                   </p>
                   </FormField>
                 )}
 
-                <FormField label="Full Name" required>
+                <FormField label="Naran kompletu" required>
                   <input
                     required
                     maxLength={255}
@@ -1134,7 +1133,7 @@ useEffect(() => {
                   />
                 </FormField>
 
-                <FormField label="Gender" required>
+                <FormField label="Jeneru" required>
                   <select
                     required
                     value={form.gender}
@@ -1143,12 +1142,12 @@ useEffect(() => {
                     }
                     className={inputClass}
                   >
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
+                    <option value="Male">Mane</option>
+                    <option value="Female">Feto</option>
                   </select>
                 </FormField>
 
-                <FormField label="ID Card Number" required>
+                <FormField label="Numeru BI/Eleitoral" required>
                   <input
                     required
                     maxLength={255}
@@ -1156,12 +1155,12 @@ useEffect(() => {
                     onChange={(event) =>
                       updateField("id_card_number", event.target.value)
                     }
-                    placeholder="Enter ID card number"
+                    placeholder="Hatama numeru kartaun BI/ELEITORAL"
                     className={inputClass}
                   />
                 </FormField>
 
-                <FormField label="Phone Number" required>
+                <FormField label="Numeru telfone" required>
                   <input
                     required
                     maxLength={255}
@@ -1169,12 +1168,12 @@ useEffect(() => {
                     onChange={(event) =>
                       updateField("phone_number", event.target.value)
                     }
-                    placeholder="Enter phone number"
+                    placeholder="Hatama numeru telfone"
                     className={inputClass}
                   />
                 </FormField>
 
-                <FormField label="Employer" required>
+                <FormField label="Empregador" required>
                   <input
                     required
                     maxLength={255}
@@ -1182,12 +1181,12 @@ useEffect(() => {
                     onChange={(event) =>
                       updateField("employer", event.target.value)
                     }
-                    placeholder="Enter employer"
+                    placeholder="Hatama posizaun servisu"
                     className={inputClass}
                   />
                 </FormField>
 
-                <FormField label="Work Location" required>
+                <FormField label="Servisu Fatin" required>
                   <input
                     required
                     maxLength={255}
@@ -1195,12 +1194,12 @@ useEffect(() => {
                     onChange={(event) =>
                       updateField("work_location", event.target.value)
                     }
-                    placeholder="Enter work location"
+                    placeholder="Hatama servisu fatin"
                     className={inputClass}
                   />
                 </FormField>
 
-                <FormField label="Membership Status" required>
+                <FormField label="Status membru" required>
                   <select
                     required
                     value={form.membership_status}
@@ -1212,14 +1211,14 @@ useEffect(() => {
                     }
                     className={inputClass}
                   >
-                    <option value="Active">Active</option>
-                    <option value="Inactive">Inactive</option>
+                    <option value="Active">Aktivu</option>
+                    <option value="Inactive">La Aktivu</option>
                   </select>
                 </FormField>
 
                 <div className="sm:col-span-2">
                   <label className={labelClass}>
-                    Address <span className="text-red-500">*</span>
+                    Hela-Fatin <span className="text-red-500">*</span>
                   </label>
                   <textarea
                     required
@@ -1229,7 +1228,7 @@ useEffect(() => {
                     onChange={(event) =>
                       updateField("address", event.target.value)
                     }
-                    placeholder="Enter address"
+                    placeholder="Hatama hela-fatin"
                     className={inputClass}
                   />
                 </div>
@@ -1242,7 +1241,7 @@ useEffect(() => {
                   disabled={saving}
                   className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 cursor-pointer disabled:opacity-50"
                 >
-                  Cancel
+                  Kansela
                 </button>
 
                 <button
@@ -1254,8 +1253,8 @@ useEffect(() => {
                   {saving
                     ? "Saving..."
                     : editingMember
-                      ? "Update Member"
-                      : "Save Member"}
+                      ? "Atualiza dadus membru"
+                      : "Rai dadus membru"}
                 </button>
               </div>
             </form>
@@ -1286,8 +1285,8 @@ useEffect(() => {
                   {modal === "success"
                     ? "Success"
                     : modal === "confirm"
-                      ? "Confirm Delete"
-                      : "Something Went Wrong"}
+                      ? "Konfirma Hamoos?"
+                      : "Akontese Erru ruma. Koko fila-fali!"}
                 </h3>
 
                 <p className="mt-2 whitespace-pre-line text-sm leading-6 text-slate-600">
@@ -1305,7 +1304,7 @@ useEffect(() => {
                     disabled={deleting}
                     className="rounded-xl border border-slate-300 px-4 py-2.5 cursor-pointer text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50 cursor-pointer"
                   >
-                    Cancel
+                    Kansela
                   </button>
 
                   <button
@@ -1315,7 +1314,7 @@ useEffect(() => {
                     className="inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700 focus:outline-none focus:ring-4 focus:ring-red-200 disabled:cursor-not-allowed cursor-pointer disabled:opacity-60"
                   >
                     {deleting && <Spinner />}
-                    {deleting ? "Deleting..." : "Delete Member"}
+                    {deleting ? "Hamoos..." : "Konfirma"}
                   </button>
                 </>
               ) : (
