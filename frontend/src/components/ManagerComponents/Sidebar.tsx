@@ -110,7 +110,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                 C-HTM
               </h1>
               <p className="mt-0.5 text-[11px] text-blue-200/75">
-                Management System
+                Sistema Jestaun
               </p>
             </div>
           </div>
