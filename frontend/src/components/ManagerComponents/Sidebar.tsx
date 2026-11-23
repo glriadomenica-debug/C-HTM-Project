@@ -34,8 +34,8 @@ const menuGroups = [
   {
     title: "Jestaun Membru",
     menus: [
-      { name: "Members", path: "/manager/members", icon: UserRound },
-      { name: "Non-Members", path: "/manager/nonmembers", icon: UserRoundX },
+      { name: "Membru", path: "/manager/members", icon: UserRound },
+      { name: "Non-Membru", path: "/manager/nonmembers", icon: UserRoundX },
     ],
   },
   {
