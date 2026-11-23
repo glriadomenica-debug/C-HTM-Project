@@ -1,11 +1,7 @@
 import { NavLink } from "react-router-dom";
 import {
   LayoutDashboard,
-  //Users,
-  //ShieldCheck,
   Settings,
-  //UserRound,
-  //UserRoundX,
   Wallet,
   CreditCard,
   ReceiptText,
@@ -22,7 +18,7 @@ interface SidebarProps {
 
 const menuGroups = [
   {
-    title: "Main Menu",
+    title: "Menu Prinsipal",
     menus: [
       {
         name: "Dashboard",
@@ -31,32 +27,25 @@ const menuGroups = [
       },
     ],
   },
-  // {
-  //   title: "Member Management",
-  //   menus: [
-  //     { name: "Members", path: "/manager/members", icon: UserRound },
-  //     { name: "Non-Members", path: "/manager/nonmembers", icon: UserRoundX },
-  //   ],
-  // },
   {
-    title: "Financial Management",
+    title: "Manajementu Finansial",
     menus: [
-      { name: "Deposits", path: "/finance/deposits", icon: Wallet },
-      { name: "Loans", path: "/finance/loans", icon: CreditCard },
+      { name: "Depositu", path: "/finance/deposits", icon: Wallet },
+      { name: "Emprestimu", path: "/finance/loans", icon: CreditCard },
       {
-        name: "Loan Payments",
+        name: "Pagamentu Emprestimu",
         path: "/finance/loanpayments",
         icon: ReceiptText,
       },
       {
-        name: "Transactions",
+        name: "Transaksaun",
         path: "/finance/transactions",
         icon: ArrowLeftRight,
       },
     ],
   },
     {
-    title: "User Management",
+    title: "Manajementu Perfil",
     menus: [
       { name: "Settings", path: "/finance/settings", icon: Settings },
     ],
