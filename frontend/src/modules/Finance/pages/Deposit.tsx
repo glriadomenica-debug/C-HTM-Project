@@ -648,7 +648,7 @@ export default function Deposit() {
   const confirmDelete = (deposit: Deposit) => {
     setSelectedDeposit(deposit);
     setMessage(
-      `Are you sure you want to delete this ${deposit.deposit_type.toLowerCase()} transaction for ${getMemberName(deposit, members)}? This action cannot be undone.`,
+      `Ita-boot hakarak duni atu hamoos dadus ${deposit.deposit_type.toLowerCase()} transaksaun ${getMemberName(deposit, members)}? Dadus ne'e sei hamoos permanente.`,
     );
     setModal("confirm");
   };
@@ -694,7 +694,7 @@ export default function Deposit() {
             C-HTM / Finance Management
           </p>
           <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
-            Deposit Management
+            Dadus depositu
           </h1>
         </div>
 
@@ -704,34 +704,34 @@ export default function Deposit() {
           className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 hover:shadow-md focus:outline-none focus:ring-4 focus:ring-blue-200 active:scale-[0.98] cursor-pointer"
         >
           <Icon name="plus" />
-          Add Transaction
+          Aumenta depositu
         </button>
       </header>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <SummaryCard
-          title="Total Transactions"
+          title="Total Transaksaun"
           value={deposits.length.toLocaleString()}
           color="blue"
           icon="transactions"
         />
 
         <SummaryCard
-          title="Total Deposits"
+          title="Total Depositu"
           value={formatAmount(totalDeposits)}
           color="green"
           icon="deposit"
         />
 
         <SummaryCard
-          title="Total Withdrawals"
+          title="Total Levantamentu"
           value={formatAmount(totalWithdrawals)}
           color="red"
           icon="withdrawal"
         />
 
         <SummaryCard
-          title="Net Amount"
+          title="Montante Likidasaun"
           value={formatAmount(totalNet)}
           color="gray"
           icon="balance"
@@ -740,15 +740,15 @@ export default function Deposit() {
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <ReportLink
-          title="Monthly Deposit Report"
-          description="Review deposit transactions for a selected month"
+          title="Relatoriu Mensal"
+          description="Halo relatoriu ba transaksaun depositu mensal"
           href="/finance/depositreport"
           icon="transactions"
         />
 
         <ReportLink
-          title="Member Savings Summary"
-          description="View the total savings accumulated by each member"
+          title="Lista Membru saving"
+          description="Haree total osan akumulada ba membru ida-idak"
           href="/finance/membersaving"
           icon="balance"
         />
@@ -760,7 +760,7 @@ export default function Deposit() {
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="text-lg font-bold tracking-tight text-slate-900">
-                  Deposit Transactions
+                  Transaksaun Depositu
                 </h2>
                 <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-700 ring-1 ring-inset ring-blue-100">
                   {filteredDeposits.length}
@@ -779,7 +779,7 @@ export default function Deposit() {
                   type="search"
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
-                  placeholder="Search transactions..."
+                  placeholder="Search transaksaun..."
                   aria-label="Search deposit transactions"
                   className="w-full rounded-xl border border-slate-300 bg-slate-50 py-2.5 pl-10 pr-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-100 cursor-pointer"
                 />
@@ -793,11 +793,11 @@ export default function Deposit() {
                 aria-label="Filter by transaction type"
                 className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100 sm:w-48 cursor-pointer"
               >
-                <option value="All">All transaction types</option>
-                <option value="Initial">Initial</option>
+                <option value="All">Hili tipu depositu</option>
+                <option value="Initial">Inisial</option>
                 <option value="Regular">Regular</option>
-                <option value="Additional">Additional</option>
-                <option value="Withdrawal">Withdrawal</option>
+                <option value="Additional">Adisional</option>
+                <option value="Withdrawal">Levantamentu</option>
               </select>
             </div>
           </div>
@@ -805,7 +805,7 @@ export default function Deposit() {
           <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-slate-100 pt-3 text-xs text-slate-500">
             <span className="inline-flex items-center gap-2">
               <span className="h-2 w-2 rounded-full bg-green-500" />
-              Deposits:{" "}
+              Depositu:{" "}
               <strong className="text-slate-800">
                 {formatAmount(totalDeposits)}
               </strong>
@@ -813,7 +813,7 @@ export default function Deposit() {
 
             <span className="inline-flex items-center gap-2">
               <span className="h-2 w-2 rounded-full bg-red-500" />
-              Withdrawals:{" "}
+              Levantamentu:{" "}
               <strong className="text-slate-800">
                 {formatAmount(totalWithdrawals)}
               </strong>
@@ -821,11 +821,11 @@ export default function Deposit() {
 
             <span className="inline-flex items-center gap-2">
               <span className="h-2 w-2 rounded-full bg-blue-500" />
-              Showing:{" "}
+              Fo sai dadus:{" "}
               <strong className="text-slate-800">
                 {filteredDeposits.length}
               </strong>{" "}
-              of {deposits.length}
+              husi {deposits.length}
             </span>
           </div>
         </div>
@@ -835,7 +835,7 @@ export default function Deposit() {
           <div className="flex flex-col items-center justify-center px-4 py-16 text-center">
             <span className="h-9 w-9 animate-spin rounded-full border-4 border-blue-100 border-t-blue-600" />
             <p className="mt-3 text-sm font-medium text-slate-700">
-              Loading deposit transactions...
+              Loading transaksaun depositu...
             </p>
           </div>
         ) : filteredDeposits.length === 0 ? (
@@ -846,14 +846,14 @@ export default function Deposit() {
 
             <h3 className="mt-4 font-semibold text-slate-900">
               {search.trim() || typeFilter !== "All"
-                ? "No matching transactions"
-                : "No deposit transactions yet"}
+                ? "La iha transaksaun ne'ebe korresponde"
+                : "Seidauk iha transaksaun depositu"}
             </h3>
 
             <p className="mx-auto mt-1 max-w-sm text-sm leading-6 text-slate-500">
               {search.trim() || typeFilter !== "All"
-                ? "Try changing your search or transaction type filter."
-                : "Add a transaction to start recording member savings."}
+                ? "Koko muda filtru tipu transaksaun."
+                : "Aumenta transaksaun ida atu hahu rejistu depositu membru nian."}
             </p>
 
             {(search.trim() || typeFilter !== "All") && (
@@ -865,7 +865,7 @@ export default function Deposit() {
                 }}
                 className="mt-4 rounded-lg px-3 py-2 text-sm font-semibold text-blue-700 transition hover:bg-blue-50"
               >
-                Clear filters
+                Fila ba inisiu
               </button>
             )}
           </div>
@@ -894,7 +894,7 @@ export default function Deposit() {
                         <div className="flex flex-wrap items-start justify-between gap-2">
                           <div className="min-w-0">
                             <p className="mb-1 text-xs text-slate-400">
-                              No. {index + 1}
+                              Nu. {index + 1}
                             </p>
 
                             <h3 className="break-words font-semibold text-slate-900">
@@ -921,12 +921,12 @@ export default function Deposit() {
 
                     <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-4 rounded-xl bg-slate-50 p-3">
                       <MobileField
-                        label="Transaction date"
+                        label="Data depositu"
                         value={formatDate(deposit.deposit_date)}
                       />
 
                       <MobileField
-                        label="Amount"
+                        label="Montante"
                         value={`${withdrawal ? "−" : "+"}${formatAmount(
                           getDepositAmount(deposit),
                         )}`}
@@ -937,7 +937,7 @@ export default function Deposit() {
 
                       <div className="col-span-2 min-w-0">
                         <MobileField
-                          label="Description"
+                          label="Deskrisaun"
                           value={deposit.description || "-"}
                         />
                       </div>
@@ -951,7 +951,7 @@ export default function Deposit() {
                         className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-white px-3 py-2 text-xs font-semibold text-blue-700 transition hover:bg-blue-50 cursor-pointer"
                       >
                         <Icon name="edit" />
-                        Edit
+                        Hadia
                       </button>
 
                       <button
@@ -961,7 +961,7 @@ export default function Deposit() {
                         className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-50 cursor-pointer"
                       >
                         <Icon name="trash" />
-                        Delete
+                        Hamoos
                       </button>
                     </div>
                   </article>
@@ -975,31 +975,31 @@ export default function Deposit() {
                 <thead className="bg-slate-800 text-xs uppercase tracking-wider text-slate-100">
                   <tr>
                     <th className="w-16 whitespace-nowrap px-4 py-4 text-center font-semibold">
-                      No.
+                      Nu.
                     </th>
 
                     <th className="whitespace-nowrap px-4 py-4 font-semibold">
-                      Date
+                      Data
                     </th>
 
                     <th className="min-w-52 px-4 py-4 font-semibold">
-                      Member Details
+                      Naran
                     </th>
 
                     <th className="whitespace-nowrap px-4 py-4 font-semibold">
-                      Transaction Type
+                      Tipu Depositu
                     </th>
 
                     <th className="whitespace-nowrap px-4 py-4 text-right font-semibold">
-                      Amount
+                      Montante
                     </th>
 
                     <th className="min-w-48 px-4 py-4 font-semibold">
-                      Description
+                      Deskrisaun
                     </th>
 
                     <th className="sticky right-0 z-10 whitespace-nowrap bg-slate-800 px-4 py-4 text-center font-semibold">
-                      Actions
+                      Aksaun
                     </th>
                   </tr>
                 </thead>
@@ -1076,7 +1076,7 @@ export default function Deposit() {
                         <td className="max-w-64 whitespace-normal break-words px-4 py-4 text-slate-600">
                           {deposit.description || (
                             <span className="text-slate-400">
-                              No description
+                              Deskrisaun la iha
                             </span>
                           )}
                         </td>
@@ -1086,7 +1086,7 @@ export default function Deposit() {
                             <button
                               type="button"
                               onClick={() => openEditForm(deposit)}
-                              title="Edit transaction"
+                              title="Hadia dadus"
                               aria-label={`Edit transaction ${deposit.id}`}
                               className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-blue-100 bg-white text-blue-700 transition hover:border-blue-300 hover:bg-blue-600 hover:text-white focus:outline-none focus:ring-4 focus:ring-blue-100 cursor-pointer"
                             >
@@ -1096,7 +1096,7 @@ export default function Deposit() {
                             <button
                               type="button"
                               onClick={() => confirmDelete(deposit)}
-                              title="Delete transaction"
+                              title="Hamoos dadus"
                               aria-label={`Delete transaction ${deposit.id}`}
                               className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-red-100 bg-white text-red-600 transition hover:border-red-300 hover:bg-red-600 hover:text-white focus:outline-none focus:ring-4 focus:ring-red-100 cursor-pointer"
                             >
@@ -1115,7 +1115,7 @@ export default function Deposit() {
                       colSpan={4}
                       className="px-4 py-4 text-right font-semibold text-slate-700"
                     >
-                      Net amount across all transactions
+                      Montante depositu husi transaksaun hotu-hotu
                     </td>
 
                     <td
@@ -1168,11 +1168,11 @@ export default function Deposit() {
               <div>
                 <h2 className="text-lg font-bold text-slate-900">
                   {editingDeposit
-                    ? "Edit Deposit Transaction"
-                    : "Add Deposit Transaction"}
+                    ? "Hadia dadus depositu"
+                    : "Aumenta dadus depositu"}
                 </h2>
                 <p className="mt-1 text-sm text-slate-500">
-                  Enter the member transaction details below.
+                  Hatama dadus detallu ba transaksaun membru nian iha kraik.
                 </p>
               </div>
 
@@ -1190,7 +1190,7 @@ export default function Deposit() {
             <form onSubmit={handleSubmit}>
               <div className="grid max-h-[65vh] grid-cols-1 gap-4 overflow-y-auto p-4 sm:grid-cols-2 sm:p-6">
                 <div className="sm:col-span-2">
-                  <FormField label="Member" required>
+                  <FormField label="Membru" required>
                     <select
                       required
                       value={form.member_number}
@@ -1202,8 +1202,8 @@ export default function Deposit() {
                     >
                       <option value="">
                         {loadingMembers
-                          ? "Loading members..."
-                          : "Select a member"}
+                          ? "Loading dadus membru..."
+                          : "Hili Membru"}
                       </option>
 
                       {members.map((member) => (
@@ -1218,13 +1218,13 @@ export default function Deposit() {
 
                     {!loadingMembers && members.length === 0 && (
                       <p className="mt-1 text-xs text-red-600">
-                        No members are available. Register a member first.
+                        Dadus membru nian la iha. Rejistu dadus membru.
                       </p>
                     )}
                   </FormField>
                 </div>
 
-                <FormField label="Transaction Type" required>
+                <FormField label="Tipu Depositu" required>
                   <select
                     required
                     value={form.deposit_type}
@@ -1236,14 +1236,14 @@ export default function Deposit() {
                     }
                     className={inputClass}
                   >
-                    <option value="Initial">Initial</option>
+                    <option value="Initial">Inisial</option>
                     <option value="Regular">Regular</option>
-                    <option value="Additional">Additional</option>
-                    <option value="Withdrawal">Withdrawal</option>
+                    <option value="Additional">Adisional</option>
+                    <option value="Withdrawal">Levantamentu</option>
                   </select>
                 </FormField>
 
-                <FormField label="Amount (USD)" required>
+                <FormField label="Montante (USD)" required>
                   <div className="relative">
                     <span className="absolute inset-y-0 left-3 flex items-center text-sm font-semibold text-slate-400">
                       $
@@ -1264,7 +1264,7 @@ export default function Deposit() {
                   </div>
                 </FormField>
 
-                <FormField label="Transaction Date" required>
+                <FormField label="Data depositu" required>
                   <input
                     required
                     type="date"
@@ -1277,7 +1277,7 @@ export default function Deposit() {
                 </FormField>
 
                 <div className="sm:col-span-2">
-                  <FormField label="Description">
+                  <FormField label="Deskrisaun">
                     <textarea
                       rows={3}
                       maxLength={1000}
@@ -1285,7 +1285,7 @@ export default function Deposit() {
                       onChange={(event) =>
                         updateField("description", event.target.value)
                       }
-                      placeholder="Enter transaction details (optional)"
+                      placeholder="Hatama detallu husi transaksaun (opsional)"
                       className={inputClass}
                     />
                     <p className="mt-1 text-right text-xs text-slate-400">
@@ -1302,7 +1302,7 @@ export default function Deposit() {
                       </div>
                       <div>
                         <p className="text-sm font-semibold text-amber-900">
-                          Withdrawal transaction
+                          Transaksaun Levantamentu
                         </p>
                         <p className="mt-1 text-sm leading-5 text-amber-800">
                           This transaction will be treated as money withdrawn
@@ -1321,7 +1321,7 @@ export default function Deposit() {
                   disabled={saving}
                   className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:opacity-50 cursor-pointer"
                 >
-                  Cancel
+                  Kansela
                 </button>
 
                 <button
@@ -1331,10 +1331,10 @@ export default function Deposit() {
                 >
                   {saving && <Spinner />}
                   {saving
-                    ? "Saving..."
+                    ? "Rai..."
                     : editingDeposit
-                      ? "Update Transaction"
-                      : "Save Transaction"}
+                      ? "Atualiza dadus"
+                      : "Rai dadus"}
                 </button>
               </div>
             </form>
@@ -1372,8 +1372,8 @@ export default function Deposit() {
                   {modal === "success"
                     ? "Success"
                     : modal === "confirm"
-                      ? "Confirm Delete"
-                      : "Something Went Wrong"}
+                      ? "Konfirma hamoos?"
+                      : "Akontese Erru ruma. Koko fila-fali"}
                 </h3>
 
                 <p className="mt-2 whitespace-pre-line text-sm leading-6 text-slate-600">
@@ -1391,7 +1391,7 @@ export default function Deposit() {
                     disabled={deleting}
                     className="rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50 cursor-pointer"
                   >
-                    Cancel
+                    Kansela
                   </button>
 
                   <button
@@ -1401,7 +1401,7 @@ export default function Deposit() {
                     className="inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700 focus:outline-none focus:ring-4 focus:ring-red-200 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
                   >
                     {deleting && <Spinner />}
-                    {deleting ? "Deleting..." : "Delete Transaction"}
+                    {deleting ? "Hamoos..." : "Hamoos dadus"}
                   </button>
                 </>
               ) : (
