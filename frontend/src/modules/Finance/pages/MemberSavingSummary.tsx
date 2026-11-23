@@ -204,7 +204,6 @@ export default function MemberSavingsReport() {
     void fetchData();
   }, [fetchData]);
 
-  // Calculate savings using all recorded deposits and withdrawals.
   const memberSavings = useMemo<MemberSaving[]>(() => {
     const balances = new Map<string, number>();
 
@@ -236,7 +235,6 @@ export default function MemberSavingsReport() {
       );
   }, [members, deposits]);
 
-  // Apply search and membership-status filters to the member list.
   const filteredMembers = useMemo(() => {
     const keyword = search.trim().toLowerCase();
 
@@ -255,7 +253,6 @@ export default function MemberSavingsReport() {
     });
   }, [memberSavings, search, statusFilter]);
 
-  // Summary cards always include every member, regardless of filters.
   const totalSavings = useMemo(
     () => memberSavings.reduce((total, member) => total + member.savings, 0),
     [memberSavings],
@@ -269,14 +266,6 @@ export default function MemberSavingsReport() {
       ),
     [memberSavings],
   );
-
-  // const activeMembers = useMemo(
-  //   () => memberSavings.filter((member) => !isInactive(member)).length,
-  //   [memberSavings],
-  // );
-
-  // const inactiveMembers = members.length - activeMembers;
-
   const clearFilters = () => {
     setSearch("");
     setStatusFilter("All");
@@ -293,19 +282,14 @@ export default function MemberSavingsReport() {
           <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-gray-500">
             <span>Finance</span>
             <span>/</span>
-            <span>Reports</span>
+            <span>Relatoriu</span>
             <span>/</span>
-            <span className="text-blue-700">Member Savings</span>
+            <span className="text-blue-700">Membru Savings</span>
           </div>
 
           <h1 className="mt-2 text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">
-            Member Savings 
+            Membru Saving 
           </h1>
-
-          {/* <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-500">
-            View each C-HTM member&apos;s accumulated savings across all
-            recorded deposit and withdrawal transactions.
-          </p> */}
         </div>
 
         <div className="flex flex-col gap-2 sm:flex-row print:hidden">
@@ -384,7 +368,7 @@ export default function MemberSavingsReport() {
                 d="M6 14h12v7H6z"
               />
             </svg>
-            Print Report
+            Print Relatoriu
           </button>
         </div>
       </header>
@@ -415,7 +399,7 @@ export default function MemberSavingsReport() {
 
             <div>
               <p className="font-semibold text-red-800">
-                Could not load the report
+                Labele karrega relatoriu
               </p>
               <p className="mt-1 text-sm leading-5 text-red-700">{error}</p>
             </div>
@@ -427,7 +411,7 @@ export default function MemberSavingsReport() {
             disabled={loading}
             className="shrink-0 rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-semibold text-red-700 transition hover:bg-red-100 disabled:opacity-50"
           >
-            Try again
+            Koko fila-fali.
           </button>
         </div>
       )}
@@ -440,13 +424,13 @@ export default function MemberSavingsReport() {
           </h2> */}
 
           <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700 ring-1 ring-inset ring-blue-100">
-            {members.length} members
+            {members.length} membru
           </span>
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
           <SummaryCard
-            title="Net Savings of All Members"
+            title="Total saving husi membru sira"
             value={formatMoney(totalSavings)}
             description=""
             color={totalSavings < 0 ? "purple" : "blue"}
@@ -469,7 +453,7 @@ export default function MemberSavingsReport() {
           />
 
           <SummaryCard
-            title="Total Members"
+            title="Total Membru"
             value={members.length.toLocaleString("en-US")}
             description=""
             color="purple"
@@ -492,7 +476,7 @@ export default function MemberSavingsReport() {
           />
 
           <SummaryCard
-            title="Positive Member Balances"
+            title="Balansu positivu "
             value={formatMoney(totalPositiveSavings)}
             description=""
             color="green"
@@ -539,13 +523,12 @@ export default function MemberSavingsReport() {
 
         <div>
           <p className="text-sm font-semibold text-blue-900">
-            About this report
+            Kona-ba relatoriu
           </p>
           <p className="mt-1 text-xs leading-5 text-blue-800">
-            Each balance is calculated from the member&apos;s recorded
-            transactions. Withdrawals are subtracted from savings. The summary
-            totals include all members and do not change when you search or
-            filter the list.
+            Saldo ida-idak kalkula bazeia ba transaksaun ne'ebé rejista ba membru. 
+            Levantamentu osan hasai husi total saving. 
+            Total rezumu inklui membru hotu-hotu no la muda bainhira ita buka ka filtra lista.
           </p>
         </div>
       </div>
@@ -556,7 +539,7 @@ export default function MemberSavingsReport() {
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="text-lg font-bold text-gray-900">
-                  Member Savings
+                  Membru Savings
                 </h2>
 
                 {/* {!loading && !error && (
@@ -595,7 +578,7 @@ export default function MemberSavingsReport() {
                   type="search"
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
-                  placeholder="Search member number or name..."
+                  placeholder="Search numeru membru ka naran.."
                   aria-label="Search members"
                   className={`${inputClass} pl-10`}
                 />
@@ -609,9 +592,9 @@ export default function MemberSavingsReport() {
                 aria-label="Filter by membership status"
                 className={`${inputClass} sm:w-40`}
               >
-                <option value="All">All statuses</option>
-                <option value="Active">Active</option>
-                <option value="Inactive">Inactive</option>
+                <option value="All">Hili Status</option>
+                <option value="Active">Aktiva</option>
+                <option value="Inactive">La Aktiva</option>
               </select>
 
               <button
@@ -620,7 +603,7 @@ export default function MemberSavingsReport() {
                 disabled={!search && statusFilter === "All"}
                 className="rounded-xl border border-gray-200 px-4 py-3 text-sm font-semibold text-gray-600 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
               >
-                Clear
+                Fila ba inisiu
               </button>
             </div>
           </div>
@@ -630,15 +613,15 @@ export default function MemberSavingsReport() {
           <div className="flex flex-col items-center justify-center gap-3 p-14 text-center">
             <div className="h-9 w-9 animate-spin rounded-full border-4 border-blue-100 border-t-blue-700" />
             <p className="text-sm font-medium text-gray-700">
-              Loading member savings...
+              Loading membru saving...
             </p>
             <p className="text-xs text-gray-400">
-              Please wait while we calculate the balances.
+              Favor hein, sei halo kalkulasaun ba balansu sira.
             </p>
           </div>
         ) : error ? (
           <div className="p-10 text-center text-sm text-gray-500">
-            The savings table will appear after the data loads successfully.
+            Tabela saving sei mosu depois de dadus sira karrega ho susesu.            
           </div>
         ) : filteredMembers.length === 0 ? (
           <div className="flex flex-col items-center px-6 py-14 text-center">
@@ -662,14 +645,14 @@ export default function MemberSavingsReport() {
 
             <h3 className="mt-4 font-bold text-gray-900">
               {members.length === 0
-                ? "No members found"
-                : "No matching members"}
+                ? "La hetan membru ida."
+                : "La iha membru ne'ebé koresponde."}
             </h3>
 
             <p className="mt-2 max-w-sm text-sm leading-6 text-gray-500">
               {members.length === 0
-                ? "Member records will appear here once they have been added."
-                : "Try searching with a different name or member number, or clear your filters."}
+                ? "Rejistu membru sira sei mosu iha-ne'e bainhira aumenta ona."
+                : "Koko buka ho naran ka númeru membru seluk, ka hamoos filtru sira."}
             </p>
 
             {(search || statusFilter !== "All") && (
@@ -678,7 +661,7 @@ export default function MemberSavingsReport() {
                 onClick={clearFilters}
                 className="mt-4 rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
               >
-                Clear filters
+                Hamoos filtru
               </button>
             )}
           </div>
@@ -699,7 +682,7 @@ export default function MemberSavingsReport() {
                         {member.full_name}
                       </p>
                       <p className="mt-1 text-xs text-gray-500">
-                        Member No. {member.member_number}
+                        Numeru Membru. {member.member_number}
                       </p>
                     </div>
 
@@ -714,7 +697,7 @@ export default function MemberSavingsReport() {
 
                     <div className="text-right">
                       <p className="mb-1 text-xs text-gray-500">
-                        Total Savings
+                        Total Saving
                       </p>
                       <SavingsAmount amount={member.savings} />
                     </div>
@@ -728,12 +711,12 @@ export default function MemberSavingsReport() {
               <table className="w-full min-w-[720px] text-left text-sm">
                 <thead className="bg-slate-800 text-xs uppercase tracking-wide text-gray-100">
                   <tr>
-                    <th className="px-5 py-4 font-semibold">No.</th>
-                    <th className="px-5 py-4 font-semibold">Member Number</th>
-                    <th className="px-5 py-4 font-semibold">Member Name</th>
+                    <th className="px-5 py-4 font-semibold">Nu.</th>
+                    <th className="px-5 py-4 font-semibold">Numeru Membru</th>
+                    <th className="px-5 py-4 font-semibold">Naran</th>
                     <th className="px-5 py-4 font-semibold">Status</th>
                     <th className="px-5 py-4 text-right font-semibold">
-                      Total Savings
+                      Total Saving
                     </th>
                   </tr>
                 </thead>
@@ -771,7 +754,7 @@ export default function MemberSavingsReport() {
                       colSpan={4}
                       className="px-5 py-4 text-right font-semibold text-gray-700"
                     >
-                      Net Savings of All Members
+                      Total Saving husi membru hotu-hotu
                     </td>
 
                     <td className="whitespace-nowrap px-5 py-4 text-right">
@@ -785,7 +768,7 @@ export default function MemberSavingsReport() {
             {/* Totals on mobile */}
             <div className="border-t border-gray-100 bg-gray-50 p-4 md:hidden">
               <p className="text-xs font-medium text-gray-500">
-                Net Savings of All Members
+                Total Saving husi membru hotu-hotu
               </p>
               <p
                 className={`mt-1 text-xl font-bold ${
@@ -795,7 +778,8 @@ export default function MemberSavingsReport() {
                 {formatMoney(totalSavings)}
               </p>
               <p className="mt-1 text-xs leading-5 text-gray-500">
-                This total includes all members, not just the filtered results.
+                Total ida-ne'e inklui membru hotu-hotu, 
+                la'ós de'it membru sira ne'ebé mosu depois aplika filtru.
               </p>
             </div>
           </>
@@ -804,9 +788,9 @@ export default function MemberSavingsReport() {
         {!loading && !error && filteredMembers.length > 0 && (
           <div className="flex flex-col gap-1 border-t border-gray-100 bg-gray-50/70 px-5 py-3 text-xs text-gray-500 sm:flex-row sm:items-center sm:justify-between">
             <span>
-              Showing {filteredMembers.length} of {members.length} members
+              Showing {filteredMembers.length} of {members.length} membru
             </span>
-            <span>Balances include all recorded transaction dates</span>
+            <span>Saldo sira inklui data transasaun hotu-hotu ne'ebé rejista ona.</span>
           </div>
         )}
       </section>
