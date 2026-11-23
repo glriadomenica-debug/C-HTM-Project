@@ -426,7 +426,7 @@ export default function LoanReport() {
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Loan Report</h1>
             <p className="mt-1 text-sm text-gray-500">
-              Report in {reportPeriod}
+            Relatoriu iha {reportPeriod}
             </p>
           </div>
 
@@ -455,7 +455,7 @@ export default function LoanReport() {
               disabled={loading || filteredLoans.length === 0}
               className="cursor-pointer rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
             >
-              Print Report
+              Print Relatoriu
             </button>
           </div>
         </div>
@@ -463,10 +463,10 @@ export default function LoanReport() {
         {/* Print Heading */}
         <div className="hidden print:block">
           <h1 className="text-2xl font-bold text-gray-900">
-            C-HTM Loan Report
+            C-HTM Relatoriu Emprestimu
           </h1>
           <p className="mt-1 text-sm text-gray-600">
-            Reporting period: {reportPeriod}
+            Peridu Relatoriu: {reportPeriod}
           </p>
         </div>
 
@@ -510,17 +510,17 @@ export default function LoanReport() {
         {/* Filters */}
         <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm print:hidden">
           <div className="mb-3">
-            <h2 className="font-semibold text-gray-800">Filter Report</h2>
-            <p className="mt-1 text-xs text-gray-500">
+            <h2 className="font-semibold text-gray-800">Filtru relatoriu</h2>
+            {/* <p className="mt-1 text-xs text-gray-500">
               Filter by loan date, borrower type and payment status.
-            </p>
+            </p> */}
           </div>
 
           <div className="flex flex-col gap-3 md:flex-row md:flex-wrap">
             <input
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search borrower, number, or loan ID..."
+              placeholder="Search ema nebe empresta, numeru..."
               className="min-w-0 flex-1 rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
             />
 
@@ -558,9 +558,9 @@ export default function LoanReport() {
               onChange={(event) => setOwner(event.target.value)}
               className="rounded-lg cursor-pointer border border-gray-300 bg-white px-3 py-2.5 text-sm"
             >
-              <option value="all">All Borrowers</option>
-              <option value="member">Members</option>
-              <option value="nonmember">Non-Members</option>
+              <option value="all">Ema</option>
+              <option value="member">Membru</option>
+              <option value="nonmember">Non-Membru</option>
             </select>
 
             <select
@@ -569,10 +569,10 @@ export default function LoanReport() {
               onChange={(event) => setStatus(event.target.value)}
               className="rounded-lg cursor-pointer border border-gray-300 bg-white px-3 py-2.5 text-sm"
             >
-              <option value="all">All Loan Statuses</option>
-              <option value="paid">Fully Paid</option>
-              <option value="partial">Partially Paid</option>
-              <option value="unpaid">Unpaid</option>
+              <option value="all">Status hotu-hotu</option>
+              <option value="paid">Selu kompletu</option>
+              <option value="partial">Selu sorin</option>
+              <option value="unpaid">Seidauk selu</option>
             </select>
 
             <button
@@ -580,7 +580,7 @@ export default function LoanReport() {
               onClick={resetFilters}
               className="cursor-pointer rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
             >
-              Reset Filters
+              Fila ba inisiu
             </button>
           </div>
         </div>
@@ -589,7 +589,7 @@ export default function LoanReport() {
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
           {loading ? (
             <div className="py-16 text-center text-sm text-gray-500">
-              Loading loan report...
+              Loading relatoriu emprestimu...
             </div>
           ) : error ? (
             <div className="p-6 text-sm text-rose-700">
@@ -599,23 +599,23 @@ export default function LoanReport() {
                 onClick={() => void fetchLoans()}
                 className="mt-3 rounded-lg bg-rose-600 px-4 py-2 text-white hover:bg-rose-700"
               >
-                Try Again
+                Koko fila-fali!
               </button>
             </div>
           ) : filteredLoans.length === 0 ? (
             <div className="p-12 text-center">
               <h3 className="font-semibold text-gray-800">
-                No Loan Records Found
+                Dadus Emprestimu la iha.
               </h3>
               <p className="mt-2 text-sm text-gray-500">
-                No loans match {reportPeriod} and your current filters.
+                La hetan dadus emprestimu ba {reportPeriod} ne'ebe hanesan ho filtru atual.
               </p>
               <button
                 type="button"
                 onClick={resetFilters}
                 className="mt-4 rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 print:hidden"
               >
-                Reset Filters
+                Fila ba inisiu
               </button>
             </div>
           ) : (
@@ -625,14 +625,14 @@ export default function LoanReport() {
                   <tr className="bg-slate-800 text-xs uppercase tracking-wide text-white">
                     {[
                       "",
-                      "No.",
-                      "Loan Date",
-                      "Borrower",
-                      "Loan Amount",
-                      "Interest",
-                      "Total Amount (inc. interest)",
-                      "Total Paid",
-                      "Outstanding",
+                      "Nu.",
+                      "Data Empresta",
+                      "Naran",
+                      "Montante Empresta",
+                      "Funan",
+                      "Total Empresta (inc. interest)",
+                      "Total selu ona",
+                      "Montante seidauk selu",
                       "Status",
                     ].map((heading, index) => (
                       <th
@@ -749,34 +749,32 @@ export default function LoanReport() {
                               <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
                                 <div className="border-b border-slate-200 px-4 py-3">
                                   <h3 className="font-semibold text-slate-800">
-                                    Payment History — {name}
+                                   Istoria Pagamentu — {name}
                                   </h3>
                                   <p className="mt-1 text-xs text-slate-500">
-                                    {payments.length} payment transaction
-                                    {payments.length === 1 ? "" : "s"}
+                                    {payments.length} Transaksaun pagamentu
                                   </p>
                                 </div>
 
                                 {payments.length === 0 ? (
                                   <p className="p-5 text-sm text-gray-500">
-                                    No payments have been recorded for this
-                                    loan.
+                                    Seidauk iha dadus pagamentu ba empréstimu ida-ne’e.
                                   </p>
                                 ) : (
                                   <div className="overflow-x-auto">
                                     <table className="w-full min-w-[650px] text-left">
                                       <thead>
                                         <tr className="bg-slate-100 text-xs uppercase text-slate-600">
-                                          <th className="px-4 py-3">No.</th>
+                                          <th className="px-4 py-3">Nu.</th>
                                           <th className="px-4 py-3">
-                                            Payment Date
+                                            Data pagamentu
                                           </th>
-                                          <th className="px-4 py-3">Method</th>
+                                          <th className="px-4 py-3">Metodu pagamentu</th>
                                           <th className="px-4 py-3 text-right">
-                                            Amount
+                                            Montante
                                           </th>
                                           <th className="px-4 py-3">
-                                            Description
+                                            Deskrisaun
                                           </th>
                                         </tr>
                                       </thead>
