@@ -23,18 +23,18 @@ interface Member {
 type TransactionFilter = "all" | "deposit" | "withdrawal";
 
 const MONTHS = [
-  { value: "01", label: "January" },
-  { value: "02", label: "February" },
-  { value: "03", label: "March" },
-  { value: "04", label: "April" },
-  { value: "05", label: "May" },
-  { value: "06", label: "June" },
-  { value: "07", label: "July" },
-  { value: "08", label: "August" },
-  { value: "09", label: "September" },
-  { value: "10", label: "October" },
-  { value: "11", label: "November" },
-  { value: "12", label: "December" },
+  { value: "01", label: "Janeiro" },
+  { value: "02", label: "Fevereiro" },
+  { value: "03", label: "Marsu" },
+  { value: "04", label: "Abril" },
+  { value: "05", label: "Maiu" },
+  { value: "06", label: "Junu" },
+  { value: "07", label: "Julu" },
+  { value: "08", label: "Agostu" },
+  { value: "09", label: "Setembru" },
+  { value: "10", label: "Outobru" },
+  { value: "11", label: "Novembru" },
+  { value: "12", label: "Dezembru" },
 ];
 
 const formatMoney = (amount: number) =>
@@ -193,7 +193,7 @@ export default function DepositReport() {
       setError(
         errorResponse?.response?.data?.message ||
           errorResponse?.message ||
-          "We couldn't load the deposit report. Please try again.",
+          "Labele karrega relatoriu depositu nian. Favor koko fila-fali",
       );
     } finally {
       setLoading(false);
@@ -311,10 +311,10 @@ export default function DepositReport() {
 
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-700">
-              Reports / Deposits
+              Relatoriu / Depositu
             </p>
             <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
-              Monthly Deposit Report
+              Relatoriu Depositu Mensal
             </h1>
         
           </div>
@@ -337,7 +337,7 @@ export default function DepositReport() {
             className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition cursor-pointer hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Icon name="print" />
-            Print Report
+            Print Relatoriu
           </button>
         </div>
       </header>
@@ -349,7 +349,7 @@ export default function DepositReport() {
           className="flex flex-col gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 sm:flex-row sm:items-center sm:justify-between print:hidden"
         >
           <div>
-            <p className="font-semibold text-red-800">Unable to load report</p>
+            <p className="font-semibold text-red-800">Labele karega relatoriu</p>
             <p className="mt-1 text-sm text-red-700">{error}</p>
           </div>
 
@@ -359,7 +359,7 @@ export default function DepositReport() {
             disabled={loading}
             className="rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-semibold text-red-700 transition hover:bg-red-100 disabled:opacity-50"
           >
-            Try again
+            Koko fila-fali
           </button>
         </div>
       )}
@@ -372,9 +372,9 @@ export default function DepositReport() {
           </div>
 
           <div>
-            <h2 className="font-semibold text-slate-900">Report period</h2>
+            <h2 className="font-semibold text-slate-900">Periodu Relatoriu</h2>
             <p className="mt-1 text-sm text-slate-500">
-              Select the month and year you want to review.
+              Hili fulan no tinan ne'ebe ita hakarak atu halo relatoriu.
             </p>
           </div>
         </div>
@@ -385,7 +385,7 @@ export default function DepositReport() {
               htmlFor="report-month"
               className="mb-1.5 block text-sm font-semibold text-slate-700"
             >
-              Month
+              Fulan
             </label>
             <select
               id="report-month"
@@ -406,7 +406,7 @@ export default function DepositReport() {
               htmlFor="report-year"
               className="mb-1.5 block text-sm font-semibold text-slate-700"
             >
-              Year
+              Tinan
             </label>
             <select
               id="report-year"
@@ -431,7 +431,7 @@ export default function DepositReport() {
             }}
             className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-semibold text-slate-700 cursor-pointer transition hover:bg-slate-100 focus:outline-none focus:ring-4 focus:ring-slate-100"
           >
-            Reset filters
+            Fila ba inisiu
           </button>
         </div>
       </section>
@@ -440,31 +440,31 @@ export default function DepositReport() {
       <section>
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-base font-bold text-slate-900 sm:text-lg">
-            {monthLabel} {selectedYear} Summary
+            Sumariu {monthLabel} {selectedYear} 
           </h2>
 
           <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700 ring-1 ring-inset ring-blue-100">
-            {summary.depositCount + summary.withdrawalCount} transactions
+            {summary.depositCount + summary.withdrawalCount} transaksaun
           </span>
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
           <SummaryCard
-            title="Total Deposits"
+            title="Total Depositu"
             amount={formatMoney(summary.deposits)}
             color="green"
             icon="plus"
           />
 
           <SummaryCard
-            title="Total Withdrawals"
+            title="Total Levantamentu"
             amount={formatMoney(summary.withdrawals)}
             color="red"
             icon="minus"
           />
 
           <SummaryCard
-            title="Monthly Net Amount"
+            title="Montante Likidu Mensal"
             amount={formatMoney(netAmount)}
             color={netAmount < 0 ? "red" : "blue"}
             icon="wallet"
@@ -478,7 +478,7 @@ export default function DepositReport() {
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-lg font-bold tracking-tight text-slate-900">
-                Transaction Details
+                Transaksaun Depositu
               </h2>
               <p className="mt-1 text-sm text-slate-500">
                 {monthLabel} {selectedYear}
@@ -493,7 +493,7 @@ export default function DepositReport() {
           <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1fr)_220px_auto]">
             <div className="relative">
               <label htmlFor="deposit-search" className="sr-only">
-                Search transactions
+                Search transaksaun
               </label>
               <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
                 <Icon name="search" />
@@ -503,14 +503,14 @@ export default function DepositReport() {
                 type="search"
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
-                placeholder="Search member, number, description..."
+                placeholder="Search membru, numeru, deskrisaun..."
                 className="w-full rounded-xl border border-slate-300 bg-slate-50 py-2.5 pl-10 pr-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-100"
               />
             </div>
 
             <div>
               <label htmlFor="transaction-type" className="sr-only">
-                Transaction type
+                Tipu transaksaun
               </label>
               <select
                 id="transaction-type"
@@ -520,9 +520,9 @@ export default function DepositReport() {
                 }
                 className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition cursor-pointer focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
               >
-                <option value="all">All transaction types</option>
-                <option value="deposit">Deposits only</option>
-                <option value="withdrawal">Withdrawals only</option>
+                <option value="all">Hili tipu transaksaun</option>
+                <option value="deposit">Depositu</option>
+                <option value="withdrawal">Levantamentu</option>
               </select>
             </div>
 
@@ -532,7 +532,7 @@ export default function DepositReport() {
               disabled={!hasActiveFilters}
               className="rounded-xl border border-slate-200 cursor-pointer bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
             >
-              Clear search
+              Fila ba inisiu
             </button>
           </div>
         </div>
@@ -540,14 +540,14 @@ export default function DepositReport() {
         {/* Print heading */}
         <div className="hidden px-5 py-4 print:block">
           <h1 className="text-xl font-bold text-slate-900">
-            C-HTM Monthly Deposit Report
+            C-HTM Relatoriu Depositu Mensal
           </h1>
           <p className="mt-1 text-sm text-slate-600">
-            Report period: {monthLabel} {selectedYear}
+            Periodu relatoriu: {monthLabel} {selectedYear}
           </p>
           <p className="mt-1 text-sm text-slate-600">
-            Total deposits: {formatMoney(summary.deposits)} · Total withdrawals:{" "}
-            {formatMoney(summary.withdrawals)} · Net amount:{" "}
+            Total depositu: {formatMoney(summary.deposits)} · Total levantamentu:{" "}
+            {formatMoney(summary.withdrawals)} · Total Montante:{" "}
             {formatMoney(netAmount)}
           </p>
         </div>
@@ -556,17 +556,16 @@ export default function DepositReport() {
           <div className="flex flex-col items-center justify-center px-4 py-16 text-center">
             <span className="h-9 w-9 animate-spin rounded-full border-4 border-blue-100 border-t-blue-600" />
             <p className="mt-3 text-sm font-semibold text-slate-700">
-              Loading transactions...
+              Loading dadus depositu...
             </p>
             <p className="mt-1 text-sm text-slate-500">
-              Please wait while we prepare your report.
+              Favor hein oituan, sei generaliza ita-nia relatoriu.
             </p>
           </div>
         ) : error ? (
           <div className="px-4 py-10 text-center">
             <p className="text-sm text-slate-500">
-              Transactions cannot be displayed until the report loads
-              successfully.
+              Labele hatudu transaksaun sira to'o relatóriu karrega ho susesu.
             </p>
           </div>
         ) : filteredDeposits.length === 0 ? (
@@ -576,21 +575,22 @@ export default function DepositReport() {
             </div>
             <h3 className="mt-4 font-semibold text-slate-900">
               {monthlyDeposits.length === 0
-                ? "No transactions for this month"
-                : "No matching transactions"}
+                ? "La iha dadus depositu ba fulan ne'e"
+                : "La iha dadus ne'ebe korresponde"}
             </h3>
             <p className="mx-auto mt-1 max-w-md text-sm leading-6 text-slate-500">
               {monthlyDeposits.length === 0
-                ? `There are no deposit or withdrawal records for ${monthLabel} ${selectedYear}. Try selecting another month or year.`
-                : "Try another search term or clear your transaction filters."}
+                ? `La iha dadus depositu ka levantamentu ba ${monthLabel} ${selectedYear}. Koko fila fulan ka tinan seluk.`
+                : "Koko termu peskiza seluk ka hamoos filtru transasaun sira."}
             </p>
+
             {hasActiveFilters && (
               <button
                 type="button"
                 onClick={clearFilters}
                 className="mt-4 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 cursor-pointer"
               >
-                Clear search and filters
+                Hamoos filtru
               </button>
             )}
           </div>
@@ -646,20 +646,20 @@ export default function DepositReport() {
 
                     <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 rounded-xl bg-slate-50 p-3">
                       <MobileField
-                        label="Transaction date"
+                        label="Data Depositu"
                         value={formatDate(deposit.deposit_date)}
                       />
                       <MobileField
-                        label="Transaction type"
+                        label="Tipu Transaksaun"
                         value={deposit.deposit_type || "Deposit"}
                       />
                       <MobileField
-                        label="Amount"
+                        label="Montante"
                         value={formatMoney(getAmount(deposit))}
                         color={withdrawal ? "red" : "green"}
                       />
                       <MobileField
-                        label="Description"
+                        label="Deskrisaun"
                         value={deposit.description || "-"}
                       />
                     </div>
@@ -673,25 +673,25 @@ export default function DepositReport() {
                 <thead className="bg-slate-800 text-xs uppercase tracking-wider text-slate-100">
                   <tr>
                     <th className="w-16 whitespace-nowrap px-4 py-4 text-center font-semibold">
-                      No.
+                      Nu.
                     </th>
                     <th className="whitespace-nowrap px-4 py-4 font-semibold">
-                      Date
+                      Data 
                     </th>
                     <th className="whitespace-nowrap px-4 py-4 font-semibold">
-                      Member Number
+                      Numeru Membru
                     </th>
                     <th className="min-w-48 px-4 py-4 font-semibold">
-                      Member Name
+                      Naran
                     </th>
                     <th className="whitespace-nowrap px-4 py-4 font-semibold">
-                      Type
+                      Tipu depositu
                     </th>
                     <th className="whitespace-nowrap px-4 py-4 text-right font-semibold">
-                      Amount
+                      Montante
                     </th>
                     <th className="min-w-48 px-4 py-4 font-semibold">
-                      Description
+                      Deskrisaun
                     </th>
                   </tr>
                 </thead>
