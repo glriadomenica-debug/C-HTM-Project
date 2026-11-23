@@ -1,20 +1,19 @@
 <?php
 
-namespace App\Models;
+// namespace App\Models;
+// use Illuminate\Database\Eloquent\Model;
+// use Illuminate\Database\Eloquent\Relations\HasMany;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+// class RoleModel extends Model
+// {
+//     protected $table = 'roles';
 
-class RoleModel extends Model
-{
-    protected $table = 'roles';
+//     protected $fillable = [
+//         'role_name',
+//     ];
 
-    protected $fillable = [
-        'role_name',
-    ];
-
-    public function users(): HasMany
-    {
-        return $this->hasMany(User::class, 'role_id');
-    }
-}
+//     public function users(): HasMany
+//     {
+//         return $this->hasMany(User::class, 'role_id');
+//     }
+// }
