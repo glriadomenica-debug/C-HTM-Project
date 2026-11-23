@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Helpers\ApiMessage;
 use App\Http\Controllers\Controller;
-use App\Models\Role;
+use App\Models\RoleModel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -14,7 +14,7 @@ class RoleController extends Controller
     public function index()
     {
         try {
-            $roles = Role::withCount('users')->get();
+            $roles = RoleModel::withCount('users')->get();
 
             return ApiMessage::success(
                 'Roles retrieved successfully',
@@ -45,7 +45,7 @@ class RoleController extends Controller
         }
 
         try {
-            $role = Role::create([
+            $role = RoleModel::create([
                 'role_name' => trim($request->role_name),
             ]);
 
@@ -62,7 +62,7 @@ class RoleController extends Controller
     public function show(string $id)
     {
         try {
-            $role = Role::withCount('users')->find($id);
+            $role = RoleModel::withCount('users')->find($id);
 
             if (!$role) {
                 return ApiMessage::error('Role not found', 404);
@@ -81,7 +81,7 @@ class RoleController extends Controller
     public function update(Request $request, string $id)
     {
         try {
-            $role = Role::find($id);
+            $role = RoleModel::find($id);
 
             if (!$role) {
                 return ApiMessage::error('Role not found', 404);
@@ -127,7 +127,7 @@ class RoleController extends Controller
     public function destroy(string $id)
     {
         try {
-            $role = Role::find($id);
+            $role = RoleModel::find($id);
 
             if (!$role) {
                 return ApiMessage::error('Role not found', 404);
