@@ -197,18 +197,18 @@ const getErrorMessage = (error: unknown) => {
 const currentYear = String(new Date().getFullYear());
 
 const monthOptions = [
-  { value: "01", label: "January" },
-  { value: "02", label: "February" },
-  { value: "03", label: "March" },
-  { value: "04", label: "April" },
-  { value: "05", label: "May" },
-  { value: "06", label: "June" },
-  { value: "07", label: "July" },
-  { value: "08", label: "August" },
-  { value: "09", label: "September" },
-  { value: "10", label: "October" },
-  { value: "11", label: "November" },
-  { value: "12", label: "December" },
+  { value: "01", label: "Janeiro" },
+  { value: "02", label: "Fevereiro" },
+  { value: "03", label: "Marsu" },
+  { value: "04", label: "Abril" },
+  { value: "05", label: "Maiu" },
+  { value: "06", label: "Junu" },
+  { value: "07", label: "Julu" },
+  { value: "08", label: "Agostu" },
+  { value: "09", label: "Setembru" },
+  { value: "10", label: "Outobru" },
+  { value: "11", label: "Novembru" },
+  { value: "12", label: "Dezembru" },
 ];
 
 export default function LoanPayReport() {
@@ -530,7 +530,7 @@ export default function LoanPayReport() {
           </p>
 
           <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
-            Loan Payment Report
+            Relatoriu Pagamentu
           </h1>
         </div>
 
@@ -581,7 +581,7 @@ export default function LoanPayReport() {
               onClick={() => void fetchReport()}
               className="mt-2 font-semibold underline"
             >
-              Try again
+              Koko fila-fali
             </button>
           </div>
         </div>
@@ -596,7 +596,7 @@ export default function LoanPayReport() {
       {/* Payment-focused summary cards */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <SummaryCard
-          title="Payment Transactions"
+          title="Transaksaun pagamentu"
           value={String(summary.transactionCount)}
           subtitle=""
           icon={<ReceiptText size={21} />}
@@ -604,7 +604,7 @@ export default function LoanPayReport() {
         />
 
         <SummaryCard
-          title="Total Collected"
+          title="Total Pagamentu"
           value={formatCurrency(summary.totalCollected)}
           subtitle=""
           icon={<Wallet size={21} />}
@@ -612,7 +612,7 @@ export default function LoanPayReport() {
         />
 
         <SummaryCard
-          title="Cash Payments"
+          title="Pagamentu Kas"
           value={formatCurrency(summary.cash)}
           subtitle=""
           icon={<CreditCard size={21} />}
@@ -620,7 +620,7 @@ export default function LoanPayReport() {
         />
 
         <SummaryCard
-          title="Bank Transfers"
+          title="Pagamentu husi Bank"
           value={formatCurrency(summary.bankTransfer)}
           subtitle=""
           icon={<Landmark size={21} />}
@@ -633,7 +633,7 @@ export default function LoanPayReport() {
         <div className="border-b border-slate-100 p-4 sm:p-5 print:hidden">
           <div className="flex flex-col gap-1">
             <h2 className="text-base font-bold text-slate-900">
-              Payment Transaction Records
+              Lista Pagamentu
             </h2>
           </div>
 
@@ -643,7 +643,7 @@ export default function LoanPayReport() {
                 htmlFor="payment-report-search"
                 className="mb-1.5 block text-xs font-semibold text-slate-600"
               >
-                Search transactions
+                Search 
               </label>
               <div className="relative">
                 <Search
@@ -655,7 +655,7 @@ export default function LoanPayReport() {
                   type="search"
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
-                  placeholder="Borrower, payment ID, loan ID..."
+                  placeholder=""
                   className={`${inputClass} pl-9`}
                 />
               </div>
@@ -666,7 +666,7 @@ export default function LoanPayReport() {
                 htmlFor="payment-report-month"
                 className="mb-1.5 block text-xs font-semibold text-slate-600"
               >
-                Payment month
+               Fulan Pagamentu
               </label>
               <select
                 id="payment-report-month"
@@ -675,7 +675,7 @@ export default function LoanPayReport() {
                 className={inputClass}
 
               >
-                <option value="All">All months</option>
+                <option value="All">Hili-Fulan</option>
                 {monthOptions.map((month) => (
                   <option key={month.value} value={month.value}>
                     {month.label}
@@ -689,7 +689,7 @@ export default function LoanPayReport() {
                 htmlFor="payment-report-year"
                 className="mb-1.5 block text-xs font-semibold text-slate-600"
               >
-                Payment year
+                Tinan Pagamentu
               </label>
               <select
                 id="payment-report-year"
@@ -697,7 +697,7 @@ export default function LoanPayReport() {
                 onChange={(event) => setSelectedYear(event.target.value)}
                 className={inputClass}
               >
-                <option value="All">All years</option>
+                <option value="All">Hili Tinan</option>
                 {availableYears.map((year) => (
                   <option key={year} value={year}>
                     {year}
@@ -711,7 +711,7 @@ export default function LoanPayReport() {
                 htmlFor="payment-report-method"
                 className="mb-1.5 block text-xs font-semibold text-slate-600"
               >
-                Method
+                Metodu Pagamentu
               </label>
               <select
                 id="payment-report-method"
@@ -719,9 +719,9 @@ export default function LoanPayReport() {
                 onChange={(event) => setMethodFilter(event.target.value)}
                 className={inputClass}
               >
-                <option value="All">All methods</option>
-                <option value="Cash">Cash</option>
-                <option value="Bank Transfer">Bank Transfer</option>
+                <option value="All">Hili Metodu Pagamentu</option>
+                <option value="Cash">Kas</option>
+                <option value="Bank Transfer">Transfer husi Bank</option>
               </select>
             </div>
 
@@ -730,7 +730,7 @@ export default function LoanPayReport() {
                 htmlFor="payment-report-borrower"
                 className="mb-1.5 block text-xs font-semibold text-slate-600"
               >
-                Borrower type
+                Tipu empresta
               </label>
               <select
                 id="payment-report-borrower"
@@ -738,9 +738,9 @@ export default function LoanPayReport() {
                 onChange={(event) => setBorrowerFilter(event.target.value)}
                 className={inputClass}
               >
-                <option value="All">All borrowers</option>
-                <option value="Member">Members</option>
-                <option value="Non-Member">Non-Members</option>
+                <option value="All">Hili</option>
+                <option value="Member">Membru</option>
+                <option value="Non-Member">Non-Membru</option>
               </select>
             </div>
 
@@ -749,7 +749,7 @@ export default function LoanPayReport() {
                 htmlFor="payment-report-status"
                 className="mb-1.5 block text-xs font-semibold text-slate-600"
               >
-                Status after payment
+                Status pagamentu
               </label>
               <select
                 id="payment-report-status"
@@ -757,9 +757,9 @@ export default function LoanPayReport() {
                 onChange={(event) => setStatusFilter(event.target.value)}
                 className={inputClass}
               >
-                <option value="All">All statuses</option>
-                <option value="Outstanding">Outstanding</option>
-                <option value="Fully Paid">Fully Paid</option>
+                <option value="All">Hili status</option>
+                <option value="Outstanding">Seidauk selu</option>
+                <option value="Fully Paid">Selu kompletu</option>
               </select>
             </div>
           </div>
@@ -771,7 +771,7 @@ export default function LoanPayReport() {
               onClick={resetFilters}
               className="text-xs font-semibold text-blue-700 hover:text-blue-900"
             >
-              Clear filters
+              Fila ba inisiu
             </button>
           </div>
         </div>
@@ -781,23 +781,22 @@ export default function LoanPayReport() {
           <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
             <RefreshCw size={28} className="animate-spin text-blue-600" />
             <p className="mt-3 text-sm font-medium text-slate-700">
-              Loading payment transactions...
+              Loading transaksaun pagamentu...
             </p>
           </div>
         ) : errorMessage ? (
           <div className="px-6 py-12 text-center text-sm text-slate-500">
-            Payment report is unavailable until payment records can be loaded.
-          </div>
+            Relatóriu pagamentu seidauk disponivel tanba sistema seidauk bele karrega rejistu pagamentu sira.          </div>
         ) : filteredRows.length === 0 ? (
           <div className="px-6 py-14 text-center">
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-500">
               <CalendarDays size={22} />
             </div>
             <h3 className="mt-3 font-semibold text-slate-900">
-              No payment transactions found
+              La iha dadus pagamentu.
             </h3>
             <p className="mt-1 text-sm text-slate-500">
-              Try a different payment month, year, or filter.
+              Koko fila-fali filtru seluk
             </p>
           </div>
         ) : (
@@ -818,7 +817,7 @@ export default function LoanPayReport() {
                         {row.borrowerType} · {row.borrowerNumber}
                       </p>
                       <p className="mt-1 text-xs text-slate-500">
-                        Payment #{row.payment.id} · Loan #{row.payment.loan_id}
+                        Pagamentu #{row.payment.id} · Emprestimu #{row.payment.loan_id}
                       </p>
                     </div>
 
@@ -836,7 +835,7 @@ export default function LoanPayReport() {
                   <div className="space-y-3 p-3">
                     <div className="flex items-center justify-between gap-3">
                       <span className="text-xs text-slate-500">
-                        Payment date
+                        Data Pagamentu
                       </span>
                       <span className="text-sm font-medium text-slate-800">
                         {formatDate(row.payment.payment_date)}
@@ -845,7 +844,7 @@ export default function LoanPayReport() {
 
                     <div className="flex items-center justify-between gap-3">
                       <span className="text-xs text-slate-500">
-                        Total loan incl. interest
+                        Total Emprestimu incl. funan
                       </span>
                       <span className="text-sm font-semibold text-slate-800">
                         {row.loan ? formatCurrency(row.loanTotal) : "-"}
@@ -854,7 +853,7 @@ export default function LoanPayReport() {
 
                     <div className="flex items-center justify-between gap-3 rounded-lg bg-emerald-50 px-3 py-2.5">
                       <span className="text-xs font-medium text-emerald-800">
-                        Payment Amount
+                        Montante Pagamentu
                       </span>
                       <span className="text-base font-bold text-emerald-700">
                         {formatCurrency(toNumber(row.payment.amount))}
@@ -864,7 +863,7 @@ export default function LoanPayReport() {
                     <div className="grid grid-cols-2 gap-3">
                       <div className="rounded-lg bg-slate-50 p-2.5">
                         <p className="text-[11px] text-slate-500">
-                          Total Paid
+                          Pagamentu ne'ebe simu ona
                         </p>
                         <p className="mt-1 break-words text-sm font-semibold text-slate-800">
                           {formatCurrency(row.cumulativePaid)}
@@ -873,7 +872,7 @@ export default function LoanPayReport() {
 
                       <div className="rounded-lg bg-amber-50 p-2.5">
                         <p className="text-[11px] text-amber-700">
-                          Balance after payment
+                          Balansu depoisde pagamentu
                         </p>
                         <p className="mt-1 break-words text-sm font-semibold text-amber-800">
                           {row.loan
@@ -908,23 +907,23 @@ export default function LoanPayReport() {
               <table className="w-full min-w-[1450px] text-left text-sm">
                 <thead className="bg-slate-800 text-xs uppercase tracking-wide text-white">
                   <tr>
-                    <th className="px-4 py-3.5">No.</th>
-                    <th className="px-4 py-3.5">Payment Date</th>
-                    <th className="px-4 py-3.5">Borrower</th>
+                    <th className="px-4 py-3.5">Nu.</th>
+                    <th className="px-4 py-3.5">Data Pagamentu</th>
+                    <th className="px-4 py-3.5">Naran</th>
                     <th className="px-4 py-3.5 text-right">
-                      Total Loan
+                      Total Emprestimu
                       <span className="mt-1 block text-[10px] font-normal normal-case text-slate-300">
-                        Incl. interest
+                        Incl. funan
                       </span>
                     </th>
-                    <th className="px-4 py-3.5 text-right">Payment Amount</th>
-                    <th className="px-4 py-3.5 text-right">Total Paid</th>
+                    <th className="px-4 py-3.5 text-right">Montante Pagamentu</th>
+                    <th className="px-4 py-3.5 text-right">Pagamentu ne'ebe simu ona</th>
                     <th className="px-4 py-3.5 text-right">
-                      Balance After Payment
+                      Montante tenki selu
                     </th>
-                    <th className="px-4 py-3.5">Method</th>
-                    <th className="px-4 py-3.5">Status After Payment</th>
-                    <th className="px-4 py-3.5">Description</th>
+                    <th className="px-4 py-3.5">Metodu Pagamentu</th>
+                    <th className="px-4 py-3.5">Status</th>
+                    <th className="px-4 py-3.5">Deskrisaun</th>
                   </tr>
                 </thead>
 
@@ -1009,7 +1008,7 @@ export default function LoanPayReport() {
                 <tfoot className="border-t-2 border-slate-200 bg-slate-50 font-bold text-slate-900">
                   <tr>
                     <td colSpan={5} className="px-4 py-4">
-                      TOTAL FOR FILTERED PAYMENTS
+                      TOTAL BAZEIA BA FILTER PAGAMENTU
                     </td>
                     <td className="whitespace-nowrap px-4 py-4 text-right text-emerald-700">
                       {formatCurrency(summary.totalCollected)}
@@ -1018,7 +1017,7 @@ export default function LoanPayReport() {
                       colSpan={5}
                       className="px-4 py-4 text-xs font-medium text-slate-500"
                     >
-                      {summary.transactionCount} payment transaction(s)
+                      {summary.transactionCount} Transaksaun pagamentu
                     </td>
                   </tr>
                 </tfoot>
