@@ -3,6 +3,7 @@ import {
   useEffect,
   useMemo,
   useState,
+  type FormEvent,
 } from "react";
 import api from "../../../services/api";
 
@@ -142,10 +143,10 @@ const getErrorMessage = (error: unknown): string => {
   }
 
   if (err.response?.status === 409) {
-    return "This loan cannot be deleted because it has existing payments.";
+    return "Empréstimu ida-ne'e labele hamoos tanba iha pagamentu sira ne'ebé eziste ona.";
   }
 
-  return err.message || "Something went wrong. Please try again.";
+  return err.message || "Akontese Erru ruma. Koko fila-fali!";
 };
 
 /**
@@ -231,21 +232,21 @@ const getLoanBalance = (loan: Loan): number =>
 
 export default function Loan() {
   const [loans, setLoans] = useState<Loan[]>([]);
-  const [_members, setMembers] = useState<Member[]>([]);
-  const [_nonmembers, setNonmembers] = useState<NonMember[]>([]);
+  const [members, setMembers] = useState<Member[]>([]);
+  const [nonmembers, setNonmembers] = useState<NonMember[]>([]);
 
   const [loading, setLoading] = useState(true);
   const [loadingOwners, setLoadingOwners] = useState(true);
-  const [_submitting, _setSubmitting] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
   const [search, setSearch] = useState("");
   const [ownerFilter, setOwnerFilter] = useState("all");
 
-  const [_showForm, setShowForm] = useState(false);
-  const [_editingLoan, setEditingLoan] = useState<Loan | null>(null);
-  const [_form, setForm] = useState<LoanForm>(emptyForm);
-  const [_formError, setFormError] = useState("");
+  const [showForm, setShowForm] = useState(false);
+  const [editingLoan, setEditingLoan] = useState<Loan | null>(null);
+  const [form, setForm] = useState<LoanForm>(emptyForm);
+  const [formError, setFormError] = useState("");
 
   const [modalType, setModalType] = useState<ModalType>("confirm");
   const [modalMessage, setModalMessage] = useState("");
@@ -302,27 +303,27 @@ export default function Loan() {
     void fetchOwners();
   }, [fetchLoans, fetchOwners]);
 
-  // const preview = useMemo(() => {
-  //   const principal = toNumber(form.loan_amount);
+  const preview = useMemo(() => {
+    const principal = toNumber(form.loan_amount);
 
-  //   const validPrincipal =
-  //     form.loan_amount.trim() !== "" &&
-  //     Number.isFinite(principal) &&
-  //     principal >= 1;
+    const validPrincipal =
+      form.loan_amount.trim() !== "" &&
+      Number.isFinite(principal) &&
+      principal >= 1;
 
-  //   const rate = validPrincipal
-  //     ? calculateInterestRate(principal, form.owner_type)
-  //     : 0;
+    const rate = validPrincipal
+      ? calculateInterestRate(principal, form.owner_type)
+      : 0;
 
-  //   const interest = roundMoney((principal * rate) / 100);
+    const interest = roundMoney((principal * rate) / 100);
 
-  //   return {
-  //     rate,
-  //     interest,
-  //     total: roundMoney(principal + interest),
-  //     valid: validPrincipal,
-  //   };
-  // }, [form.loan_amount, form.owner_type]);
+    return {
+      rate,
+      interest,
+      total: roundMoney(principal + interest),
+      valid: validPrincipal,
+    };
+  }, [form.loan_amount, form.owner_type]);
 
   const totalPrincipal = useMemo(
     () =>
@@ -404,100 +405,98 @@ export default function Loan() {
     setShowForm(true);
   };
 
-  // const closeForm = () => {
-  //   if (submitting) return;
+  const closeForm = () => {
+    if (submitting) return;
 
-  //   setShowForm(false);
-  //   setEditingLoan(null);
-  //   setForm(emptyForm);
-  //   setFormError("");
-  // };
+    setShowForm(false);
+    setEditingLoan(null);
+    setForm(emptyForm);
+    setFormError("");
+  };
 
-  // const handleOwnerTypeChange = (ownerType: OwnerType) => {
-  //   setForm((current) => ({
-  //     ...current,
-  //     owner_type: ownerType,
-  //     member_number: ownerType === "member" ? current.member_number : "",
-  //     non_member_number:
-  //       ownerType === "nonmember" ? current.non_member_number : "",
-  //   }));
+  const handleOwnerTypeChange = (ownerType: OwnerType) => {
+    setForm((current) => ({
+      ...current,
+      owner_type: ownerType,
+      member_number: ownerType === "member" ? current.member_number : "",
+      non_member_number:
+        ownerType === "nonmember" ? current.non_member_number : "",
+    }));
 
-  //   setFormError("");
-  // };
+    setFormError("");
+  };
 
-  // const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-  //   event.preventDefault();
-  //   setFormError("");
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setFormError("");
 
-  //   if (form.owner_type === "member" && !form.member_number) {
-  //     setFormError("Please select a member as the borrower.");
-  //     return;
-  //   }
+    if (form.owner_type === "member" && !form.member_number) {
+      setFormError("Please select a member as the borrower.");
+      return;
+    }
 
-  //   if (form.owner_type === "nonmember" && !form.non_member_number) {
-  //     setFormError("Please select a non-member as the borrower.");
-  //     return;
-  //   }
+    if (form.owner_type === "nonmember" && !form.non_member_number) {
+      setFormError("Please select a non-member as the borrower.");
+      return;
+    }
 
-  //   if (!form.loan_date) {
-  //     setFormError("The loan date is required.");
-  //     return;
-  //   }
+    if (!form.loan_date) {
+      setFormError("The loan date is required.");
+      return;
+    }
 
-  //   const amount = Number(form.loan_amount);
+    const amount = Number(form.loan_amount);
 
-  //   if (
-  //     form.loan_amount.trim() === "" ||
-  //     !Number.isFinite(amount) ||
-  //     amount < 1
-  //   ) {
-  //     setFormError("The principal loan amount must be at least $1.00.");
-  //     return;
-  //   }
+    if (
+      form.loan_amount.trim() === "" ||
+      !Number.isFinite(amount) ||
+      amount < 1
+    ) {
+      setFormError("The principal loan amount must be at least $1.00.");
+      return;
+    }
 
-  //   const payload = {
-  //     member_number: form.owner_type === "member" ? form.member_number : null,
-  //     non_member_number:
-  //       form.owner_type === "nonmember" ? form.non_member_number : null,
-  //     loan_date: form.loan_date,
-  //     loan_amount: amount,
-  //   };
+    const payload = {
+      member_number: form.owner_type === "member" ? form.member_number : null,
+      non_member_number:
+        form.owner_type === "nonmember" ? form.non_member_number : null,
+      loan_date: form.loan_date,
+      loan_amount: amount,
+    };
 
-  //   setSubmitting(true);
+    setSubmitting(true);
 
-  //   try {
-  //     if (editingLoan) {
-  //       await api.put(`/loans/${editingLoan.id}`, payload);
-  //     } else {
-  //       await api.post("/loans", payload);
-  //     }
+    try {
+      if (editingLoan) {
+        await api.put(`/loans/${editingLoan.id}`, payload);
+      } else {
+        await api.post("/loans", payload);
+      }
 
-  //     setShowForm(false);
-  //     setEditingLoan(null);
-  //     setForm(emptyForm);
-  //     setModalType("success");
-  //     setModalTitle("Success");
-  //     setModalMessage(
-  //       editingLoan
-  //         ? "The loan has been updated successfully."
-  //         : "The new loan has been added successfully.",
-  //     );
-  //     setSelectedLoan(null);
+      setShowForm(false);
+      setEditingLoan(null);
+      setForm(emptyForm);
+      setModalType("success");
+      setModalTitle("Success");
+      setModalMessage(
+        editingLoan ? "Dadus hadia ho susesu." : "Dadus aumenta ho susesu.",
+      );
+      setSelectedLoan(null);
 
-  //     await fetchLoans();
-  //   } catch (error) {
-  //     setFormError(getErrorMessage(error));
-  //   } finally {
-  //     setSubmitting(false);
-  //   }
-  // };
+      await fetchLoans();
+    } catch (error) {
+      setFormError(getErrorMessage(error));
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const openDeleteConfirmation = (loan: Loan) => {
     if ((loan.payments || []).length > 0) {
       setModalType("warning");
-      setModalTitle("Cannot Delete Loan");
+      setModalTitle("Labele hamoos dadus ne'e");
       setModalMessage(
-        "This loan already has payments. Please review or resolve the payment records before deleting this loan.",
+        "Empréstimu ida-ne’e iha ona pagamentu. Favór ida, haree uluk rejistu pagamentu sira antes hamoos empréstimu ne’e.",
       );
       setSelectedLoan(null);
       return;
@@ -527,13 +526,13 @@ export default function Loan() {
 
       setModalType("success");
       setModalTitle("Success");
-      setModalMessage("The loan has been deleted successfully.");
+      setModalMessage("Dadus ne'e hamoos ho susesu.");
       setSelectedLoan(null);
 
       await fetchLoans();
     } catch (error) {
       setModalType("error");
-      setModalTitle("Unable to Delete Loan");
+      setModalTitle("Labele atu hamoos dadus ne'e.");
       setModalMessage(getErrorMessage(error));
       setSelectedLoan(null);
     } finally {
@@ -559,10 +558,19 @@ export default function Loan() {
               C-HTM / Finance Management
             </p>
             <h1 className="text-2xl font-bold text-gray-900">
-              Loan Management
+              Dadus Emprestimu
             </h1>
           </div>
 
+          <button
+            type="button"
+            onClick={openCreateForm}
+            disabled={loadingOwners}
+            className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <span className="text-lg leading-none">+</span>
+            Aumenta dadus
+          </button>
         </div>
 
         {/* Summary Cards */}
@@ -573,7 +581,9 @@ export default function Loan() {
 
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-sm font-medium text-gray-500">Total Loans</p>
+                <p className="text-sm font-medium text-gray-500">
+                  Total Emprestimu
+                </p>
                 <p className="mt-3 text-3xl font-bold tracking-tight text-gray-900">
                   {loans.length}
                 </p>
@@ -610,8 +620,8 @@ export default function Loan() {
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-sm font-medium text-gray-500">
-                  Total Loan Amount
-                  <p>(exc. interest)</p>
+                  Total Montante Emprestimu
+                  <p>(exc. funan)</p>
                 </p>
                 <p className="mt-3 break-words text-2xl font-bold tracking-tight text-emerald-700">
                   {formatCurrency(totalPrincipal)}
@@ -642,9 +652,7 @@ export default function Loan() {
 
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-sm font-medium text-gray-500">
-                  Total Interest
-                </p>
+                <p className="text-sm font-medium text-gray-500">Total funan</p>
                 <p className="mt-3 break-words text-2xl font-bold tracking-tight text-amber-700">
                   {formatCurrency(totalInterest)}
                 </p>
@@ -678,8 +686,8 @@ export default function Loan() {
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-sm font-medium text-gray-500">
-                  Total Loan Amount
-                  <p>(inc. interest) </p>
+                  Total Montante Emprestimu
+                  <p>(inc. funan) </p>
                 </p>
                 <p className="mt-3 break-words text-2xl font-bold tracking-tight text-violet-700">
                   {formatCurrency(totalLoanAmount)}
@@ -716,7 +724,7 @@ export default function Loan() {
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-sm font-medium text-gray-500">
-                  Total Payments Received
+                  Total Pagamentu
                 </p>
                 <p className="mt-3 break-words text-2xl font-bold tracking-tight text-emerald-700">
                   {formatCurrency(totalPaid)}
@@ -750,7 +758,7 @@ export default function Loan() {
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-sm font-medium text-gray-500">
-                  Outstanding Balance
+                  Total seidauk selu
                 </p>
                 <p className="mt-3 break-words text-2xl font-bold tracking-tight text-rose-700">
                   {formatCurrency(totalBalance)}
@@ -800,7 +808,7 @@ export default function Loan() {
                 type="text"
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
-                placeholder="Search by borrower, number, ID, or amount..."
+                placeholder="Buka naran, numeru, id ou montante empresta..."
                 className="w-full rounded-lg border border-gray-300 py-2.5 pl-10 pr-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 cursor-pointer"
               />
             </div>
@@ -811,9 +819,9 @@ export default function Loan() {
               className="cursor-pointer rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 md:w-52"
               aria-label="Filter by borrower type"
             >
-              <option value="all">All Borrowers</option>
-              <option value="member">Member</option>
-              <option value="nonmember">Non-Member</option>
+              <option value="all">Ema hotu</option>
+              <option value="member">Membru</option>
+              <option value="nonmember">Non-Membru</option>
             </select>
 
             <button
@@ -825,7 +833,7 @@ export default function Loan() {
               }}
               className="cursor-pointer rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
             >
-              Reset
+              Fila ba inisiu
             </button>
           </div>
         </div>
@@ -834,7 +842,9 @@ export default function Loan() {
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
           <div className="flex flex-col justify-between gap-3 border-b border-slate-200 bg-white px-5 py-5 sm:flex-row sm:items-center">
             <div>
-              <h2 className="text-lg font-bold text-slate-800">Loan Records</h2>
+              <h2 className="text-lg font-bold text-slate-800">
+                Lista emprestimu
+              </h2>
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
@@ -864,7 +874,7 @@ export default function Loan() {
                     d="M15 3v5h4M8 13h8M8 17h8"
                   />
                 </svg>
-                Loan List Report
+                Relatoriu
               </button>
 
               <button
@@ -902,11 +912,9 @@ export default function Loan() {
             <div className="flex flex-col items-center justify-center px-4 py-16">
               <div className="h-9 w-9 animate-spin rounded-full border-4 border-blue-100 border-t-blue-600" />
               <p className="mt-4 text-sm font-medium text-slate-600">
-                Loading loan records...
+                Loading ...
               </p>
-              <p className="mt-1 text-xs text-slate-400">
-                Please wait a moment.
-              </p>
+              <p className="mt-1 text-xs text-slate-400">Favor hein oituan.</p>
             </div>
           ) : filteredLoans.length === 0 ? (
             <div className="flex flex-col items-center justify-center px-4 py-16 text-center">
@@ -933,13 +941,13 @@ export default function Loan() {
               </div>
 
               <h3 className="mt-4 text-base font-bold text-slate-800">
-                No Loan Records Found
+                Dadus Emprestimu la iha.
               </h3>
 
               <p className="mt-2 max-w-sm text-sm leading-6 text-slate-500">
                 {search || ownerFilter !== "all"
-                  ? "No loans match your current search or filter. Try changing your criteria."
-                  : "There are no loan records yet. Add a loan to get started."}
+                  ? "La hetan dadus emprestimu ne'ebe hanesan ho ita buka ka filtru. Koko muda kriteria buka nian."
+                  : "Dadus emprestimu seidauk iha."}
               </p>
 
               {!search && ownerFilter === "all" && (
@@ -960,16 +968,16 @@ export default function Loan() {
                   <thead>
                     <tr className="bg-slate-800 text-white">
                       {[
-                        "No.",
-                        "Loan Date",
-                        "Borrower",
-                        "Loan Amount",
-                        "Interest Rate",
-                        "Interest Range",
-                        "Total Loan (inc. interest)",
-                        "Payments",
-                        "Outstanding",
-                        "Actions",
+                        "Nu.",
+                        "Data Empresta",
+                        "Naran",
+                        "Montante Empresta",
+                        "Funan %",
+                        "Funan iha $",
+                        "Total Empresta (inc. funan)",
+                        "Pagamentu",
+                        "Montante seidauk selu",
+                        "Aksaun",
                       ].map((heading) => (
                         <th
                           key={heading}
@@ -1144,7 +1152,7 @@ export default function Loan() {
                               <button
                                 type="button"
                                 onClick={() => openEditForm(loan)}
-                                title="Edit loan"
+                                title="Hadia dadus"
                                 aria-label={`Edit loan for ${borrowerName}`}
                                 className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-blue-200 bg-white text-blue-600 transition hover:border-blue-600 hover:bg-blue-600 hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-200 cursor-pointer"
                               >
@@ -1169,8 +1177,8 @@ export default function Loan() {
                                 onClick={() => openDeleteConfirmation(loan)}
                                 title={
                                   hasPayments
-                                    ? "Loan has payments"
-                                    : "Delete loan"
+                                    ? "Emprestimu ne'e iha ona pagamentu"
+                                    : "Hamoos dadus"
                                 }
                                 aria-label={`Delete loan for ${borrowerName}`}
                                 className={`inline-flex h-9 w-9 items-center justify-center rounded-lg border transition focus:outline-none focus:ring-2 cursor-pointer ${
@@ -1220,7 +1228,446 @@ export default function Loan() {
           )}
         </div>
       </div>
- 
+
+      {/* Create/Edit Loan Modal */}
+      {showForm && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-slate-950/50 p-3 backdrop-blur-[2px] sm:p-5"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) closeForm();
+          }}
+        >
+          <div className="my-auto flex max-h-[calc(100dvh-1.5rem)] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl sm:max-h-[calc(100dvh-2.5rem)]">
+            {/* Modal Header */}
+            <div className="flex shrink-0 items-center justify-between gap-4 border-b border-slate-200 px-5 py-4 sm:px-6">
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                  <svg
+                    className="h-5 w-5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    aria-hidden="true"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M7 3.75h7l4.25 4.5v12H7a2 2 0 0 1-2-2v-12a2.5 2.5 0 0 1 2-2.5Z"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M14 4v5h4M8.5 13h6M8.5 16.5h4"
+                    />
+                  </svg>
+                </div>
+
+                <div className="min-w-0">
+                  <h2 className="text-lg font-bold text-slate-900">
+                    {editingLoan
+                      ? "Hadia dadus emprestimu"
+                      : "Aumenta dadus emprestimu"}
+                  </h2>
+                  {/* <p className="mt-0.5 text-xs text-slate-500">
+                    Borrower information and loan details
+                  </p> */}
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={closeForm}
+                disabled={submitting}
+                aria-label="Close form"
+                className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <svg
+                  className="h-5 w-5"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  aria-hidden="true"
+                >
+                  <path d="m18 6-12 12M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <form
+              onSubmit={handleSubmit}
+              className="flex min-h-0 flex-1 flex-col overflow-hidden"
+            >
+              {/* Scrollable Form Content */}
+              <div className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain px-5 py-5 sm:px-6">
+                {formError && (
+                  <div
+                    role="alert"
+                    className="whitespace-pre-line rounded-lg border border-red-200 bg-red-50 px-3.5 py-3 text-sm text-red-700"
+                  >
+                    <div className="flex items-start gap-2">
+                      <svg
+                        className="mt-0.5 h-4 w-4 shrink-0"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        aria-hidden="true"
+                      >
+                        <circle cx="12" cy="12" r="9" />
+                        <path d="M12 8v5m0 3h.01" />
+                      </svg>
+                      <span>{formError}</span>
+                    </div>
+                  </div>
+                )}
+
+                {loadingOwners && (
+                  <div className="flex items-center gap-2 rounded-lg border border-blue-100 bg-blue-50 px-3.5 py-3 text-sm text-blue-700">
+                    <svg
+                      className="h-4 w-4 shrink-0 animate-spin"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      aria-hidden="true"
+                    >
+                      <circle cx="12" cy="12" r="9" strokeOpacity="0.25" />
+                      <path d="M21 12a9 9 0 0 0-9-9" />
+                    </svg>
+                    Loading borrower information...
+                  </div>
+                )}
+
+                {/* Borrower Type */}
+                <section>
+                  <label className="mb-2 block text-sm font-semibold text-slate-700">
+                    Hili Membru / Non-Membru?{" "}
+                    <span className="text-red-500">*</span>
+                  </label>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => handleOwnerTypeChange("member")}
+                      aria-pressed={form.owner_type === "member"}
+                      className={`flex cursor-pointer items-center justify-center gap-2 rounded-xl border px-3 py-3 text-sm font-semibold transition ${
+                        form.owner_type === "member"
+                          ? "border-blue-500 bg-blue-50 text-blue-700 ring-1 ring-blue-500"
+                          : "border-slate-200 bg-white text-slate-600 hover:border-blue-300 hover:bg-slate-50"
+                      }`}
+                    >
+                      <svg
+                        className="h-5 w-5"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        aria-hidden="true"
+                      >
+                        <circle cx="12" cy="8" r="3.5" />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M5 20v-1.5a7 7 0 0 1 14 0V20Z"
+                        />
+                      </svg>
+                      Membru
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleOwnerTypeChange("nonmember")}
+                      aria-pressed={form.owner_type === "nonmember"}
+                      className={`flex cursor-pointer items-center justify-center gap-2 rounded-xl border px-3 py-3 text-sm font-semibold transition ${
+                        form.owner_type === "nonmember"
+                          ? "border-violet-500 bg-violet-50 text-violet-700 ring-1 ring-violet-500"
+                          : "border-slate-200 bg-white text-slate-600 hover:border-violet-300 hover:bg-slate-50"
+                      }`}
+                    >
+                      <svg
+                        className="h-5 w-5"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        aria-hidden="true"
+                      >
+                        <circle cx="12" cy="8" r="3.5" />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M5 20v-1.5a7 7 0 0 1 14 0V20Z"
+                        />
+                      </svg>
+                      Non-Membru
+                    </button>
+                  </div>
+                </section>
+
+                {/* Borrower Selection */}
+                {form.owner_type === "member" ? (
+                  <div>
+                    <label
+                      htmlFor="loan-member"
+                      className="mb-1.5 block text-sm font-semibold text-slate-700"
+                    >
+                      Hili membru <span className="text-red-500">*</span>
+                    </label>
+
+                    <select
+                      id="loan-member"
+                      value={form.member_number}
+                      onChange={(event) =>
+                        setForm((current) => ({
+                          ...current,
+                          member_number: event.target.value,
+                        }))
+                      }
+                      required
+                      disabled={loadingOwners || submitting}
+                      className="w-full cursor-pointer rounded-lg border border-slate-300 bg-white px-3.5 py-3 text-sm text-slate-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-50"
+                    >
+                      <option value="">-- Hili membru nia numeru --</option>
+                      {members.map((member) => (
+                        <option key={member.id} value={member.member_number}>
+                          {member.full_name} ({member.member_number})
+                        </option>
+                      ))}
+                    </select>
+
+                    {!loadingOwners && members.length === 0 && (
+                      <p className="mt-1.5 text-xs text-amber-700">
+                        Dadus membru laiha. Favor rejistu uluk dadus membru.
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <div>
+                    <label
+                      htmlFor="loan-nonmember"
+                      className="mb-1.5 block text-sm font-semibold text-slate-700"
+                    >
+                      Hili non-membru <span className="text-red-500">*</span>
+                    </label>
+
+                    <select
+                      id="loan-nonmember"
+                      value={form.non_member_number}
+                      onChange={(event) =>
+                        setForm((current) => ({
+                          ...current,
+                          non_member_number: event.target.value,
+                        }))
+                      }
+                      required
+                      disabled={loadingOwners || submitting}
+                      className="w-full cursor-pointer rounded-lg border border-slate-300 bg-white px-3.5 py-3 text-sm text-slate-800 outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-100 disabled:cursor-not-allowed disabled:bg-slate-50"
+                    >
+                      <option value="">-- Hili non-membru nia numeru --</option>
+                      {nonmembers.map((nonmember) => (
+                        <option
+                          key={nonmember.id}
+                          value={nonmember.non_member_number}
+                        >
+                          {nonmember.full_name} ({nonmember.non_member_number})
+                        </option>
+                      ))}
+                    </select>
+
+                    {!loadingOwners && nonmembers.length === 0 && (
+                      <p className="mt-1.5 text-xs text-amber-700">
+                        Dadus laiha. Favor rejistu uluk dadus non-membru.
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <label
+                      htmlFor="loan-date"
+                      className="mb-1.5 block text-sm font-semibold text-slate-700"
+                    >
+                      Data empresta <span className="text-red-500">*</span>
+                    </label>
+
+                    <input
+                      id="loan-date"
+                      type="date"
+                      value={form.loan_date}
+                      onChange={(event) =>
+                        setForm((current) => ({
+                          ...current,
+                          loan_date: event.target.value,
+                        }))
+                      }
+                      required
+                      disabled={submitting}
+                      className="w-full rounded-lg border border-slate-300 bg-white px-3 py-3 text-sm text-slate-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:bg-slate-50"
+                    />
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="loan-amount"
+                      className="mb-1.5 block text-sm font-semibold text-slate-700"
+                    >
+                      Montante Empresta (USD){" "}
+                      <span className="text-red-500">*</span>
+                    </label>
+
+                    <input
+                      id="loan-amount"
+                      type="number"
+                      min="1"
+                      step="0.01"
+                      value={form.loan_amount}
+                      onChange={(event) =>
+                        setForm((current) => ({
+                          ...current,
+                          loan_amount: event.target.value,
+                        }))
+                      }
+                      placeholder="0.00"
+                      required
+                      disabled={submitting}
+                      className="w-full rounded-lg border border-slate-300 bg-white px-3 py-3 text-sm text-slate-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:bg-slate-50"
+                    />
+                    <p className="mt-1.5 text-xs text-slate-500">
+                      Minimu montante: $1.00
+                    </p>
+                  </div>
+                </div>
+
+                {/* Compact Loan Calculation Preview */}
+                <section className="overflow-hidden rounded-xl border border-blue-100 bg-slate-50">
+                  <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-4 py-3">
+                    <div>
+                      <h3 className="text-sm font-bold text-slate-800">
+                        Sumariu Emprestimu
+                      </h3>
+                      <p className="mt-0.5 text-xs text-slate-500">
+                        Estimasaun pursentu husi funan empresta
+                      </p>
+                    </div>
+
+                    <span className="shrink-0 rounded-lg bg-blue-100 px-2.5 py-1 text-xs font-bold text-blue-700">
+                      {preview.rate.toFixed(2)}%
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-px bg-slate-200 sm:grid-cols-3">
+                    <div className="bg-white p-3.5">
+                      <p className="text-xs font-medium text-slate-500">
+                        Montante Empresta
+                      </p>
+                      <p className="mt-1.5 break-words text-base font-bold tabular-nums text-slate-800">
+                        {formatCurrency(
+                          preview.valid ? toNumber(form.loan_amount) : 0,
+                        )}
+                      </p>
+                    </div>
+
+                    <div className="bg-white p-3.5">
+                      <p className="text-xs font-medium text-slate-500">
+                        Funan
+                      </p>
+                      <p className="mt-1.5 break-words text-base font-bold tabular-nums text-amber-700">
+                        {formatCurrency(preview.valid ? preview.interest : 0)}
+                      </p>
+                    </div>
+
+                    <div className="col-span-2 bg-blue-50 p-3.5 sm:col-span-1">
+                      <p className="text-xs font-semibold text-blue-700">
+                        Total Empresta
+                      </p>
+                      <p className="mt-1.5 break-words text-lg font-bold tabular-nums text-blue-800">
+                        {formatCurrency(preview.valid ? preview.total : 0)}
+                      </p>
+                    </div>
+                  </div>
+                </section>
+
+                {/* Payment Information */}
+                <div className="flex items-start gap-2.5 rounded-lg border border-amber-200 bg-amber-50 px-3.5 py-3">
+                  <svg
+                    className="mt-0.5 h-4 w-4 shrink-0 text-amber-600"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    aria-hidden="true"
+                  >
+                    <circle cx="12" cy="12" r="9" />
+                    <path d="M12 8v5m0 3h.01" />
+                  </svg>
+
+                  <p className="text-xs leading-5 text-amber-800">
+                    Pagamentu sira aplika ba montante total empréstimu, inklui
+                    funan.
+                  </p>
+                </div>
+              </div>
+
+              {/* Fixed Footer */}
+              <div className="flex shrink-0 flex-col-reverse gap-2.5 border-t border-slate-200 bg-white px-5 py-4 sm:flex-row sm:justify-end sm:px-6">
+                <button
+                  type="button"
+                  onClick={closeForm}
+                  disabled={submitting}
+                  className="w-full cursor-pointer rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+                >
+                  Kansela
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={submitting || loadingOwners}
+                  className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+                >
+                  {submitting ? (
+                    <>
+                      <svg
+                        className="h-4 w-4 animate-spin"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        aria-hidden="true"
+                      >
+                        <circle cx="12" cy="12" r="9" strokeOpacity="0.25" />
+                        <path d="M21 12a9 9 0 0 0-9-9" />
+                      </svg>
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <svg
+                        className="h-4 w-4"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        aria-hidden="true"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M5 12h14m-7-7 7 7-7 7"
+                        />
+                      </svg>
+                      {editingLoan ? "Atualiza dadus" : "Rai dadus"}
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Confirmation and Feedback Modal */}
       {modalTitle && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4">
@@ -1281,7 +1728,7 @@ export default function Loan() {
                     disabled={deleting}
                     className="cursor-pointer rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
                   >
-                    Cancel
+                    Kansela
                   </button>
 
                   <button
@@ -1299,7 +1746,7 @@ export default function Loan() {
                   onClick={closeMessageModal}
                   className="cursor-pointer rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
                 >
-                  Close
+                  Kansela
                 </button>
               )}
             </div>

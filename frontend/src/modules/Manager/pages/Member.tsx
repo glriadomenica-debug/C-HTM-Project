@@ -3,6 +3,8 @@ import {
   useEffect,
   useMemo,
   useState,
+  type FormEvent,
+  type ReactNode,
 } from "react";
 import * as XLSX from "xlsx";
 import api from "../../../services/api";
@@ -50,9 +52,10 @@ const emptyForm: MemberForm = {
   membership_status: "Active",
 };
 
-// const inputClass = "mt-1 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-100";
+const inputClass =
+  "mt-1 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-100";
 
-// const labelClass = "block text-sm font-semibold text-slate-700";
+const labelClass = "block text-sm font-semibold text-slate-700";
 
 const reportHeaders = [
   "No.",
@@ -203,13 +206,13 @@ function downloadBlob(blob: Blob, filename: string): void {
 export default function Member() {
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
-  const [_saving, _setSaving] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
   const [search, setSearch] = useState("");
-  const [_showForm, setShowForm] = useState(false);
-  const [_editingMember, setEditingMember] = useState<Member | null>(null);
-  const [_form, setForm] = useState<MemberForm>({ ...emptyForm });
+  const [showForm, setShowForm] = useState(false);
+  const [editingMember, setEditingMember] = useState<Member | null>(null);
+  const [form, setForm] = useState<MemberForm>({ ...emptyForm });
 
   const [modal, setModal] = useState<ModalType | null>(null);
   const [message, setMessage] = useState("");
@@ -279,88 +282,87 @@ export default function Member() {
     [members],
   );
 
-  
-// const openCreateForm = () => {
-//   setEditingMember(null);
-//   setForm({ ...emptyForm });
-//   setShowForm(true);
-// };
+  const openCreateForm = () => {
+    setEditingMember(null);
+    setForm({ ...emptyForm });
+    setShowForm(true);
+  };
 
-const openEditForm = (member: Member) => {
-  setEditingMember(member);
+  const openEditForm = (member: Member) => {
+    setEditingMember(member);
 
-  setForm({
-    full_name: member.full_name ?? "",
-    gender: member.gender ?? "Male",
-    id_card_number: member.id_card_number ?? "",
-    phone_number: member.phone_number ?? "",
-    address: member.address ?? "",
-    employer: member.employer ?? "",
-    work_location: member.work_location ?? "",
-    membership_status: member.membership_status ?? "Active",
-  });
+    setForm({
+      full_name: member.full_name ?? "",
+      gender: member.gender ?? "Male",
+      id_card_number: member.id_card_number ?? "",
+      phone_number: member.phone_number ?? "",
+      address: member.address ?? "",
+      employer: member.employer ?? "",
+      work_location: member.work_location ?? "",
+      membership_status: member.membership_status ?? "Active",
+    });
 
-  setShowForm(true);
-};
+    setShowForm(true);
+  };
 
-// const closeForm = () => {
-//   if (saving) return;
+  const closeForm = () => {
+    if (saving) return;
 
-//   setShowForm(false);
-//   setEditingMember(null);
-//   setForm({ ...emptyForm });
-// };
+    setShowForm(false);
+    setEditingMember(null);
+    setForm({ ...emptyForm });
+  };
 
-// const updateField = <K extends keyof MemberForm>(
-//   field: K,
-//   value: MemberForm[K],
-// ) => {
-//   setForm((previous) => ({
-//     ...previous,
-//     [field]: value,
-//   }));
-// };
+  const updateField = <K extends keyof MemberForm>(
+    field: K,
+    value: MemberForm[K],
+  ) => {
+    setForm((previous) => ({
+      ...previous,
+      [field]: value,
+    }));
+  };
 
-// const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-//   event.preventDefault();
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
 
-//   if (saving) return;
+    if (saving) return;
 
-//   setSaving(true);
+    setSaving(true);
 
-//   try {
-//     const payload: MemberForm = { ...form };
+    try {
+      const payload: MemberForm = { ...form };
 
-//     const response = editingMember
-//       ? await api.put(`/members/${editingMember.id}`, payload)
-//       : await api.post("/members", payload);
+      const response = editingMember
+        ? await api.put(`/members/${editingMember.id}`, payload)
+        : await api.post("/members", payload);
 
-//     setMessage(
-//       response.data?.message ||
-//         (editingMember
-//           ? "Member updated successfully."
-//           : "Member created successfully."),
-//     );
+      setMessage(
+        response.data?.message ||
+          (editingMember
+            ? "Dadus hadia ho susesu."
+            : "Dadus aumenta ho susesu."),
+      );
 
-//     setShowForm(false);
-//     setEditingMember(null);
-//     setForm({ ...emptyForm });
-//     setModal("success");
+      setShowForm(false);
+      setEditingMember(null);
+      setForm({ ...emptyForm });
+      setModal("success");
 
-//     await fetchMembers();
-//   } catch (error) {
-//     setMessage(getErrorMessage(error));
-//     setModal("error");
-//   } finally {
-//     setSaving(false);
-//   }
-// };
+      await fetchMembers();
+    } catch (error) {
+      setMessage(getErrorMessage(error));
+      setModal("error");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const confirmDelete = (member: Member) => {
     setSelectedMember(member);
 
     setMessage(
-      `Are you sure you want to delete "${member.full_name}"? This action cannot be undone.`,
+      `Ita-boot hakarak duni atu hamoos dadus "${member.full_name}"? Dadus ne'e sei hamoos permanente.`,
     );
 
     setModal("confirm");
@@ -388,39 +390,31 @@ const openEditForm = (member: Member) => {
     }
   };
 
-const [currentPage, setCurrentPage] = useState(1);
-const [pageSize, setPageSize] = useState(10);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
-const totalPages = Math.max(
-  1,
-  Math.ceil(filteredMembers.length / pageSize),
-);
+  const totalPages = Math.max(1, Math.ceil(filteredMembers.length / pageSize));
 
-const paginatedMembers = useMemo(() => {
-  const startIndex = (currentPage - 1) * pageSize;
+  const paginatedMembers = useMemo(() => {
+    const startIndex = (currentPage - 1) * pageSize;
 
-  return filteredMembers.slice(startIndex, startIndex + pageSize);
-}, [filteredMembers, currentPage, pageSize]);
+    return filteredMembers.slice(startIndex, startIndex + pageSize);
+  }, [filteredMembers, currentPage, pageSize]);
 
-const startItem =
-  filteredMembers.length === 0
-    ? 0
-    : (currentPage - 1) * pageSize + 1;
+  const startItem =
+    filteredMembers.length === 0 ? 0 : (currentPage - 1) * pageSize + 1;
 
-const endItem = Math.min(
-  currentPage * pageSize,
-  filteredMembers.length,
-);
+  const endItem = Math.min(currentPage * pageSize, filteredMembers.length);
 
-useEffect(() => {
-  setCurrentPage(1);
-}, [search, pageSize]);
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, pageSize]);
 
-useEffect(() => {
-  if (currentPage > totalPages) {
-    setCurrentPage(totalPages);
-  }
-}, [currentPage, totalPages]);
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
 
   const closeModal = () => {
     if (deleting) return;
@@ -597,29 +591,38 @@ useEffect(() => {
           </p>
 
           <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
-            Members
+            Membru
           </h1>
         </div>
+
+        <button
+          type="button"
+          onClick={openCreateForm}
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 hover:shadow-md focus:outline-none focus:ring-4 focus:ring-blue-200 active:scale-[0.98] cursor-pointer"
+        >
+          <Icon name="plus" />
+          Aumenta Membru
+        </button>
       </header>
 
       {/* Summary cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 print:hidden">
         <SummaryCard
-          title="Total Members"
+          title="Total Membru"
           value={members.length}
           color="blue"
           icon="users"
         />
 
         <SummaryCard
-          title="Active Members"
+          title="Membru Aktivu"
           value={activeMembers}
           color="green"
           icon="check"
         />
 
         <SummaryCard
-          title="Inactive Members"
+          title="Membru La Aktivu"
           value={inactiveMembers}
           color="gray"
           icon="users"
@@ -632,7 +635,7 @@ useEffect(() => {
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="text-lg font-bold tracking-tight text-slate-900">
-                  Member List
+                  Lista Membru
                 </h2>
                 <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-700 ring-1 ring-inset ring-blue-100">
                   {filteredMembers.length}
@@ -650,7 +653,7 @@ useEffect(() => {
                   type="search"
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
-                  placeholder="Search members..."
+                  placeholder="Buka membru..."
                   aria-label="Search members"
                   className="w-full rounded-xl border border-slate-300 bg-slate-50 py-2.5 pl-10 pr-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-100 cursor-pointer"
                 />
@@ -717,21 +720,21 @@ useEffect(() => {
           <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-slate-100 pt-3 text-xs text-slate-500">
             <span className="inline-flex items-center gap-2">
               <span className="h-2 w-2 rounded-full bg-green-500" />
-              Active:{" "}
+              Aktivu:{" "}
               <strong className="text-slate-800">{activeMembers}</strong>
             </span>
             <span className="inline-flex items-center gap-2">
               <span className="h-2 w-2 rounded-full bg-slate-400" />
-              Inactive:{" "}
+              La Aktivu:{" "}
               <strong className="text-slate-800">{inactiveMembers}</strong>
             </span>
             <span className="inline-flex items-center gap-2">
               <span className="h-2 w-2 rounded-full bg-blue-500" />
-              Showing:{" "}
+              Fo sai dadus:{" "}
               <strong className="text-slate-800">
                 {filteredMembers.length}
               </strong>{" "}
-              of {members.length}
+              husi {members.length}
             </span>
           </div>
         </div>
@@ -854,7 +857,7 @@ useEffect(() => {
                         type="button"
                         onClick={() => confirmDelete(member)}
                         aria-label={`Delete ${member.full_name}`}
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-50 cursor-not-allowed"
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-50 cursor-pointer"
                       >
                         <Icon name="trash" />
                         Delete
@@ -871,40 +874,38 @@ useEffect(() => {
                 <thead className="bg-slate-800 text-xs uppercase tracking-wider text-slate-100">
                   <tr>
                     <th className="w-16 whitespace-nowrap px-4 py-4 text-center font-semibold">
-                      No.
+                      Nu.
                     </th>
                     <th className="whitespace-nowrap px-4 py-4 font-semibold">
-                      Member Number
+                      Numeru Membru
                     </th>
-                    <th className="min-w-52 px-4 py-4 font-semibold">
-                      Member Details
+                    <th className="min-w-52 px-4 py-4 font-semibold">Naran</th>
+                    <th className="whitespace-nowrap px-4 py-4 font-semibold">
+                      BI/Eleitoral
                     </th>
                     <th className="whitespace-nowrap px-4 py-4 font-semibold">
-                      ID Card Number
-                    </th>
-                    <th className="whitespace-nowrap px-4 py-4 font-semibold">
-                      Phone Number
+                      Numeru telfone
                     </th>
                     <th className="min-w-40 px-4 py-4 font-semibold">
-                      Address
+                      Hela-Fatin
                     </th>
                     <th className="min-w-36 px-4 py-4 font-semibold">
-                      Employer
+                      Empregador
                     </th>
                     <th className="min-w-36 px-4 py-4 font-semibold">
-                      Work Location
+                      Servisu Fatin
                     </th>
                     <th className="whitespace-nowrap px-4 py-4 font-semibold">
                       Status
                     </th>
                     <th className="whitespace-nowrap px-4 py-4 text-center font-semibold">
-                      Deposits
+                      Depositu
                     </th>
                     <th className="whitespace-nowrap px-4 py-4 text-center font-semibold">
-                      Loans
+                      Emprestimu
                     </th>
                     <th className="sticky right-0 z-10 whitespace-nowrap bg-slate-800 px-4 py-4 text-center font-semibold print:hidden">
-                      Actions
+                      Aksaun
                     </th>
                   </tr>
                 </thead>
@@ -983,7 +984,7 @@ useEffect(() => {
                           <button
                             type="button"
                             onClick={() => openEditForm(member)}
-                            title="Edit member"
+                            title="Hadia dadus"
                             aria-label={`Edit ${member.full_name}`}
                             className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-blue-100 bg-white text-blue-700 transition hover:border-blue-300 hover:bg-blue-600 hover:text-white focus:outline-none focus:ring-4 focus:ring-blue-100 cursor-pointer"
                           >
@@ -992,7 +993,7 @@ useEffect(() => {
                           <button
                             type="button"
                             onClick={() => confirmDelete(member)}
-                            title="Delete member"
+                            title="Hamoos membru"
                             aria-label={`Delete ${member.full_name}`}
                             className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-red-100 bg-white text-red-600 transition hover:border-red-300 hover:bg-red-600 hover:text-white focus:outline-none focus:ring-4 focus:ring-red-100 cursor-pointer "
                           >
@@ -1019,11 +1020,19 @@ useEffect(() => {
 
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-wrap items-center gap-3">
-              <label htmlFor="member-page-size" className="text-xs font-medium text-slate-600">
-                Rows per page 
+              <label
+                htmlFor="member-page-size"
+                className="text-xs font-medium text-slate-600"
+              >
+                Rows per page
               </label>
-              
-              <select id="member-page-size" value={pageSize} onChange={(event) => setPageSize(Number(event.target.value))} className="rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-xs font-medium text-slate-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
+
+              <select
+                id="member-page-size"
+                value={pageSize}
+                onChange={(event) => setPageSize(Number(event.target.value))}
+                className="rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-xs font-medium text-slate-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+              >
                 <option value={10}>10</option>
                 <option value={25}>25</option>
                 <option value={50}>50</option>
@@ -1032,35 +1041,247 @@ useEffect(() => {
 
               <span className="text-xs text-slate-500">
                 Showing{" "}
-                <strong className="text-slate-800">{startItem}–{endItem}</strong>
-                {" "}of{" "}
+                <strong className="text-slate-800">
+                  {startItem}–{endItem}
+                </strong>{" "}
+                of{" "}
                 <strong className="text-slate-800">
                   {filteredMembers.length}
                 </strong>
               </span>
             </div>
 
-          <div className="flex items-center justify-between gap-2 sm:justify-end">
-            <button type="button" onClick={() => setCurrentPage((page) => Math.max(1, page - 1))} disabled={currentPage === 1 || loading} className="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40">
-              <Icon name="chevron-left" /> Previous </button>
+            <div className="flex items-center justify-between gap-2 sm:justify-end">
+              <button
+                type="button"
+                onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                disabled={currentPage === 1 || loading}
+                className="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <Icon name="chevron-left" /> Previous{" "}
+              </button>
               <span className="whitespace-nowrap text-xs font-medium text-slate-600">
-                Page <strong className="text-slate-900">{currentPage}</strong> of{" "}
-                <strong className="text-slate-900">{totalPages}</strong>
+                Page <strong className="text-slate-900">{currentPage}</strong>{" "}
+                of <strong className="text-slate-900">{totalPages}</strong>
               </span>
 
-            <button type="button" onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))} disabled={currentPage >= totalPages || loading} className="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40" >
-              Next 
-              <Icon name="chevron-right" />
-            </button>
-          </div>
+              <button
+                type="button"
+                onClick={() =>
+                  setCurrentPage((page) => Math.min(totalPages, page + 1))
+                }
+                disabled={currentPage >= totalPages || loading}
+                className="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Next
+                <Icon name="chevron-right" />
+              </button>
+            </div>
           </div>
 
-        <button type="button" onClick={() => void fetchMembers()} disabled={loading} className="inline-flex items-center justify-center gap-2 self-start rounded-lg border border-slate-200 bg-white px-3 py-2 font-semibold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50 sm:self-auto">
-        <Icon name="refresh" />
-        Refresh list
-        </button>
-      </footer>
+          <button
+            type="button"
+            onClick={() => void fetchMembers()}
+            disabled={loading}
+            className="inline-flex items-center justify-center gap-2 self-start rounded-lg border border-slate-200 bg-white px-3 py-2 font-semibold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50 sm:self-auto"
+          >
+            <Icon name="refresh" />
+            Refresh list
+          </button>
+        </footer>
       </section>
+
+      {showForm && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center overflow-y-auto bg-slate-950/60 p-3 backdrop-blur-sm sm:p-5 print:hidden">
+          <div className="my-auto w-full max-w-3xl overflow-hidden rounded-2xl border border-white/20 bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-200 px-4 py-4 sm:px-6">
+              <div>
+                <h2 className="text-lg font-bold text-slate-900">
+                  {editingMember ? "Hadia dadus membru" : "Aumenta membru foun"}
+                </h2>
+              </div>
+
+              <button
+                type="button"
+                onClick={closeForm}
+                disabled={saving}
+                aria-label="Close form"
+                className="rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 disabled:opacity-50"
+              >
+                <Icon name="warning" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit}>
+              <div className="grid grid-cols-1 gap-4 p-4 sm:grid-cols-2 sm:gap-5 sm:p-6">
+                {/* Automatically generated or read-only member number */}
+                {editingMember ? (
+                  <FormField label="Numeru Membru">
+                    <div className="mt-1 flex min-h-[42px] items-center rounded-xl border border-slate-200 bg-slate-100 px-3.5 py-2.5">
+                      <span className="text-sm font-bold text-blue-800">
+                        {editingMember.member_number || "-"}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-xs text-slate-500">
+                      Númeru ida-ne’e labele muda
+                    </p>
+                  </FormField>
+                ) : (
+                  <FormField label="Numeru Membru">
+                    <div className="mt-1 flex min-h-[42px] items-center gap-2 rounded-xl border border-blue-100 bg-blue-50 px-3.5 py-2.5">
+                      <Icon name="check" />
+                      <span className="text-sm font-medium text-blue-800">
+                        Sistema mak kria automatika
+                      </span>
+                    </div>
+                    <p className="mt-1 text-xs text-slate-500">
+                      Sistema sei fó númeru úniku ba membru ne’e bainhira ita
+                      rai ona dadus membru{" "}
+                    </p>
+                  </FormField>
+                )}
+
+                <FormField label="Naran kompletu" required>
+                  <input
+                    required
+                    maxLength={255}
+                    value={form.full_name}
+                    onChange={(event) =>
+                      updateField("full_name", event.target.value)
+                    }
+                    placeholder="Enter full name"
+                    className={inputClass}
+                  />
+                </FormField>
+
+                <FormField label="Jeneru" required>
+                  <select
+                    required
+                    value={form.gender}
+                    onChange={(event) =>
+                      updateField("gender", event.target.value as Gender)
+                    }
+                    className={inputClass}
+                  >
+                    <option value="Male">Mane</option>
+                    <option value="Female">Feto</option>
+                  </select>
+                </FormField>
+
+                <FormField label="Numeru BI/Eleitoral" required>
+                  <input
+                    required
+                    maxLength={255}
+                    value={form.id_card_number}
+                    onChange={(event) =>
+                      updateField("id_card_number", event.target.value)
+                    }
+                    placeholder="Hatama numeru kartaun BI/ELEITORAL"
+                    className={inputClass}
+                  />
+                </FormField>
+
+                <FormField label="Numeru telfone" required>
+                  <input
+                    required
+                    maxLength={255}
+                    value={form.phone_number}
+                    onChange={(event) =>
+                      updateField("phone_number", event.target.value)
+                    }
+                    placeholder="Hatama numeru telfone"
+                    className={inputClass}
+                  />
+                </FormField>
+
+                <FormField label="Empregador" required>
+                  <input
+                    required
+                    maxLength={255}
+                    value={form.employer}
+                    onChange={(event) =>
+                      updateField("employer", event.target.value)
+                    }
+                    placeholder="Hatama posizaun servisu"
+                    className={inputClass}
+                  />
+                </FormField>
+
+                <FormField label="Servisu Fatin" required>
+                  <input
+                    required
+                    maxLength={255}
+                    value={form.work_location}
+                    onChange={(event) =>
+                      updateField("work_location", event.target.value)
+                    }
+                    placeholder="Hatama servisu fatin"
+                    className={inputClass}
+                  />
+                </FormField>
+
+                <FormField label="Status membru" required>
+                  <select
+                    required
+                    value={form.membership_status}
+                    onChange={(event) =>
+                      updateField(
+                        "membership_status",
+                        event.target.value as MembershipStatus,
+                      )
+                    }
+                    className={inputClass}
+                  >
+                    <option value="Active">Aktivu</option>
+                    <option value="Inactive">La Aktivu</option>
+                  </select>
+                </FormField>
+
+                <div className="sm:col-span-2">
+                  <label className={labelClass}>
+                    Hela-Fatin <span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    required
+                    maxLength={255}
+                    rows={3}
+                    value={form.address}
+                    onChange={(event) =>
+                      updateField("address", event.target.value)
+                    }
+                    placeholder="Hatama hela-fatin"
+                    className={inputClass}
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-col-reverse gap-3 border-t border-slate-200 bg-slate-50/70 px-4 py-4 sm:flex-row sm:justify-end sm:px-6">
+                <button
+                  type="button"
+                  onClick={closeForm}
+                  disabled={saving}
+                  className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 cursor-pointer disabled:opacity-50"
+                >
+                  Kansela
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-200 disabled:cursor-not-allowed cursor-pointer disabled:opacity-60"
+                >
+                  {saving && <Spinner />}
+                  {saving
+                    ? "Saving..."
+                    : editingMember
+                      ? "Atualiza dadus membru"
+                      : "Rai dadus membru"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Confirmation and feedback modal */}
       {modal && (
@@ -1084,8 +1305,8 @@ useEffect(() => {
                   {modal === "success"
                     ? "Success"
                     : modal === "confirm"
-                      ? "Confirm Delete"
-                      : "Something Went Wrong"}
+                      ? "Konfirma Hamoos?"
+                      : "Akontese Erru ruma. Koko fila-fali!"}
                 </h3>
 
                 <p className="mt-2 whitespace-pre-line text-sm leading-6 text-slate-600">
@@ -1103,7 +1324,7 @@ useEffect(() => {
                     disabled={deleting}
                     className="rounded-xl border border-slate-300 px-4 py-2.5 cursor-pointer text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50 cursor-pointer"
                   >
-                    Cancel
+                    Kansela
                   </button>
 
                   <button
@@ -1113,7 +1334,7 @@ useEffect(() => {
                     className="inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700 focus:outline-none focus:ring-4 focus:ring-red-200 disabled:cursor-not-allowed cursor-pointer disabled:opacity-60"
                   >
                     {deleting && <Spinner />}
-                    {deleting ? "Deleting..." : "Delete Member"}
+                    {deleting ? "Hamoos..." : "Konfirma"}
                   </button>
                 </>
               ) : (
@@ -1315,25 +1536,25 @@ function MobileField({
   );
 }
 
-// function FormField({
-//   label,
-//   required,
-//   children,
-// }: {
-//   label: string;
-//   required?: boolean;
-//   children: ReactNode;
-// }) {
-//   return (
-//     <div>
-//       <label className={labelClass}>
-//         {label} {required && <span className="text-red-500">*</span>}
-//       </label>
+function FormField({
+  label,
+  required,
+  children,
+}: {
+  label: string;
+  required?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <div>
+      <label className={labelClass}>
+        {label} {required && <span className="text-red-500">*</span>}
+      </label>
 
-//       {children}
-//     </div>
-//   );
-// }
+      {children}
+    </div>
+  );
+}
 
 function ExportOption({
   icon,

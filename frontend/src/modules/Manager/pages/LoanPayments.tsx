@@ -3,6 +3,7 @@ import {
   useEffect,
   useMemo,
   useState,
+  type FormEvent,
 } from "react";
 import api from "../../../services/api";
 
@@ -241,30 +242,30 @@ const getPaymentLoan = (payment: LoanPayment, loans: Loan[]): Loan | null => {
   };
 };
 
-// const getLoanPaid = (loan: Loan, payments: LoanPayment[]): number => {
-//   const loanPayments = payments.filter(
-//     (payment) => Number(payment.loan_id) === Number(loan.id),
-//   );
+const getLoanPaid = (loan: Loan, payments: LoanPayment[]): number => {
+  const loanPayments = payments.filter(
+    (payment) => Number(payment.loan_id) === Number(loan.id),
+  );
 
-//   if (loanPayments.length > 0) {
-//     return roundMoney(
-//       loanPayments.reduce((sum, payment) => sum + toNumber(payment.amount), 0),
-//     );
-//   }
+  if (loanPayments.length > 0) {
+    return roundMoney(
+      loanPayments.reduce((sum, payment) => sum + toNumber(payment.amount), 0),
+    );
+  }
 
-//   return roundMoney(
-//     (loan.payments || []).reduce(
-//       (sum, payment) => sum + toNumber(payment.amount),
-//       0,
-//     ),
-//   );
-// };
+  return roundMoney(
+    (loan.payments || []).reduce(
+      (sum, payment) => sum + toNumber(payment.amount),
+      0,
+    ),
+  );
+};
 
-// const getLoanBalance = (loan: Loan, paid: number): number =>
-//   Math.max(0, roundMoney(getLoanTotal(loan) - paid));
+const getLoanBalance = (loan: Loan, paid: number): number =>
+  Math.max(0, roundMoney(getLoanTotal(loan) - paid));
 
-// const isFullyPaid = (loan: Loan, paid: number): boolean =>
-//   getLoanBalance(loan, paid) <= 0.009;
+const isFullyPaid = (loan: Loan, paid: number): boolean =>
+  getLoanBalance(loan, paid) <= 0.009;
 
 /**
  * Calculates the payment progress at the date and position
@@ -311,25 +312,25 @@ const getPaymentProgress = (
 export default function LoanPayment() {
   const [payments, setPayments] = useState<LoanPayment[]>([]);
   const [loans, setLoans] = useState<Loan[]>([]);
-  const [_members, setMembers] = useState<Borrower[]>([]);
-  const [_nonmembers, setNonmembers] = useState<Borrower[]>([]);
+  const [members, setMembers] = useState<Borrower[]>([]);
+  const [nonmembers, setNonmembers] = useState<Borrower[]>([]);
 
   const [loading, setLoading] = useState(true);
-  const [_loadingBorrowers, setLoadingBorrowers] = useState(true);
-  const [_submitting, _setSubmitting] = useState(false);
+  const [loadingBorrowers, setLoadingBorrowers] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
   const [search, setSearch] = useState("");
   const [methodFilter, setMethodFilter] = useState("All");
   const [statusFilter, setStatusFilter] = useState("All");
 
-  const [_showForm, setShowForm] = useState(false);
-  const [_editingPayment, setEditingPayment] = useState<LoanPayment | null>(
+  const [showForm, setShowForm] = useState(false);
+  const [editingPayment, setEditingPayment] = useState<LoanPayment | null>(
     null,
   );
 
-  const [_form, setForm] = useState<PaymentForm>(emptyForm);
-  const [_formError, setFormError] = useState("");
+  const [form, setForm] = useState<PaymentForm>(emptyForm);
+  const [formError, setFormError] = useState("");
 
   const [modalType, setModalType] = useState<ModalType | null>(null);
   const [modalTitle, setModalTitle] = useState("");
@@ -479,144 +480,142 @@ export default function LoanPayment() {
     });
   }, [payments, loans, search, methodFilter, statusFilter]);
 
-  
-// const borrowerOptions = useMemo(() => {
-//   if (form.borrower_type === "member") {
-//     return members
-//       .filter((member) => {
-//         if (!member.member_number) return false;
+  const borrowerOptions = useMemo(() => {
+    if (form.borrower_type === "member") {
+      return members
+        .filter((member) => {
+          if (!member.member_number) return false;
 
-//         // Include members who have at least one outstanding loan.
-//         return loans.some((loan) => {
-//           if (loan.member_number !== String(member.member_number)) {
-//             return false;
-//           }
+          // Include members who have at least one outstanding loan.
+          return loans.some((loan) => {
+            if (loan.member_number !== String(member.member_number)) {
+              return false;
+            }
 
-//           const paid = getLoanPaid(loan, payments);
-//           const remaining = getLoanBalance(loan, paid);
+            const paid = getLoanPaid(loan, payments);
+            const remaining = getLoanBalance(loan, paid);
 
-//           return remaining > 0.009;
-//         });
-//       })
-//       .map((member) => ({
-//         number: String(member.member_number),
-//         name: member.full_name,
-//       }));
-//   }
+            return remaining > 0.009;
+          });
+        })
+        .map((member) => ({
+          number: String(member.member_number),
+          name: member.full_name,
+        }));
+    }
 
-//   if (form.borrower_type === "nonmember") {
-//     return nonmembers
-//       .filter((member) => {
-//         if (!member.non_member_number) return false;
+    if (form.borrower_type === "nonmember") {
+      return nonmembers
+        .filter((member) => {
+          if (!member.non_member_number) return false;
 
-//         // Include non-members who have at least one outstanding loan.
-//         return loans.some((loan) => {
-//           if (loan.non_member_number !== String(member.non_member_number)) {
-//             return false;
-//           }
+          // Include non-members who have at least one outstanding loan.
+          return loans.some((loan) => {
+            if (loan.non_member_number !== String(member.non_member_number)) {
+              return false;
+            }
 
-//           const paid = getLoanPaid(loan, payments);
-//           const remaining = getLoanBalance(loan, paid);
+            const paid = getLoanPaid(loan, payments);
+            const remaining = getLoanBalance(loan, paid);
 
-//           return remaining > 0.009;
-//         });
-//       })
-//       .map((member) => ({
-//         number: String(member.non_member_number),
-//         name: member.full_name,
-//       }));
-//   }
+            return remaining > 0.009;
+          });
+        })
+        .map((member) => ({
+          number: String(member.non_member_number),
+          name: member.full_name,
+        }));
+    }
 
-//   return [];
-// }, [form.borrower_type, members, nonmembers, loans, payments]);
+    return [];
+  }, [form.borrower_type, members, nonmembers, loans, payments]);
 
+  const availableLoans = useMemo(() => {
+    if (!form.borrower_type || !form.borrower_number) {
+      return [];
+    }
 
-  // const availableLoans = useMemo(() => {
-  //   if (!form.borrower_type || !form.borrower_number) {
-  //     return [];
-  //   }
+    return loans.filter((loan) => {
+      if (form.borrower_type === "member") {
+        return loan.member_number === form.borrower_number;
+      }
 
-  //   return loans.filter((loan) => {
-  //     if (form.borrower_type === "member") {
-  //       return loan.member_number === form.borrower_number;
-  //     }
+      return loan.non_member_number === form.borrower_number;
+    });
+  }, [loans, form.borrower_type, form.borrower_number]);
 
-  //     return loan.non_member_number === form.borrower_number;
-  //   });
-  // }, [loans, form.borrower_type, form.borrower_number]);
+  const selectedLoan = useMemo(
+    () =>
+      loans.find((loan) => Number(loan.id) === Number(form.loan_id)) || null,
+    [loans, form.loan_id],
+  );
 
-  // const selectedLoan = useMemo(
-  //   () =>
-  //     loans.find((loan) => Number(loan.id) === Number(form.loan_id)) || null,
-  //   [loans, form.loan_id],
-  // );
+  const selectedLoanProgress = useMemo(() => {
+    if (!selectedLoan) {
+      return {
+        paid: 0,
+        balance: 0,
+        total: 0,
+        fullyPaid: false,
+      };
+    }
 
-  // const selectedLoanProgress = useMemo(() => {
-  //   if (!selectedLoan) {
-  //     return {
-  //       paid: 0,
-  //       balance: 0,
-  //       total: 0,
-  //       fullyPaid: false,
-  //     };
-  //   }
+    const paid = getLoanPaid(selectedLoan, payments);
+    const total = getLoanTotal(selectedLoan);
+    const balance = getLoanBalance(selectedLoan, paid);
 
-  //   const paid = getLoanPaid(selectedLoan, payments);
-  //   const total = getLoanTotal(selectedLoan);
-  //   const balance = getLoanBalance(selectedLoan, paid);
+    return {
+      paid,
+      total,
+      balance,
+      fullyPaid: isFullyPaid(selectedLoan, paid),
+    };
+  }, [selectedLoan, payments]);
 
-  //   return {
-  //     paid,
-  //     total,
-  //     balance,
-  //     fullyPaid: isFullyPaid(selectedLoan, paid),
-  //   };
-  // }, [selectedLoan, payments]);
+  const previousPaymentAmount = editingPayment
+    ? toNumber(editingPayment.amount)
+    : 0;
 
-  // const previousPaymentAmount = editingPayment
-  //   ? toNumber(editingPayment.amount)
-  //   : 0;
+  const maximumAllowedPayment = roundMoney(
+    selectedLoanProgress.balance + previousPaymentAmount,
+  );
 
-  // const maximumAllowedPayment = roundMoney(
-  //   selectedLoanProgress.balance + previousPaymentAmount,
-  // );
+  const enteredPaymentAmount = Number(form.amount);
 
-  // const enteredPaymentAmount = Number(form.amount);
+  const paymentExceedsBalance =
+    Boolean(selectedLoan) &&
+    form.amount.trim() !== "" &&
+    Number.isFinite(enteredPaymentAmount) &&
+    Math.round(enteredPaymentAmount * 100) >
+      Math.round(maximumAllowedPayment * 100);
 
-  // const paymentExceedsBalance =
-  //   Boolean(selectedLoan) &&
-  //   form.amount.trim() !== "" &&
-  //   Number.isFinite(enteredPaymentAmount) &&
-  //   Math.round(enteredPaymentAmount * 100) >
-  //     Math.round(maximumAllowedPayment * 100);
+  const setField = <K extends keyof PaymentForm>(
+    field: K,
+    value: PaymentForm[K],
+  ) => {
+    setForm((previous) => ({
+      ...previous,
+      [field]: value,
+    }));
+    setFormError("");
+  };
 
-  // const setField = <K extends keyof PaymentForm>(
-  //   field: K,
-  //   value: PaymentForm[K],
-  // ) => {
-  //   setForm((previous) => ({
-  //     ...previous,
-  //     [field]: value,
-  //   }));
-  //   setFormError("");
-  // };
+  const resetForm = () => {
+    setForm(emptyForm);
+    setFormError("");
+    setEditingPayment(null);
+    setShowForm(false);
+  };
 
-  // const resetForm = () => {
-  //   setForm(emptyForm);
-  //   setFormError("");
-  //   setEditingPayment(null);
-  //   setShowForm(false);
-  // };
-
-  // const openCreateForm = () => {
-  //   setForm({
-  //     ...emptyForm,
-  //     payment_date: today(),
-  //   });
-  //   setEditingPayment(null);
-  //   setFormError("");
-  //   setShowForm(true);
-  // };
+  const openCreateForm = () => {
+    setForm({
+      ...emptyForm,
+      payment_date: today(),
+    });
+    setEditingPayment(null);
+    setFormError("");
+    setShowForm(true);
+  };
 
   const openEditForm = (payment: LoanPayment) => {
     const loan =
@@ -650,138 +649,138 @@ export default function LoanPayment() {
     setShowForm(true);
   };
 
-  // const closeForm = () => {
-  //   if (submitting) return;
-  //   resetForm();
-  // };
+  const closeForm = () => {
+    if (submitting) return;
+    resetForm();
+  };
 
-  // const handleBorrowerTypeChange = (value: BorrowerType | "") => {
-  //   setForm((previous) => ({
-  //     ...previous,
-  //     borrower_type: value,
-  //     borrower_number: "",
-  //     loan_id: "",
-  //     amount: "",
-  //   }));
-  //   setFormError("");
-  // };
+  const handleBorrowerTypeChange = (value: BorrowerType | "") => {
+    setForm((previous) => ({
+      ...previous,
+      borrower_type: value,
+      borrower_number: "",
+      loan_id: "",
+      amount: "",
+    }));
+    setFormError("");
+  };
 
-  // const handleBorrowerChange = (value: string) => {
-  //   setForm((previous) => ({
-  //     ...previous,
-  //     borrower_number: value,
-  //     loan_id: "",
-  //     amount: "",
-  //   }));
-  //   setFormError("");
-  // };
+  const handleBorrowerChange = (value: string) => {
+    setForm((previous) => ({
+      ...previous,
+      borrower_number: value,
+      loan_id: "",
+      amount: "",
+    }));
+    setFormError("");
+  };
 
-  // const handleLoanChange = (value: string) => {
-  //   const loan = loans.find((item) => String(item.id) === value);
+  const handleLoanChange = (value: string) => {
+    const loan = loans.find((item) => String(item.id) === value);
 
-  //   const paid = loan ? getLoanPaid(loan, payments) : 0;
-  //   const balance = loan ? getLoanBalance(loan, paid) : 0;
+    const paid = loan ? getLoanPaid(loan, payments) : 0;
+    const balance = loan ? getLoanBalance(loan, paid) : 0;
 
-  //   setForm((previous) => ({
-  //     ...previous,
-  //     loan_id: value,
-  //     amount: loan && balance > 0.009 ? balance.toFixed(2) : "",
-  //   }));
+    setForm((previous) => ({
+      ...previous,
+      loan_id: value,
+      amount: loan && balance > 0.009 ? balance.toFixed(2) : "",
+    }));
 
-  //   setFormError("");
-  // };
+    setFormError("");
+  };
 
-  // const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-  //   event.preventDefault();
-  //   setFormError("");
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setFormError("");
 
-  //   if (!form.borrower_type) {
-  //     setFormError("Please select a borrower type.");
-  //     return;
-  //   }
+    if (!form.borrower_type) {
+      setFormError("Please select a borrower type.");
+      return;
+    }
 
-  //   if (!form.borrower_number) {
-  //     setFormError("Please select a borrower.");
-  //     return;
-  //   }
+    if (!form.borrower_number) {
+      setFormError("Please select a borrower.");
+      return;
+    }
 
-  //   if (!form.loan_id) {
-  //     setFormError("Please select a loan.");
-  //     return;
-  //   }
+    if (!form.loan_id) {
+      setFormError("Please select a loan.");
+      return;
+    }
 
-  //   const amount = Number(form.amount);
+    const amount = Number(form.amount);
 
-  //   if (!form.amount.trim() || !Number.isFinite(amount) || amount <= 0) {
-  //     setFormError("Enter a valid payment amount greater than zero.");
-  //     return;
-  //   }
+    if (!form.amount.trim() || !Number.isFinite(amount) || amount <= 0) {
+      setFormError("Enter a valid payment amount greater than zero.");
+      return;
+    }
 
-  //   if (!form.payment_date) {
-  //     setFormError("Please select a payment date.");
-  //     return;
-  //   }
+    if (!form.payment_date) {
+      setFormError("Please select a payment date.");
+      return;
+    }
 
-  //   if (!selectedLoan) {
-  //     setFormError(
-  //       "The selected loan could not be found. Please select it again.",
-  //     );
-  //     return;
-  //   }
+    if (!selectedLoan) {
+      setFormError(
+        "The selected loan could not be found. Please select it again.",
+      );
+      return;
+    }
 
-  //   const paid = getLoanPaid(selectedLoan, payments);
-  //   const remaining = getLoanBalance(selectedLoan, paid);
-  //   const maximumAllowed = maximumAllowedPayment;
+    const paid = getLoanPaid(selectedLoan, payments);
+    const remaining = getLoanBalance(selectedLoan, paid);
+    const maximumAllowed = maximumAllowedPayment;
 
-  //   if (!editingPayment && remaining <= 0.009) {
-  //     setFormError(
-  //       "This loan is already fully paid. No additional payment can be recorded.",
-  //     );
-  //     return;
-  //   }
+    if (!editingPayment && remaining <= 0.009) {
+      setFormError(
+        "This loan is already fully paid. No additional payment can be recorded.",
+      );
+      return;
+    }
 
-  //   if (Math.round(amount * 100) > Math.round(maximumAllowed * 100)) {
-  //     setFormError(
-  //       `Payment amount cannot exceed the remaining balance of ${formatCurrency(maximumAllowed)}.`,
-  //     );
-  //     return;
-  //   }
+    if (Math.round(amount * 100) > Math.round(maximumAllowed * 100)) {
+      setFormError(
+        `Payment amount cannot exceed the remaining balance of ${formatCurrency(maximumAllowed)}.`,
+      );
+      return;
+    }
 
-  //   const payload = {
-  //     loan_id: Number(form.loan_id),
-  //     amount: roundMoney(amount),
-  //     payment_date: form.payment_date,
-  //     payment_method: form.payment_method,
-  //     description: form.description.trim() || null,
-  //   };
+    const payload = {
+      loan_id: Number(form.loan_id),
+      amount: roundMoney(amount),
+      payment_date: form.payment_date,
+      payment_method: form.payment_method,
+      description: form.description.trim() || null,
+    };
 
-  //   setSubmitting(true);
+    setSubmitting(true);
 
-  //   try {
-  //     if (editingPayment) {
-  //       await api.put(`/loanpayments/${editingPayment.id}`, payload);
-  //       setNotice("Payment updated successfully.");
-  //     } else {
-  //       await api.post("/loanpayments", payload);
-  //       setNotice("Payment recorded successfully.");
-  //     }
+    try {
+      if (editingPayment) {
+        await api.put(`/loanpayments/${editingPayment.id}`, payload);
+        setNotice("Payment updated successfully.");
+      } else {
+        await api.post("/loanpayments", payload);
+        setNotice("Payment recorded successfully.");
+      }
 
-  //     resetForm();
-  //     await refreshData();
-  //   } catch (error) {
-  //     setFormError(getErrorMessage(error));
-  //   } finally {
-  //     setSubmitting(false);
-  //   }
-  // };
+      resetForm();
+      await refreshData();
+    } catch (error) {
+      setFormError(getErrorMessage(error));
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const openDeleteConfirmation = (payment: LoanPayment) => {
     setSelectedPayment(payment);
 
     showMessage(
       "confirm",
-      "Delete Payment?",
-      `Are you sure you want to delete payment #${payment.id}? This action cannot be undone.`,
+      "Hamoos Dadus Pagamentu?",
+      `Ita-boot hakarak duni atu hamoos dadus ne'e? Dadus ne'e sei hamoos permanente.`,
     );
   };
 
@@ -803,9 +802,9 @@ export default function LoanPayment() {
     }
   };
 
-  // const selectedBorrowerName = borrowerOptions.find(
-  //   (item) => item.number === form.borrower_number,
-  // )?.name;
+  const selectedBorrowerName = borrowerOptions.find(
+    (item) => item.number === form.borrower_number,
+  )?.name;
 
   const buttonClass =
     "rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60";
@@ -821,9 +820,17 @@ export default function LoanPayment() {
             C-HTM / Finance Management
           </p>
           <h1 className="text-2xl font-bold tracking-tight text-gray-900">
-            Loan Payments
+            Pagamentu Emprestimu
           </h1>
         </div>
+
+        <button
+          type="button"
+          onClick={openCreateForm}
+          className={`${buttonClass} cursor-pointer`}
+        >
+          + Aumenta dadus
+        </button>
       </div>
 
       {notice && (
@@ -844,7 +851,7 @@ export default function LoanPayment() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {[
           {
-            title: "Payment Transactions",
+            title: "Transaksaun Pagamentu",
             value: String(paymentTotals.count),
             description: "",
             icon: "▤",
@@ -854,7 +861,7 @@ export default function LoanPayment() {
             valueColor: "text-gray-900",
           },
           {
-            title: "Total Collected",
+            title: "Total Pagamentu",
             value: formatCurrency(paymentTotals.total),
             description: "",
             icon: "$",
@@ -864,7 +871,7 @@ export default function LoanPayment() {
             valueColor: "text-emerald-700",
           },
           {
-            title: "Cash Payments",
+            title: "Pagamentu Kas",
             value: formatCurrency(paymentTotals.cash),
             description: "",
             icon: "↗",
@@ -874,7 +881,7 @@ export default function LoanPayment() {
             valueColor: "text-violet-700",
           },
           {
-            title: "Bank Transfers",
+            title: "Pagamentu husi Bank",
             value: formatCurrency(paymentTotals.bankTransfer),
             description: "",
             icon: "⇄",
@@ -922,7 +929,7 @@ export default function LoanPayment() {
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <h2 className="text-lg font-semibold text-gray-900">
-                Payment Records
+                Lista pagamentu
               </h2>
             </div>
 
@@ -930,7 +937,7 @@ export default function LoanPayment() {
               <button
                 type="button"
                 onClick={() => {
-                  window.location.href = "/manager/loanpayreport";
+                  window.location.href = "/superadmin/loanpayreport";
                 }}
                 className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-4 py-2.5 text-sm font-semibold text-blue-700 transition hover:border-blue-600 hover:bg-blue-600 hover:text-white"
               >
@@ -953,7 +960,7 @@ export default function LoanPayment() {
                     d="M15 3v5h4M8 13h8M8 17h8"
                   />
                 </svg>
-                Loan Payment Report
+                Relatoriu pagamentu
               </button>
 
               <button
@@ -999,7 +1006,7 @@ export default function LoanPayment() {
                 type="search"
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
-                placeholder="Borrower, payment ID, loan ID..."
+                placeholder=""
                 className="w-full cursor-pointer rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
               />
             </div>
@@ -1009,7 +1016,7 @@ export default function LoanPayment() {
                 htmlFor="payment-method-filter"
                 className="mb-1.5 block text-sm font-medium text-gray-700"
               >
-                Payment Method
+                Metodu Pagamentu
               </label>
               <select
                 id="payment-method-filter"
@@ -1017,9 +1024,9 @@ export default function LoanPayment() {
                 onChange={(event) => setMethodFilter(event.target.value)}
                 className="w-full cursor-pointer rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
               >
-                <option value="All">All Methods</option>
-                <option value="Cash">Cash</option>
-                <option value="Bank Transfer">Bank Transfer</option>
+                <option value="All">Metodu hotu-hotu</option>
+                <option value="Cash">Kas</option>
+                <option value="Bank Transfer">Transfer husi bank</option>
               </select>
             </div>
 
@@ -1028,7 +1035,7 @@ export default function LoanPayment() {
                 htmlFor="payment-status-filter"
                 className="mb-1.5 block text-sm font-medium text-gray-700"
               >
-                Loan Status
+                Status pagamentu
               </label>
               <select
                 id="payment-status-filter"
@@ -1036,9 +1043,9 @@ export default function LoanPayment() {
                 onChange={(event) => setStatusFilter(event.target.value)}
                 className="w-full cursor-pointer rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
               >
-                <option value="All">All Loan Statuses</option>
-                <option value="Outstanding">Outstanding</option>
-                <option value="Fully Paid">Fully Paid</option>
+                <option value="All">Hotu-hotu</option>
+                <option value="Outstanding">Seidauk selu</option>
+                <option value="Fully Paid">Selu kompletu</option>
               </select>
             </div>
           </div>
@@ -1048,7 +1055,7 @@ export default function LoanPayment() {
           <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
             <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600" />
             <p className="mt-3 text-sm text-gray-500">
-              Loading payment records...
+              Loading dadus pagamentu...
             </p>
           </div>
         ) : filteredPayments.length === 0 ? (
@@ -1057,12 +1064,12 @@ export default function LoanPayment() {
               $
             </div>
             <h3 className="mt-3 text-base font-semibold text-gray-900">
-              No payment records found
+              Dadus pagamentu la iha.
             </h3>
             <p className="mt-1 text-sm text-gray-500">
               {search || methodFilter !== "All" || statusFilter !== "All"
-                ? "Try changing your search or filters."
-                : "Add a payment to get started."}
+                ? "Muda filtru no koko fila-fali."
+                : "Aumenta pagamentu ida atu hahu. "}
             </p>
           </div>
         ) : (
@@ -1070,26 +1077,29 @@ export default function LoanPayment() {
             <table className="w-full min-w-[1150px] text-left text-sm">
               <thead className="bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
                 <tr className="bg-slate-800 text-white">
-                  <th className="px-5 py-3.5 font-semibold">No.</th>
-                  <th className="px-5 py-3.5 font-semibold">Payment Date</th>
-                  <th className="px-5 py-3.5 font-semibold">Borrower</th>
+                  <th className="px-5 py-3.5 font-semibold">Nu.</th>
+                  <th className="px-5 py-3.5 font-semibold">Data Pagamentu</th>
+                  <th className="px-5 py-3.5 font-semibold">Naran</th>
                   <th className="px-5 py-3.5 text-right font-semibold">
-                    Loan Amount
-                    <p>(incl. interest)</p>
+                    Montante Empresta
+                    <p>(incl. funan)</p>
                   </th>
                   <th className="px-5 py-3.5 text-right font-semibold">
-                    Payment Amount
+                    Montante Pagamentu
                   </th>
                   <th className="px-5 py-3.5 text-right font-semibold">
-                    Total Paid
+                    Pagamentu
+                    <p> ne'ebe simu ona</p>
                   </th>
                   <th className="px-5 py-3.5 text-right font-semibold">
-                    Remaining Balance
+                    Montante tenki<p> selu </p>
                   </th>
-                  <th className="px-5 py-3.5 font-semibold">Method</th>
+                  <th className="px-5 py-3.5 font-semibold">
+                    Metodu <p>pagamentu</p>
+                  </th>
                   <th className="px-5 py-3.5 font-semibold">Status</th>
                   <th className="px-5 py-3.5 text-right font-semibold">
-                    Actions
+                    Aksaun
                   </th>
                 </tr>
               </thead>
@@ -1116,11 +1126,11 @@ export default function LoanPayment() {
                           {index + 1}
                         </div>
                       </td>
-                      
+
                       <td className="whitespace-nowrap px-5 py-4 text-gray-600">
                         {formatDate(payment.payment_date)}
                       </td>
-                      
+
                       <td className="px-5 py-4">
                         <div className="font-medium text-gray-900">
                           {loan ? getBorrowerName(loan) : "Unknown borrower"}
@@ -1129,8 +1139,6 @@ export default function LoanPayment() {
                           {loan ? getBorrowerNumber(loan) : "-"}
                         </div>
                       </td>
-
-                      
 
                       <td className="whitespace-nowrap px-5 py-4 text-right font-medium text-gray-900">
                         {progress ? formatCurrency(progress.total) : "-"}
@@ -1175,7 +1183,7 @@ export default function LoanPayment() {
                             type="button"
                             onClick={() => openEditForm(payment)}
                             aria-label={`Edit payment ${payment.id}`}
-                            title="Edit payment"
+                            title="Hadia dadus"
                             className="cursor-pointer px-3 py-2 text-xs font-semibold text-gray-700 transition hover:bg-gray-100"
                           >
                             <svg
@@ -1197,7 +1205,7 @@ export default function LoanPayment() {
                             type="button"
                             onClick={() => openDeleteConfirmation(payment)}
                             aria-label={`Delete payment ${payment.id}`}
-                            title="Delete payment"
+                            title="Hamoos dadus"
                             className="cursor-pointer px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-50"
                           >
                             <svg
@@ -1231,6 +1239,463 @@ export default function LoanPayment() {
           </div>
         )}
       </section>
+
+      {/* Add / Edit Payment Modal */}
+      {showForm && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center overflow-y-auto bg-gray-950/50 p-3 sm:p-6">
+          <div className="my-auto w-full max-w-2xl overflow-hidden rounded-2xl bg-white shadow-2xl">
+            <div className="flex items-start justify-between gap-4 border-b border-gray-200 px-5 py-4 sm:px-6">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">
+                  {editingPayment ? "Hadia dadus" : "Aumenta dadus pagamentu"}
+                </h2>
+                <p className="mt-1 text-sm text-gray-500">
+                  {editingPayment
+                    ? "Hadia dadus pagamentu iha kraik."
+                    : "Hili ema ne'ebe foti emprestimu i depois hatama dadus pagamentu."}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={closeForm}
+                disabled={submitting}
+                aria-label="Close form"
+                className="rounded-lg p-2 text-xl leading-none text-gray-400 transition hover:bg-gray-100 hover:text-gray-700 disabled:opacity-50"
+              >
+                ×
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit}>
+              <div className="max-h-[70vh] space-y-5 overflow-y-auto px-5 py-5 sm:px-6">
+                {formError && (
+                  <div
+                    role="alert"
+                    className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+                  >
+                    <p className="font-semibold">Please check the following</p>
+                    <p className="mt-1">{formError}</p>
+                  </div>
+                )}
+
+                {/* Borrower Type */}
+                <div>
+                  <label className="mb-2 block text-sm font-semibold text-gray-800">
+                    1. Hili Membru/Non-membru{" "}
+                    <span className="text-red-500">*</span>
+                  </label>
+
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <button
+                      type="button"
+                      onClick={() => handleBorrowerTypeChange("member")}
+                      disabled={Boolean(editingPayment)}
+                      aria-pressed={form.borrower_type === "member"}
+                      className={`cursor-pointer rounded-xl border-2 p-4 text-left transition ${
+                        form.borrower_type === "member"
+                          ? "border-blue-600 bg-blue-50 ring-2 ring-blue-100"
+                          : "border-gray-200 bg-white hover:border-blue-300 hover:bg-gray-50"
+                      } disabled:cursor-not-allowed disabled:opacity-60`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div
+                          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-lg ${
+                            form.borrower_type === "member"
+                              ? "bg-blue-600 text-white"
+                              : "bg-gray-100 text-gray-600"
+                          }`}
+                        >
+                          <svg
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="1.8"
+                            className="h-6 w-6"
+                          >
+                            <circle cx="12" cy="8" r="4" />
+                            <path d="M4 21a8 8 0 0 1 16 0" />
+                          </svg>
+                        </div>
+
+                        <div className="min-w-0 flex-1">
+                          <p className="font-semibold text-gray-900">Membru</p>
+                          <p className="mt-1 text-xs leading-5 text-gray-500">
+                            Hili membru ne’ebé rejista ona hanesan ema ne’ebé
+                            foti empréstimu.
+                          </p>
+                        </div>
+
+                        {form.borrower_type === "member" && (
+                          <span className="text-blue-600">✓</span>
+                        )}
+                      </div>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleBorrowerTypeChange("nonmember")}
+                      disabled={Boolean(editingPayment)}
+                      aria-pressed={form.borrower_type === "nonmember"}
+                      className={`cursor-pointer rounded-xl border-2 p-4 text-left transition ${
+                        form.borrower_type === "nonmember"
+                          ? "border-blue-600 bg-blue-50 ring-2 ring-blue-100"
+                          : "border-gray-200 bg-white hover:border-blue-300 hover:bg-gray-50"
+                      } disabled:cursor-not-allowed disabled:opacity-60`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div
+                          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-lg ${
+                            form.borrower_type === "nonmember"
+                              ? "bg-blue-600 text-white"
+                              : "bg-gray-100 text-gray-600"
+                          }`}
+                        >
+                          <svg
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="1.8"
+                            className="h-6 w-6"
+                          >
+                            <circle cx="9" cy="8" r="3.5" />
+                            <path d="M2 20a7 7 0 0 1 14 0" />
+                            <path d="M16 5.5a3.5 3.5 0 0 1 0 6.8M18 14a6 6 0 0 1 4 5.7" />
+                          </svg>
+                        </div>
+
+                        <div className="min-w-0 flex-1">
+                          <p className="font-semibold text-gray-900">
+                            Non-Membru
+                          </p>
+                          <p className="mt-1 text-xs leading-5 text-gray-500">
+                            Hili non-membru ne’ebé rejista ona hanesan ema
+                            ne’ebé foti empréstimu.
+                          </p>
+                        </div>
+
+                        {form.borrower_type === "nonmember" && (
+                          <span className="text-blue-600">✓</span>
+                        )}
+                      </div>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Borrower selection */}
+                <div>
+                  <label
+                    htmlFor="borrower"
+                    className="mb-1.5 block text-sm font-semibold text-gray-800"
+                  >
+                    2. Hili membru/non-membru ne'ebe empresta{" "}
+                    <span className="text-red-500">*</span>
+                  </label>
+
+                  <select
+                    id="borrower"
+                    value={form.borrower_number}
+                    onChange={(event) =>
+                      handleBorrowerChange(event.target.value)
+                    }
+                    disabled={
+                      !form.borrower_type ||
+                      loadingBorrowers ||
+                      Boolean(editingPayment)
+                    }
+                    required
+                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:bg-gray-100"
+                  >
+                    <option value="">
+                      {loadingBorrowers
+                        ? "Loading informasaun kona-ba ema ne'ebe empresta..."
+                        : !form.borrower_type
+                          ? "Hili uluk tipu ema ne'ebe foti empresta"
+                          : borrowerOptions.length === 0
+                            ? "La iha ema ne'ebe seidauk selu emprestimu. Hotu-hotu selu ona!"
+                            : "Hili ema ne'ebe foti empresta"}
+                    </option>
+
+                    {borrowerOptions.map((borrower) => (
+                      <option key={borrower.number} value={borrower.number}>
+                        {borrower.name} ({borrower.number})
+                      </option>
+                    ))}
+                  </select>
+
+                  {form.borrower_type && !loadingBorrowers && (
+                    <p className="mt-1.5 text-xs text-gray-500">
+                      {borrowerOptions.length}{" "}
+                      {form.borrower_type === "member"
+                        ? "members"
+                        : "non-members"}{" "}
+                      Ne'ebe emprestimu seidauk selu kompletu.
+                    </p>
+                  )}
+                </div>
+
+                {/* Loan selection */}
+                <div>
+                  <label
+                    htmlFor="loan"
+                    className="mb-1.5 block text-sm font-semibold text-gray-800"
+                  >
+                    3. Hili montante empresta{" "}
+                    <span className="text-red-500">*</span>
+                  </label>
+
+                  <select
+                    id="loan"
+                    value={form.loan_id}
+                    onChange={(event) => handleLoanChange(event.target.value)}
+                    disabled={
+                      !form.borrower_type ||
+                      !form.borrower_number ||
+                      Boolean(editingPayment)
+                    }
+                    required
+                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:bg-gray-100"
+                  >
+                    <option value="">
+                      {!form.borrower_number
+                        ? "Hili uluk ema ne'ebe empresta"
+                        : availableLoans.length === 0
+                          ? "Laiha emprestimu"
+                          : "Hili emprestimu"}
+                    </option>
+
+                    {availableLoans.map((loan) => {
+                      const paid = getLoanPaid(loan, payments);
+                      const total = getLoanTotal(loan);
+                      const remaining = getLoanBalance(loan, paid);
+                      const fullyPaid = isFullyPaid(loan, paid);
+
+                      return (
+                        <option key={loan.id} value={loan.id}>
+                          {`Total empresta ${formatCurrency(total)} · ${
+                            fullyPaid
+                              ? "Selu kompletu ona"
+                              : `Seidauk selu ${formatCurrency(remaining)}`
+                          }`}
+                        </option>
+                      );
+                    })}
+                  </select>
+
+                  {form.borrower_number && availableLoans.length === 0 && (
+                    <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm text-amber-800">
+                      La hetan empréstimu ba ema ne’e. Favór ida, hili ema seluk
+                      ka verifica rejistu empréstimu sira.
+                    </div>
+                  )}
+
+                  {selectedLoan && (
+                    <div className="mt-3 rounded-xl border border-gray-200 bg-gray-50 p-4">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div>
+                          <p className="text-sm font-semibold text-gray-900">
+                            Loan #{selectedLoan.id}
+                          </p>
+                          <p className="mt-1 text-xs text-gray-500">
+                            Ema ne'ebe empresta:{" "}
+                            {selectedBorrowerName ||
+                              getBorrowerName(selectedLoan)}
+                          </p>
+                        </div>
+
+                        <span
+                          className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+                            selectedLoanProgress.fullyPaid
+                              ? "bg-green-100 text-green-700"
+                              : "bg-amber-100 text-amber-700"
+                          }`}
+                        >
+                          {selectedLoanProgress.fullyPaid
+                            ? "Fully Paid"
+                            : "Outstanding"}
+                        </span>
+                      </div>
+
+                      <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                        <ProgressItem
+                          label="Total Empresta"
+                          value={formatCurrency(selectedLoanProgress.total)}
+                        />
+                        <ProgressItem
+                          label="Total Selu ona"
+                          value={formatCurrency(selectedLoanProgress.paid)}
+                          green
+                        />
+                        <ProgressItem
+                          label="Total seidauk selu"
+                          value={formatCurrency(selectedLoanProgress.balance)}
+                          highlight={!selectedLoanProgress.fullyPaid}
+                        />
+                      </div>
+
+                      {selectedLoanProgress.fullyPaid && (
+                        <p className="mt-3 rounded-lg bg-green-50 px-3 py-2 text-xs font-medium text-green-800">
+                          Empréstimu ida-ne’e selu hotu ona. Empréstimu ne’e sei
+                          kontinua hatudu atu bele haree fali, maibé labele
+                          rejista pagamentu tan.
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Payment amount and date */}
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <label
+                      htmlFor="payment-amount"
+                      className="mb-1.5 block text-sm font-semibold text-gray-800"
+                    >
+                      Montante Pagamentu (USD){" "}
+                      <span className="text-red-500">*</span>
+                    </label>
+
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-500">
+                        $
+                      </span>
+                      <input
+                        id="payment-amount"
+                        type="number"
+                        min="0.01"
+                        step="0.01"
+                        value={form.amount}
+                        onChange={(event) =>
+                          setField("amount", event.target.value)
+                        }
+                        disabled={
+                          !selectedLoan ||
+                          (selectedLoanProgress.fullyPaid && !editingPayment) ||
+                          submitting
+                        }
+                        required
+                        placeholder="0.00"
+                        className="w-full rounded-lg border border-gray-300 py-3 pl-7 pr-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:bg-gray-100"
+                      />
+                    </div>
+
+                    {selectedLoan &&
+                      (!selectedLoanProgress.fullyPaid || editingPayment) && (
+                        <p className="mt-1.5 text-xs text-gray-500">
+                          Pagamentu Maximu:{" "}
+                          {formatCurrency(maximumAllowedPayment)}
+                        </p>
+                      )}
+
+                    {paymentExceedsBalance && (
+                      <p
+                        role="alert"
+                        className="mt-1.5 text-sm font-medium text-red-600"
+                      >
+                        Montante pagamentu labele liu saldo restante ne’ebé mak
+                        seidauk selu. {formatCurrency(maximumAllowedPayment)}.
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="payment-date"
+                      className="mb-1.5 block text-sm font-semibold text-gray-800"
+                    >
+                      Data Pagamentu <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      id="payment-date"
+                      type="date"
+                      value={form.payment_date}
+                      onChange={(event) =>
+                        setField("payment_date", event.target.value)
+                      }
+                      required
+                      className="w-full rounded-lg border border-gray-300 px-3 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="payment-method"
+                    className="mb-1.5 block text-sm font-semibold text-gray-800"
+                  >
+                    Metodu Pagamentu<span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    id="payment-method"
+                    value={form.payment_method}
+                    onChange={(event) =>
+                      setField(
+                        "payment_method",
+                        event.target.value as PaymentMethod,
+                      )
+                    }
+                    required
+                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                  >
+                    <option value="Cash">Kas</option>
+                    <option value="Bank Transfer">Transfer husi Bank</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="payment-description"
+                    className="mb-1.5 block text-sm font-semibold text-gray-800"
+                  >
+                    Deskrisaun{" "}
+                    <span className="font-normal text-gray-400">
+                      (Opsional)
+                    </span>
+                  </label>
+                  <textarea
+                    id="payment-description"
+                    rows={3}
+                    value={form.description}
+                    onChange={(event) =>
+                      setField("description", event.target.value)
+                    }
+                    placeholder="Anota kona-ba pagamentu..."
+                    className="w-full resize-y rounded-lg border border-gray-300 px-3 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-col-reverse gap-3 border-t border-gray-200 bg-gray-50 px-5 py-4 sm:flex-row sm:justify-end sm:px-6">
+                <button
+                  type="button"
+                  onClick={closeForm}
+                  disabled={submitting}
+                  className={`${secondaryButtonClass} cursor-pointer`}
+                >
+                  Kansela
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={
+                    submitting ||
+                    paymentExceedsBalance ||
+                    (!editingPayment &&
+                      Boolean(selectedLoan && selectedLoanProgress.fullyPaid))
+                  }
+                  className={`${buttonClass} cursor-pointer`}
+                >
+                  {submitting
+                    ? "Saving..."
+                    : editingPayment
+                      ? "Atualiza dadus"
+                      : "Rai dadus"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Confirmation and message modal */}
       {modalType && (
@@ -1270,7 +1735,7 @@ export default function LoanPayment() {
                     disabled={deleting}
                     className={`${secondaryButtonClass} cursor-pointer`}
                   >
-                    Cancel
+                    Kansela
                   </button>
                   <button
                     type="button"
@@ -1278,7 +1743,7 @@ export default function LoanPayment() {
                     disabled={deleting}
                     className="cursor-pointer rounded-lg bg-red-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-60"
                   >
-                    {deleting ? "Deleting..." : "Delete Payment"}
+                    {deleting ? "Hamoos..." : "Hamoos dadus"}
                   </button>
                 </>
               ) : (
@@ -1298,33 +1763,33 @@ export default function LoanPayment() {
   );
 }
 
-// interface ProgressItemProps {
-//   label: string;
-//   value: string;
-//   green?: boolean;
-//   highlight?: boolean;
-// }
+interface ProgressItemProps {
+  label: string;
+  value: string;
+  green?: boolean;
+  highlight?: boolean;
+}
 
-// function ProgressItem({
-//   label,
-//   value,
-//   green = false,
-//   highlight = false,
-// }: ProgressItemProps) {
-//   return (
-//     <div className="rounded-lg border border-gray-200 bg-white p-3">
-//       <p className="text-xs font-medium text-gray-500">{label}</p>
-//       <p
-//         className={`mt-1 break-words text-sm font-bold ${
-//           green
-//             ? "text-green-700"
-//             : highlight
-//               ? "text-amber-700"
-//               : "text-gray-900"
-//         }`}
-//       >
-//         {value}
-//       </p>
-//     </div>
-//   );
-// }
+function ProgressItem({
+  label,
+  value,
+  green = false,
+  highlight = false,
+}: ProgressItemProps) {
+  return (
+    <div className="rounded-lg border border-gray-200 bg-white p-3">
+      <p className="text-xs font-medium text-gray-500">{label}</p>
+      <p
+        className={`mt-1 break-words text-sm font-bold ${
+          green
+            ? "text-green-700"
+            : highlight
+              ? "text-amber-700"
+              : "text-gray-900"
+        }`}
+      >
+        {value}
+      </p>
+    </div>
+  );
+}
