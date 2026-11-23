@@ -143,10 +143,11 @@ const getErrorMessage = (error: unknown): string => {
   }
 
   if (err.response?.status === 409) {
-    return "This loan cannot be deleted because it has existing payments.";
+    return "Empréstimu ida-ne'e labele hamoos tanba iha pagamentu sira ne'ebé eziste ona.";
+    
   }
 
-  return err.message || "Something went wrong. Please try again.";
+  return err.message || "Akontese Erru ruma. Koko fila-fali!";
 };
 
 /**
@@ -480,8 +481,8 @@ export default function Loan() {
       setModalTitle("Success");
       setModalMessage(
         editingLoan
-          ? "The loan has been updated successfully."
-          : "The new loan has been added successfully.",
+          ? "Dadus hadia ho susesu."
+          : "Dadus aumenta ho susesu.",
       );
       setSelectedLoan(null);
 
@@ -496,9 +497,9 @@ export default function Loan() {
   const openDeleteConfirmation = (loan: Loan) => {
     if ((loan.payments || []).length > 0) {
       setModalType("warning");
-      setModalTitle("Cannot Delete Loan");
+      setModalTitle("Labele hamoos dadus ne'e");
       setModalMessage(
-        "This loan already has payments. Please review or resolve the payment records before deleting this loan.",
+        "Empréstimu ida-ne’e iha ona pagamentu. Favór ida, haree uluk rejistu pagamentu sira antes hamoos empréstimu ne’e."
       );
       setSelectedLoan(null);
       return;
@@ -528,13 +529,13 @@ export default function Loan() {
 
       setModalType("success");
       setModalTitle("Success");
-      setModalMessage("The loan has been deleted successfully.");
+      setModalMessage("Dadus ne'e hamoos ho susesu.");
       setSelectedLoan(null);
 
       await fetchLoans();
     } catch (error) {
       setModalType("error");
-      setModalTitle("Unable to Delete Loan");
+      setModalTitle("Labele atu hamoos dadus ne'e.");
       setModalMessage(getErrorMessage(error));
       setSelectedLoan(null);
     } finally {
@@ -560,7 +561,7 @@ export default function Loan() {
               C-HTM / Finance Management
             </p>
             <h1 className="text-2xl font-bold text-gray-900">
-              Loan Management
+              Dadus Emprestimu
             </h1>
           </div>
 
@@ -571,7 +572,7 @@ export default function Loan() {
             className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <span className="text-lg leading-none">+</span>
-            Add Loan
+            Aumenta dadus
           </button>
         </div>
 
@@ -583,7 +584,7 @@ export default function Loan() {
 
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-sm font-medium text-gray-500">Total Loans</p>
+                <p className="text-sm font-medium text-gray-500">Total Emprestimu</p>
                 <p className="mt-3 text-3xl font-bold tracking-tight text-gray-900">
                   {loans.length}
                 </p>
@@ -620,8 +621,8 @@ export default function Loan() {
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-sm font-medium text-gray-500">
-                  Total Loan Amount
-                  <p>(exc. interest)</p>
+                  Total Montante Emprestimu
+                  <p>(exc. funan)</p>
                 </p>
                 <p className="mt-3 break-words text-2xl font-bold tracking-tight text-emerald-700">
                   {formatCurrency(totalPrincipal)}
@@ -653,7 +654,7 @@ export default function Loan() {
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-sm font-medium text-gray-500">
-                  Total Interest
+                  Total funan
                 </p>
                 <p className="mt-3 break-words text-2xl font-bold tracking-tight text-amber-700">
                   {formatCurrency(totalInterest)}
@@ -688,8 +689,8 @@ export default function Loan() {
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-sm font-medium text-gray-500">
-                  Total Loan Amount
-                  <p>(inc. interest) </p>
+                  Total Montante Emprestimu
+                  <p>(inc. funan) </p>
                 </p>
                 <p className="mt-3 break-words text-2xl font-bold tracking-tight text-violet-700">
                   {formatCurrency(totalLoanAmount)}
@@ -726,7 +727,7 @@ export default function Loan() {
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-sm font-medium text-gray-500">
-                  Total Payments Received
+                  Total Pagamentu 
                 </p>
                 <p className="mt-3 break-words text-2xl font-bold tracking-tight text-emerald-700">
                   {formatCurrency(totalPaid)}
@@ -760,7 +761,7 @@ export default function Loan() {
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-sm font-medium text-gray-500">
-                  Outstanding Balance
+                  Total seidauk selu
                 </p>
                 <p className="mt-3 break-words text-2xl font-bold tracking-tight text-rose-700">
                   {formatCurrency(totalBalance)}
@@ -810,7 +811,7 @@ export default function Loan() {
                 type="text"
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
-                placeholder="Search by borrower, number, ID, or amount..."
+                placeholder="Buka naran, numeru, id ou montante empresta..."
                 className="w-full rounded-lg border border-gray-300 py-2.5 pl-10 pr-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 cursor-pointer"
               />
             </div>
@@ -821,9 +822,9 @@ export default function Loan() {
               className="cursor-pointer rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 md:w-52"
               aria-label="Filter by borrower type"
             >
-              <option value="all">All Borrowers</option>
-              <option value="member">Member</option>
-              <option value="nonmember">Non-Member</option>
+              <option value="all">Ema hotu</option>
+              <option value="member">Membru</option>
+              <option value="nonmember">Non-Membru</option>
             </select>
 
             <button
@@ -835,7 +836,7 @@ export default function Loan() {
               }}
               className="cursor-pointer rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
             >
-              Reset
+              Fila ba inisiu
             </button>
           </div>
         </div>
@@ -844,7 +845,7 @@ export default function Loan() {
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
           <div className="flex flex-col justify-between gap-3 border-b border-slate-200 bg-white px-5 py-5 sm:flex-row sm:items-center">
             <div>
-              <h2 className="text-lg font-bold text-slate-800">Loan Records</h2>
+              <h2 className="text-lg font-bold text-slate-800">Lista emprestimu</h2>
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
@@ -874,7 +875,7 @@ export default function Loan() {
                     d="M15 3v5h4M8 13h8M8 17h8"
                   />
                 </svg>
-                Loan List Report
+                Relatoriu
               </button>
 
               <button
@@ -912,10 +913,10 @@ export default function Loan() {
             <div className="flex flex-col items-center justify-center px-4 py-16">
               <div className="h-9 w-9 animate-spin rounded-full border-4 border-blue-100 border-t-blue-600" />
               <p className="mt-4 text-sm font-medium text-slate-600">
-                Loading loan records...
+                Loading ...
               </p>
               <p className="mt-1 text-xs text-slate-400">
-                Please wait a moment.
+                Favor hein oituan.
               </p>
             </div>
           ) : filteredLoans.length === 0 ? (
@@ -943,13 +944,13 @@ export default function Loan() {
               </div>
 
               <h3 className="mt-4 text-base font-bold text-slate-800">
-                No Loan Records Found
+                Dadus Emprestimu la iha.
               </h3>
 
               <p className="mt-2 max-w-sm text-sm leading-6 text-slate-500">
                 {search || ownerFilter !== "all"
-                  ? "No loans match your current search or filter. Try changing your criteria."
-                  : "There are no loan records yet. Add a loan to get started."}
+                  ? "La hetan dadus emprestimu ne'ebe hanesan ho ita buka ka filtru. Koko muda kriteria buka nian."
+                  : "Dadus emprestimu seidauk iha."}
               </p>
 
               {!search && ownerFilter === "all" && (
@@ -970,16 +971,16 @@ export default function Loan() {
                   <thead>
                     <tr className="bg-slate-800 text-white">
                       {[
-                        "No.",
-                        "Loan Date",
-                        "Borrower",
-                        "Loan Amount",
-                        "Interest Rate",
-                        "Interest Range",
-                        "Total Loan (inc. interest)",
-                        "Payments",
-                        "Outstanding",
-                        "Actions",
+                        "Nu.",
+                        "Data Empresta",
+                        "Naran",
+                        "Montante Empresta",
+                        "Funan %",
+                        "Funan iha $",
+                        "Total Empresta (inc. funan)",
+                        "Pagamentu",
+                        "Montante seidauk selu",
+                        "Aksaun",
                       ].map((heading) => (
                         <th
                           key={heading}
@@ -1154,7 +1155,7 @@ export default function Loan() {
                               <button
                                 type="button"
                                 onClick={() => openEditForm(loan)}
-                                title="Edit loan"
+                                title="Hadia dadus"
                                 aria-label={`Edit loan for ${borrowerName}`}
                                 className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-blue-200 bg-white text-blue-600 transition hover:border-blue-600 hover:bg-blue-600 hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-200 cursor-pointer"
                               >
@@ -1179,8 +1180,8 @@ export default function Loan() {
                                 onClick={() => openDeleteConfirmation(loan)}
                                 title={
                                   hasPayments
-                                    ? "Loan has payments"
-                                    : "Delete loan"
+                                    ? "Emprestimu ne'e iha ona pagamentu"
+                                    : "Hamoos dadus"
                                 }
                                 aria-label={`Delete loan for ${borrowerName}`}
                                 className={`inline-flex h-9 w-9 items-center justify-center rounded-lg border transition focus:outline-none focus:ring-2 cursor-pointer ${
@@ -1267,7 +1268,7 @@ export default function Loan() {
 
                 <div className="min-w-0">
                   <h2 className="text-lg font-bold text-slate-900">
-                    {editingLoan ? "Edit Loan" : "Add Loan"}
+                    {editingLoan ? "Hadia dadus emprestimu" : "Aumenta dadus emprestimu"}
                   </h2>
                   {/* <p className="mt-0.5 text-xs text-slate-500">
                     Borrower information and loan details
@@ -1348,7 +1349,7 @@ export default function Loan() {
                 {/* Borrower Type */}
                 <section>
                   <label className="mb-2 block text-sm font-semibold text-slate-700">
-                    Borrower Type{" "}
+                    Hili Membru / Non-Membru?{" "}
                     <span className="text-red-500">*</span>
                   </label>
 
@@ -1378,7 +1379,7 @@ export default function Loan() {
                           d="M5 20v-1.5a7 7 0 0 1 14 0V20Z"
                         />
                       </svg>
-                      Member
+                      Membru
                     </button>
 
                     <button
@@ -1406,7 +1407,7 @@ export default function Loan() {
                           d="M5 20v-1.5a7 7 0 0 1 14 0V20Z"
                         />
                       </svg>
-                      Non-Member
+                      Non-Membru
                     </button>
                   </div>
                 </section>
@@ -1418,7 +1419,7 @@ export default function Loan() {
                       htmlFor="loan-member"
                       className="mb-1.5 block text-sm font-semibold text-slate-700"
                     >
-                      Select Member{" "}
+                      Hili membru{" "}
                       <span className="text-red-500">*</span>
                     </label>
 
@@ -1435,7 +1436,7 @@ export default function Loan() {
                       disabled={loadingOwners || submitting}
                       className="w-full cursor-pointer rounded-lg border border-slate-300 bg-white px-3.5 py-3 text-sm text-slate-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-50"
                     >
-                      <option value="">-- Select a member --</option>
+                      <option value="">-- Hili membru nia numeru --</option>
                       {members.map((member) => (
                         <option key={member.id} value={member.member_number}>
                           {member.full_name} ({member.member_number})
@@ -1445,7 +1446,7 @@ export default function Loan() {
 
                     {!loadingOwners && members.length === 0 && (
                       <p className="mt-1.5 text-xs text-amber-700">
-                        No members found. Please add a member first.
+                      Dadus membru laiha. Favor rejistu uluk dadus membru.
                       </p>
                     )}
                   </div>
@@ -1455,7 +1456,7 @@ export default function Loan() {
                       htmlFor="loan-nonmember"
                       className="mb-1.5 block text-sm font-semibold text-slate-700"
                     >
-                      Select Non-Member{" "}
+                      Hili non-membru{" "}
                       <span className="text-red-500">*</span>
                     </label>
 
@@ -1472,7 +1473,7 @@ export default function Loan() {
                       disabled={loadingOwners || submitting}
                       className="w-full cursor-pointer rounded-lg border border-slate-300 bg-white px-3.5 py-3 text-sm text-slate-800 outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-100 disabled:cursor-not-allowed disabled:bg-slate-50"
                     >
-                      <option value="">-- Select a non-member --</option>
+                      <option value="">-- Hili non-membru nia numeru --</option>
                       {nonmembers.map((nonmember) => (
                         <option
                           key={nonmember.id}
@@ -1486,7 +1487,7 @@ export default function Loan() {
 
                     {!loadingOwners && nonmembers.length === 0 && (
                       <p className="mt-1.5 text-xs text-amber-700">
-                        No non-members found. Please add a non-member first.
+                        Dadus laiha. Favor rejistu uluk dadus non-membru.
                       </p>
                     )}
                   </div>
@@ -1498,7 +1499,7 @@ export default function Loan() {
                       htmlFor="loan-date"
                       className="mb-1.5 block text-sm font-semibold text-slate-700"
                     >
-                      Loan Date{" "}
+                      Data empresta{" "}
                       <span className="text-red-500">*</span>
                     </label>
 
@@ -1523,7 +1524,7 @@ export default function Loan() {
                       htmlFor="loan-amount"
                       className="mb-1.5 block text-sm font-semibold text-slate-700"
                     >
-                      Loan Amount (USD){" "}
+                      Montante Empresta (USD){" "}
                       <span className="text-red-500">*</span>
                     </label>
 
@@ -1545,7 +1546,7 @@ export default function Loan() {
                       className="w-full rounded-lg border border-slate-300 bg-white px-3 py-3 text-sm text-slate-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:bg-slate-50"
                     />
                     <p className="mt-1.5 text-xs text-slate-500">
-                      Minimum amount: $1.00
+                      Minimu montante: $1.00
                     </p>
                   </div>
                 </div>
@@ -1555,10 +1556,10 @@ export default function Loan() {
                   <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-4 py-3">
                     <div>
                       <h3 className="text-sm font-bold text-slate-800">
-                        Loan Summary
+                        Sumariu Emprestimu
                       </h3>
                       <p className="mt-0.5 text-xs text-slate-500">
-                        Estimated one-time flat interest
+                        Estimasaun pursentu husi funan empresta
                       </p>
                     </div>
 
@@ -1570,7 +1571,7 @@ export default function Loan() {
                   <div className="grid grid-cols-2 gap-px bg-slate-200 sm:grid-cols-3">
                     <div className="bg-white p-3.5">
                       <p className="text-xs font-medium text-slate-500">
-                        Loan Amount
+                        Montante Empresta
                       </p>
                       <p className="mt-1.5 break-words text-base font-bold tabular-nums text-slate-800">
                         {formatCurrency(
@@ -1581,7 +1582,7 @@ export default function Loan() {
 
                     <div className="bg-white p-3.5">
                       <p className="text-xs font-medium text-slate-500">
-                        Interest
+                        Funan
                       </p>
                       <p className="mt-1.5 break-words text-base font-bold tabular-nums text-amber-700">
                         {formatCurrency(
@@ -1592,7 +1593,7 @@ export default function Loan() {
 
                     <div className="col-span-2 bg-blue-50 p-3.5 sm:col-span-1">
                       <p className="text-xs font-semibold text-blue-700">
-                        Total Loan
+                        Total Empresta
                       </p>
                       <p className="mt-1.5 break-words text-lg font-bold tabular-nums text-blue-800">
                         {formatCurrency(
@@ -1601,11 +1602,6 @@ export default function Loan() {
                       </p>
                     </div>
                   </div>
-
-                  <p className="px-4 py-2.5 text-xs leading-5 text-slate-500">
-                    Final interest and total are calculated and saved by the
-                    Laravel backend.
-                  </p>
                 </section>
 
                 {/* Payment Information */}
@@ -1623,8 +1619,7 @@ export default function Loan() {
                   </svg>
 
                   <p className="text-xs leading-5 text-amber-800">
-                    Payments are applied to the total loan amount, including
-                    interest.
+                    Pagamentu sira aplika ba montante total empréstimu, inklui funan.
                   </p>
                 </div>
               </div>
@@ -1637,7 +1632,7 @@ export default function Loan() {
                   disabled={submitting}
                   className="w-full cursor-pointer rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
                 >
-                  Cancel
+                  Kansela
                 </button>
 
                 <button
@@ -1681,7 +1676,7 @@ export default function Loan() {
                           d="M5 12h14m-7-7 7 7-7 7"
                         />
                       </svg>
-                      {editingLoan ? "Save Changes" : "Add Loan"}
+                      {editingLoan ? "Atualiza dadus" : "Rai dadus"}
                     </>
                   )}
                 </button>
@@ -1752,7 +1747,7 @@ export default function Loan() {
                     disabled={deleting}
                     className="cursor-pointer rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
                   >
-                    Cancel
+                    Kansela
                   </button>
 
                   <button
@@ -1770,7 +1765,7 @@ export default function Loan() {
                   onClick={closeMessageModal}
                   className="cursor-pointer rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
                 >
-                  Close
+                  Kansela
                 </button>
               )}
             </div>
