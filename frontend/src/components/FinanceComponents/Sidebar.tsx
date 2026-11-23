@@ -28,7 +28,7 @@ const menuGroups = [
     ],
   },
   {
-    title: "Manajementu Finansial",
+    title: "Jestaun Finanseiru",
     menus: [
       { name: "Depositu", path: "/finance/deposits", icon: Wallet },
       { name: "Emprestimu", path: "/finance/loans", icon: CreditCard },
@@ -38,14 +38,14 @@ const menuGroups = [
         icon: ReceiptText,
       },
       {
-        name: "Transaksaun",
+        name: "Konta Transaksaun",
         path: "/finance/transactions",
         icon: ArrowLeftRight,
       },
     ],
   },
     {
-    title: "Manajementu Perfil",
+    title: "Jestaun Perfil",
     menus: [
       { name: "Settings", path: "/finance/settings", icon: Settings },
     ],
