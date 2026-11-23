@@ -781,8 +781,8 @@ const borrowerOptions = useMemo(() => {
 
     showMessage(
       "confirm",
-      "Delete Payment?",
-      `Are you sure you want to delete payment #${payment.id}? This action cannot be undone.`,
+      "Hamoos Dadus Pagamentu?",
+      `Ita-boot hakarak duni atu hamoos dadus ne'e? Dadus ne'e sei hamoos permanente.`,
     );
   };
 
@@ -822,7 +822,7 @@ const borrowerOptions = useMemo(() => {
             C-HTM / Finance Management
           </p>
           <h1 className="text-2xl font-bold tracking-tight text-gray-900">
-            Loan Payments
+            Pagamentu Emprestimu
           </h1>
         </div>
 
@@ -831,7 +831,7 @@ const borrowerOptions = useMemo(() => {
           onClick={openCreateForm}
           className={`${buttonClass} cursor-pointer`}
         >
-          + Add Payment
+          + Aumenta dadus
         </button>
       </div>
 
@@ -853,7 +853,7 @@ const borrowerOptions = useMemo(() => {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {[
           {
-            title: "Payment Transactions",
+            title: "Transaksaun Pagamentu",
             value: String(paymentTotals.count),
             description: "",
             icon: "▤",
@@ -863,7 +863,7 @@ const borrowerOptions = useMemo(() => {
             valueColor: "text-gray-900",
           },
           {
-            title: "Total Collected",
+            title: "Total Pagamentu",
             value: formatCurrency(paymentTotals.total),
             description: "",
             icon: "$",
@@ -873,7 +873,7 @@ const borrowerOptions = useMemo(() => {
             valueColor: "text-emerald-700",
           },
           {
-            title: "Cash Payments",
+            title: "Pagamentu Kas",
             value: formatCurrency(paymentTotals.cash),
             description: "",
             icon: "↗",
@@ -883,7 +883,7 @@ const borrowerOptions = useMemo(() => {
             valueColor: "text-violet-700",
           },
           {
-            title: "Bank Transfers",
+            title: "Pagamentu husi Bank",
             value: formatCurrency(paymentTotals.bankTransfer),
             description: "",
             icon: "⇄",
@@ -931,7 +931,7 @@ const borrowerOptions = useMemo(() => {
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <h2 className="text-lg font-semibold text-gray-900">
-                Payment Records
+                Lista pagamentu
               </h2>
             </div>
 
@@ -962,7 +962,7 @@ const borrowerOptions = useMemo(() => {
                     d="M15 3v5h4M8 13h8M8 17h8"
                   />
                 </svg>
-                Loan Payment Report
+                Relatoriu pagamentu
               </button>
 
               <button
@@ -1008,7 +1008,7 @@ const borrowerOptions = useMemo(() => {
                 type="search"
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
-                placeholder="Borrower, payment ID, loan ID..."
+                placeholder=""
                 className="w-full cursor-pointer rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
               />
             </div>
@@ -1018,7 +1018,7 @@ const borrowerOptions = useMemo(() => {
                 htmlFor="payment-method-filter"
                 className="mb-1.5 block text-sm font-medium text-gray-700"
               >
-                Payment Method
+                Metodu Pagamentu
               </label>
               <select
                 id="payment-method-filter"
@@ -1026,9 +1026,9 @@ const borrowerOptions = useMemo(() => {
                 onChange={(event) => setMethodFilter(event.target.value)}
                 className="w-full cursor-pointer rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
               >
-                <option value="All">All Methods</option>
-                <option value="Cash">Cash</option>
-                <option value="Bank Transfer">Bank Transfer</option>
+                <option value="All">Metodu hotu-hotu</option>
+                <option value="Cash">Kas</option>
+                <option value="Bank Transfer">Transfer husi bank</option>
               </select>
             </div>
 
@@ -1037,7 +1037,7 @@ const borrowerOptions = useMemo(() => {
                 htmlFor="payment-status-filter"
                 className="mb-1.5 block text-sm font-medium text-gray-700"
               >
-                Loan Status
+                Status pagamentu
               </label>
               <select
                 id="payment-status-filter"
@@ -1045,9 +1045,9 @@ const borrowerOptions = useMemo(() => {
                 onChange={(event) => setStatusFilter(event.target.value)}
                 className="w-full cursor-pointer rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
               >
-                <option value="All">All Loan Statuses</option>
-                <option value="Outstanding">Outstanding</option>
-                <option value="Fully Paid">Fully Paid</option>
+                <option value="All">Hotu-hotu</option>
+                <option value="Outstanding">Seidauk selu</option>
+                <option value="Fully Paid">Selu kompletu</option>
               </select>
             </div>
           </div>
@@ -1057,7 +1057,7 @@ const borrowerOptions = useMemo(() => {
           <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
             <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600" />
             <p className="mt-3 text-sm text-gray-500">
-              Loading payment records...
+              Loading dadus pagamentu...
             </p>
           </div>
         ) : filteredPayments.length === 0 ? (
@@ -1066,12 +1066,12 @@ const borrowerOptions = useMemo(() => {
               $
             </div>
             <h3 className="mt-3 text-base font-semibold text-gray-900">
-              No payment records found
+              Dadus pagamentu la iha.
             </h3>
             <p className="mt-1 text-sm text-gray-500">
               {search || methodFilter !== "All" || statusFilter !== "All"
-                ? "Try changing your search or filters."
-                : "Add a payment to get started."}
+                ? "Muda filtru no koko fila-fali."
+                : "Aumenta pagamentu ida atu hahu. "}
             </p>
           </div>
         ) : (
@@ -1079,26 +1079,27 @@ const borrowerOptions = useMemo(() => {
             <table className="w-full min-w-[1150px] text-left text-sm">
               <thead className="bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
                 <tr className="bg-slate-800 text-white">
-                  <th className="px-5 py-3.5 font-semibold">No.</th>
-                  <th className="px-5 py-3.5 font-semibold">Payment Date</th>
-                  <th className="px-5 py-3.5 font-semibold">Borrower</th>
+                  <th className="px-5 py-3.5 font-semibold">Nu.</th>
+                  <th className="px-5 py-3.5 font-semibold">Data Pagamentu</th>
+                  <th className="px-5 py-3.5 font-semibold">Naran</th>
                   <th className="px-5 py-3.5 text-right font-semibold">
-                    Loan Amount
-                    <p>(incl. interest)</p>
+                    Montante Empresta
+                    <p>(incl. funan)</p>
                   </th>
                   <th className="px-5 py-3.5 text-right font-semibold">
-                    Payment Amount
+                    Montante Pagamentu
                   </th>
                   <th className="px-5 py-3.5 text-right font-semibold">
-                    Total Paid
+                  Pagamentu
+                    <p> ne'ebe simu ona</p>
                   </th>
                   <th className="px-5 py-3.5 text-right font-semibold">
-                    Remaining Balance
+                    Montante tenki<p> selu </p>
                   </th>
-                  <th className="px-5 py-3.5 font-semibold">Method</th>
+                  <th className="px-5 py-3.5 font-semibold">Metodu <p>pagamentu</p></th>
                   <th className="px-5 py-3.5 font-semibold">Status</th>
                   <th className="px-5 py-3.5 text-right font-semibold">
-                    Actions
+                    Aksaun
                   </th>
                 </tr>
               </thead>
@@ -1184,7 +1185,7 @@ const borrowerOptions = useMemo(() => {
                             type="button"
                             onClick={() => openEditForm(payment)}
                             aria-label={`Edit payment ${payment.id}`}
-                            title="Edit payment"
+                            title="Hadia dadus"
                             className="cursor-pointer px-3 py-2 text-xs font-semibold text-gray-700 transition hover:bg-gray-100"
                           >
                             <svg
@@ -1206,7 +1207,7 @@ const borrowerOptions = useMemo(() => {
                             type="button"
                             onClick={() => openDeleteConfirmation(payment)}
                             aria-label={`Delete payment ${payment.id}`}
-                            title="Delete payment"
+                            title="Hamoos dadus"
                             className="cursor-pointer px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-50"
                           >
                             <svg
@@ -1248,12 +1249,12 @@ const borrowerOptions = useMemo(() => {
             <div className="flex items-start justify-between gap-4 border-b border-gray-200 px-5 py-4 sm:px-6">
               <div>
                 <h2 className="text-xl font-bold text-gray-900">
-                  {editingPayment ? "Edit Payment" : "Add Loan Payment"}
+                  {editingPayment ? "Hadia dadus" : "Aumenta dadus pagamentu"}
                 </h2>
                 <p className="mt-1 text-sm text-gray-500">
                   {editingPayment
-                    ? "Update the repayment details below."
-                    : "Select a borrower and loan, then enter the payment details."}
+                    ? "Hadia dadus pagamentu iha kraik."
+                    : "Hili ema ne'ebe foti emprestimu i depois hatama dadus pagamentu."}
                 </p>
               </div>
 
@@ -1283,7 +1284,7 @@ const borrowerOptions = useMemo(() => {
                 {/* Borrower Type */}
                 <div>
                   <label className="mb-2 block text-sm font-semibold text-gray-800">
-                    1. Borrower Type <span className="text-red-500">*</span>
+                    1. Hili Membru/Non-membru <span className="text-red-500">*</span>
                   </label>
 
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -1319,9 +1320,9 @@ const borrowerOptions = useMemo(() => {
                         </div>
 
                         <div className="min-w-0 flex-1">
-                          <p className="font-semibold text-gray-900">Member</p>
+                          <p className="font-semibold text-gray-900">Membru</p>
                           <p className="mt-1 text-xs leading-5 text-gray-500">
-                            Select a registered member as the borrower.
+                           Hili membru ne’ebé rejista ona hanesan ema ne’ebé foti empréstimu.
                           </p>
                         </div>
 
@@ -1365,10 +1366,10 @@ const borrowerOptions = useMemo(() => {
 
                         <div className="min-w-0 flex-1">
                           <p className="font-semibold text-gray-900">
-                            Non-Member
+                            Non-Membru
                           </p>
                           <p className="mt-1 text-xs leading-5 text-gray-500">
-                            Select a borrower who is not a registered member.
+                            Hili non-membru ne’ebé rejista ona hanesan ema ne’ebé foti empréstimu.
                           </p>
                         </div>
 
@@ -1386,7 +1387,7 @@ const borrowerOptions = useMemo(() => {
                     htmlFor="borrower"
                     className="mb-1.5 block text-sm font-semibold text-gray-800"
                   >
-                    2. Select Borrower <span className="text-red-500">*</span>
+                    2. Hili membru/non-membru ne'ebe empresta <span className="text-red-500">*</span>
                   </label>
 
                   <select
@@ -1405,12 +1406,12 @@ const borrowerOptions = useMemo(() => {
                   >
                     <option value="">
                       {loadingBorrowers
-                        ? "Loading borrowers..."
+                        ? "Loading informasaun kona-ba ema ne'ebe empresta..."
                         : !form.borrower_type
-                          ? "Select a borrower type first"
+                          ? "Hili uluk tipu ema ne'ebe foti empresta"
                           : borrowerOptions.length === 0
-                          ? "No borrowers with outstanding loans"
-                          : "Choose a borrower"}
+                          ? "La iha ema ne'ebe seidauk selu emprestimu. Hotu-hotu selu ona!"
+                          : "Hili ema ne'ebe foti empresta"}
                     </option>
 
                     {borrowerOptions.map((borrower) => (
@@ -1424,7 +1425,7 @@ const borrowerOptions = useMemo(() => {
                   <p className="mt-1.5 text-xs text-gray-500">
                     {borrowerOptions.length}{" "}
                     {form.borrower_type === "member" ? "members" : "non-members"}{" "}
-                    with outstanding loans available.
+                    Ne'ebe emprestimu seidauk selu kompletu.
                   </p>
                   )}
                 </div>
@@ -1435,7 +1436,7 @@ const borrowerOptions = useMemo(() => {
                     htmlFor="loan"
                     className="mb-1.5 block text-sm font-semibold text-gray-800"
                   >
-                    3. Select Loan <span className="text-red-500">*</span>
+                    3. Hili montante empresta <span className="text-red-500">*</span>
                   </label>
 
                   <select
@@ -1452,10 +1453,10 @@ const borrowerOptions = useMemo(() => {
                   >
                     <option value="">
                       {!form.borrower_number
-                        ? "Select a borrower first"
+                        ? "Hili uluk ema ne'ebe empresta"
                         : availableLoans.length === 0
-                          ? "No loans found for this borrower"
-                          : "Choose a loan"}
+                          ? "Laiha emprestimu"
+                          : "Hili emprestimu"}
                     </option>
 
                     {availableLoans.map((loan) => {
@@ -1466,10 +1467,10 @@ const borrowerOptions = useMemo(() => {
 
                       return (
                         <option key={loan.id} value={loan.id}>
-                          {`Loan #${loan.id} · ${formatCurrency(total)} · ${
+                          {`Total empresta ${formatCurrency(total)} · ${
                             fullyPaid
-                              ? "Fully Paid"
-                              : `Remaining ${formatCurrency(remaining)}`
+                              ? "Selu kompletu ona"
+                              : `Seidauk selu ${formatCurrency(remaining)}`
                           }`}
                         </option>
                       );
@@ -1478,8 +1479,8 @@ const borrowerOptions = useMemo(() => {
 
                   {form.borrower_number && availableLoans.length === 0 && (
                     <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm text-amber-800">
-                      No loans were found for this borrower. Select another
-                      borrower or check the loan records.
+                      La hetan empréstimu ba ema ne’e. 
+                      Favór ida, hili ema seluk ka verifica rejistu empréstimu sira.
                     </div>
                   )}
 
@@ -1491,7 +1492,7 @@ const borrowerOptions = useMemo(() => {
                             Loan #{selectedLoan.id}
                           </p>
                           <p className="mt-1 text-xs text-gray-500">
-                            Borrower:{" "}
+                            Ema ne'ebe empresta:{" "}
                             {selectedBorrowerName ||
                               getBorrowerName(selectedLoan)}
                           </p>
@@ -1512,16 +1513,16 @@ const borrowerOptions = useMemo(() => {
 
                       <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
                         <ProgressItem
-                          label="Loan Amount"
+                          label="Total Empresta"
                           value={formatCurrency(selectedLoanProgress.total)}
                         />
                         <ProgressItem
-                          label="Total Paid"
+                          label="Total Selu ona"
                           value={formatCurrency(selectedLoanProgress.paid)}
                           green
                         />
                         <ProgressItem
-                          label="Remaining Balance"
+                          label="Total seidauk selu"
                           value={formatCurrency(selectedLoanProgress.balance)}
                           highlight={!selectedLoanProgress.fullyPaid}
                         />
@@ -1529,8 +1530,9 @@ const borrowerOptions = useMemo(() => {
 
                       {selectedLoanProgress.fullyPaid && (
                         <p className="mt-3 rounded-lg bg-green-50 px-3 py-2 text-xs font-medium text-green-800">
-                          This loan has been fully paid. It remains visible for
-                          reference, but no additional payment can be recorded.
+                          Empréstimu ida-ne’e selu hotu ona. 
+                          Empréstimu ne’e sei kontinua hatudu atu bele haree fali, 
+                          maibé labele rejista pagamentu tan.                       
                         </p>
                       )}
                     </div>
@@ -1544,7 +1546,7 @@ const borrowerOptions = useMemo(() => {
                       htmlFor="payment-amount"
                       className="mb-1.5 block text-sm font-semibold text-gray-800"
                     >
-                      Payment Amount (USD){" "}
+                      Montante Pagamentu (USD){" "}
                       <span className="text-red-500">*</span>
                     </label>
 
@@ -1575,7 +1577,7 @@ const borrowerOptions = useMemo(() => {
                     {selectedLoan &&
                       (!selectedLoanProgress.fullyPaid || editingPayment) && (
                         <p className="mt-1.5 text-xs text-gray-500">
-                          Maximum payment:{" "}
+                          Pagamentu Maximu:{" "}
                           {formatCurrency(maximumAllowedPayment)}
                         </p>
                       )}
@@ -1585,7 +1587,7 @@ const borrowerOptions = useMemo(() => {
                         role="alert"
                         className="mt-1.5 text-sm font-medium text-red-600"
                       >
-                        Payment amount cannot exceed the remaining balance of{" "}
+                       Montante pagamentu labele liu saldo restante ne’ebé mak seidauk selu.{" "}
                         {formatCurrency(maximumAllowedPayment)}.
                       </p>
                     )}
@@ -1596,7 +1598,7 @@ const borrowerOptions = useMemo(() => {
                       htmlFor="payment-date"
                       className="mb-1.5 block text-sm font-semibold text-gray-800"
                     >
-                      Payment Date <span className="text-red-500">*</span>
+                      Data Pagamentu <span className="text-red-500">*</span>
                     </label>
                     <input
                       id="payment-date"
@@ -1616,7 +1618,7 @@ const borrowerOptions = useMemo(() => {
                     htmlFor="payment-method"
                     className="mb-1.5 block text-sm font-semibold text-gray-800"
                   >
-                    Payment Method <span className="text-red-500">*</span>
+                    Metodu Pagamentu<span className="text-red-500">*</span>
                   </label>
                   <select
                     id="payment-method"
@@ -1630,8 +1632,8 @@ const borrowerOptions = useMemo(() => {
                     required
                     className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                   >
-                    <option value="Cash">Cash</option>
-                    <option value="Bank Transfer">Bank Transfer</option>
+                    <option value="Cash">Kas</option>
+                    <option value="Bank Transfer">Transfer husi Bank</option>
                   </select>
                 </div>
 
@@ -1640,9 +1642,9 @@ const borrowerOptions = useMemo(() => {
                     htmlFor="payment-description"
                     className="mb-1.5 block text-sm font-semibold text-gray-800"
                   >
-                    Description{" "}
+                    Deskrisaun{" "}
                     <span className="font-normal text-gray-400">
-                      (Optional)
+                      (Opsional)
                     </span>
                   </label>
                   <textarea
@@ -1652,7 +1654,7 @@ const borrowerOptions = useMemo(() => {
                     onChange={(event) =>
                       setField("description", event.target.value)
                     }
-                    placeholder="Add a note about this payment..."
+                    placeholder="Anota kona-ba pagamentu..."
                     className="w-full resize-y rounded-lg border border-gray-300 px-3 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                   />
                 </div>
@@ -1665,7 +1667,7 @@ const borrowerOptions = useMemo(() => {
                   disabled={submitting}
                   className={`${secondaryButtonClass} cursor-pointer`}
                 >
-                  Cancel
+                  Kansela
                 </button>
 
                 <button
@@ -1681,8 +1683,8 @@ const borrowerOptions = useMemo(() => {
                   {submitting
                     ? "Saving..."
                     : editingPayment
-                      ? "Save Changes"
-                      : "Record Payment"}
+                      ? "Atualiza dadus"
+                      : "Rai dadus"}
                 </button>
               </div>
             </form>
@@ -1728,7 +1730,7 @@ const borrowerOptions = useMemo(() => {
                     disabled={deleting}
                     className={`${secondaryButtonClass} cursor-pointer`}
                   >
-                    Cancel
+                    Kansela
                   </button>
                   <button
                     type="button"
@@ -1736,7 +1738,7 @@ const borrowerOptions = useMemo(() => {
                     disabled={deleting}
                     className="cursor-pointer rounded-lg bg-red-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-60"
                   >
-                    {deleting ? "Deleting..." : "Delete Payment"}
+                    {deleting ? "Hamoos..." : "Hamoos dadus"}
                   </button>
                 </>
               ) : (
