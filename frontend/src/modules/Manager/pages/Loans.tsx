@@ -851,7 +851,7 @@ export default function Loan() {
               <button
                 type="button"
                 onClick={() => {
-                  window.location.href = "/superadmin/loanreport";
+                  window.location.href = "/manager/loanreport";
                 }}
                 className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-4 py-2.5 text-sm font-semibold text-blue-700 transition hover:border-blue-600 hover:bg-blue-600 hover:text-white"
               >

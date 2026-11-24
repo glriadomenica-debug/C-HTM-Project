@@ -742,14 +742,14 @@ export default function Deposit() {
         <ReportLink
           title="Relatoriu Mensal"
           description="Halo relatoriu ba transaksaun depositu mensal"
-          href="/superadmin/depositreport"
+          href="/manager/depositreport"
           icon="transactions"
         />
 
         <ReportLink
           title="Lista Membru saving"
           description="Haree total osan akumulada ba membru ida-idak"
-          href="/superadmin/membersaving"
+          href="/manager/membersaving"
           icon="balance"
         />
       </div>
@@ -766,7 +766,6 @@ export default function Deposit() {
                   {filteredDeposits.length}
                 </span>
               </div>
-             
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row">
@@ -982,9 +981,7 @@ export default function Deposit() {
                       Data
                     </th>
 
-                    <th className="min-w-52 px-4 py-4 font-semibold">
-                      Naran
-                    </th>
+                    <th className="min-w-52 px-4 py-4 font-semibold">Naran</th>
 
                     <th className="whitespace-nowrap px-4 py-4 font-semibold">
                       Tipu Depositu
