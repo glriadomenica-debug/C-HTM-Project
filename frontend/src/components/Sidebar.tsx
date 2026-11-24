@@ -22,7 +22,7 @@ interface SidebarProps {
 
 const menuGroups = [
   {
-    title: "Main Menu",
+    title: "Menu Prinsipal",
     menus: [
       {
         name: "Dashboard",
@@ -32,11 +32,11 @@ const menuGroups = [
     ],
   },
   {
-    title: "User Management",
+    title: "Jestaun Utilizador",
     menus: [
-      { name: "Users", path: "/superadmin/users", icon: Users },
+      { name: "Utilizador", path: "/superadmin/users", icon: Users },
       {
-        name: "Roles & Permissions",
+        name: "Role",
         path: "/superadmin/roles",
         icon: ShieldCheck,
       },
@@ -44,24 +44,24 @@ const menuGroups = [
     ],
   },
   {
-    title: "Member Management",
+    title: "Jestaun Membru",
     menus: [
-      { name: "Members", path: "/superadmin/members", icon: UserRound },
-      { name: "Non-Members", path: "/superadmin/nonmembers", icon: UserRoundX },
+      { name: "Membru", path: "/superadmin/members", icon: UserRound },
+      { name: "Non-Membru", path: "/superadmin/nonmembers", icon: UserRoundX },
     ],
   },
   {
-    title: "Financial Management",
+    title: "Jestaun Finanseiru",
     menus: [
-      { name: "Deposits", path: "/superadmin/deposits", icon: Wallet },
-      { name: "Loans", path: "/superadmin/loans", icon: CreditCard },
+      { name: "Depositu", path: "/superadmin/deposits", icon: Wallet },
+      { name: "Emprestimu", path: "/superadmin/loans", icon: CreditCard },
       {
-        name: "Loan Payments",
+        name: "Pagamentu",
         path: "/superadmin/loanpayments",
         icon: ReceiptText,
       },
       {
-        name: "Transactions",
+        name: "Konta Transaksaun",
         path: "/superadmin/transactions",
         icon: ArrowLeftRight,
       },
@@ -110,7 +110,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                 C-HTM
               </h1>
               <p className="mt-0.5 text-[11px] text-blue-200/75">
-                Management System
+                Sistema Jestaun
               </p>
             </div>
           </div>
