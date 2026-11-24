@@ -43,7 +43,7 @@ class Loan extends Model
     public function nonmember(): BelongsTo
     {
         return $this->belongsTo(
-            Nonmember::class,
+            NonMember::class,
             'non_member_number',
             'non_member_number'
         );

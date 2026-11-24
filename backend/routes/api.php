@@ -3,7 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\MemberController;
-use App\Http\Controllers\Api\NonmemberController;
+use App\Http\Controllers\Api\NonMemberController;
 use App\Http\Controllers\Api\DepositController;
 use App\Http\Controllers\Api\LoanController;
 use App\Http\Controllers\Api\LoanpaymentController;
@@ -26,7 +26,7 @@ Route::apiResource('users', UserController::class);
 Route::apiResource('members', MemberController::class);
 
 // Non-members
-Route::apiResource('nonmembers', NonmemberController::class);
+Route::apiResource('nonmembers', NonMemberController::class);
 
 // Deposits
 Route::apiResource('deposits', DepositController::class);

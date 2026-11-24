@@ -4,16 +4,17 @@ namespace App\Http\Controllers\Api;
 
 use App\Helpers\ApiMessage;
 use App\Http\Controllers\Controller;
-use App\Models\Nonmember;
+use App\Models\NonMember;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
-class NonmemberController extends Controller
+class NonMemberController extends Controller
 {
     public function index()
     {
         try {
-            $nonmembers = Nonmember::withCount('loans')->get();
+            // $nonmembers = NonMember::withCount('loans')->get();
+            $nonmembers = NonMember::all();
 
             return ApiMessage::success(
                 'Success get all nonmembers data',
@@ -50,7 +51,7 @@ class NonmemberController extends Controller
                 return ApiMessage::error($validator->errors(), 400);
             }
 
-            $nonmember = Nonmember::create(
+            $nonmember = NonMember::create(
                 $validator->validated()
             );
 
@@ -67,7 +68,7 @@ class NonmemberController extends Controller
     public function show(string $id)
     {
         try {
-            $nonmember = Nonmember::with('loans.payments')->find($id);
+            $nonmember = NonMember::with('loans.payments')->find($id);
 
             if (!$nonmember) {
                 return ApiMessage::error('Nonmember not found', 404);
@@ -86,7 +87,7 @@ class NonmemberController extends Controller
     public function update(Request $request, string $id)
     {
         try {
-            $nonmember = Nonmember::find($id);
+            $nonmember = NonMember::find($id);
 
             if (!$nonmember) {
                 return ApiMessage::error('Nonmember not found', 404);
@@ -122,7 +123,7 @@ class NonmemberController extends Controller
     public function destroy(string $id)
     {
         try {
-            $nonmember = Nonmember::find($id);
+            $nonmember = NonMember::find($id);
 
             if (!$nonmember) {
                 return ApiMessage::error('Nonmember not found', 404);
