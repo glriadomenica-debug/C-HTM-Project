@@ -432,21 +432,21 @@ export default function Settings() {
     const phone = profileForm.phone_number.trim();
 
     if (!name) {
-      errors.name = "Full name is required.";
+      errors.name = "Naran kompletu presiza prienxe.";
     } else if (name.length > 255) {
-      errors.name = "Name cannot exceed 255 characters.";
+      errors.name = "Naran labele liu karakter 255.";
     }
 
     if (!email) {
-      errors.email = "Email address is required.";
+      errors.email = "Email  presiza prienxe.";
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      errors.email = "Please enter a valid email address.";
+      errors.email = "Favor hatama email ne'ebé válidu.";
     } else if (email.length > 255) {
-      errors.email = "Email cannot exceed 255 characters.";
+      errors.email = "Email labele liu karakter 255.";
     }
 
     if (phone.length > 30) {
-      errors.phone_number = "Phone number cannot exceed 30 characters.";
+      errors.phone_number = "Númeru telefone labele liu karakter 30.";
     }
 
     setProfileErrors(errors);
@@ -488,8 +488,8 @@ export default function Settings() {
 
       setModal({
         type: "success",
-        title: "Profile Updated Successfully",
-        message: "Your account information has been saved successfully.",
+        title: "Perfil Atualiza ho susesu",
+        message: "Ita-nia informasaun pesoal rai ho susesu.",
       });
     } catch (error: any) {
       if (error instanceof Error && error.message === "INVALID_PROFILE") {
@@ -506,15 +506,15 @@ export default function Settings() {
           setProfileErrors(errors);
           setModal({
             type: "warning",
-            title: "Please Review Your Information",
+            title: "Favor Verifika Ita-nia Informasaun",
             message:
-              "Some fields contain invalid information. Correct the highlighted fields and try saving again.",
+              "Iha koluna balu ne'ebé iha informasaun sala. Hadi'a koluna sira ne'ebé marka, depois koko rai fali.",
           });
         } else {
           setModal({
             type: "error",
-            title: "Failed to Update Profile",
-            message: friendlyError(error, "Please try again."),
+            title: "La konsege atualiza perfil",
+            message: friendlyError(error, "Favor koko fila-fali."),
           });
         }
       }
@@ -527,22 +527,21 @@ export default function Settings() {
     const errors: FieldErrors = {};
 
     if (!passwordForm.current_password) {
-      errors.current_password = "Current password is required.";
+      errors.current_password = "Password atual presiza prienxe.";
     }
 
     if (!passwordForm.password) {
-      errors.password = "New password is required.";
+      errors.password = "Password foun presiza prienxe.";
     } else if (passwordForm.password.length < 8) {
-      errors.password = "Password must be at least 8 characters long.";
+      errors.password = "Password tenke iha karakter pelumenus 8.";
     } else if (passwordForm.password === passwordForm.current_password) {
-      errors.password =
-        "New password must be different from your current password.";
+      errors.password = "Password foun tenke diferente husi password atual.";
     }
 
     if (!passwordForm.password_confirmation) {
-      errors.password_confirmation = "Please confirm your new password.";
+      errors.password_confirmation = "Favor konfirma password foun.";
     } else if (passwordForm.password !== passwordForm.password_confirmation) {
-      errors.password_confirmation = "Passwords do not match.";
+      errors.password_confirmation = "Password sira la hanesan.";
     }
 
     setPasswordErrors(errors);
@@ -563,9 +562,9 @@ export default function Settings() {
 
       setModal({
         type: "success",
-        title: "Password Changed Successfully",
+        title: "Password Troka Ho Susesu",
         message:
-          "Your password has been updated. Use your new password the next time you log in.",
+          "Ita-nia password atualiza ona. Uza password foun ne'e bainhira ita login.",
       });
     } catch (error: any) {
       const errors = apiErrors(error);
@@ -574,14 +573,14 @@ export default function Settings() {
         setPasswordErrors(errors);
         setModal({
           type: "warning",
-          title: "Please Review Your Password",
+          title: "Favor Verifika Ita-nia Password",
           message:
-            "Make sure your current password is correct, your new password meets the requirements, and the confirmation matches.",
+            "Favor asegura katak password atual loos, password foun kumpre rekizitu sira no password konfirmasaun hanesan.",
         });
       } else {
         setModal({
           type: "error",
-          title: "Failed to Change Password",
+          title: "La konsege troka password",
           message: friendlyError(error, "Please try again."),
         });
       }
@@ -597,11 +596,11 @@ export default function Settings() {
 
     setModal({
       type: "confirm",
-      title: "Change Your Password?",
+      title: "Troka ita-boot nia password?",
       message:
-        "You are about to update your account password. Make sure your new password is correct before continuing.",
-      confirmText: "Yes, Change Password",
-      cancelText: "Review Again",
+        "Ita-boot atu atualiza ita-boot nia password konta nian. Asegura katak ita-boot nia password foun loos molok kontinua.",
+      confirmText: "Sim, Troka Password",
+      cancelText: "Haree fali",
       onConfirm: updatePassword,
     });
   };
@@ -621,11 +620,11 @@ export default function Settings() {
 
     setModal({
       type: "confirm",
-      title: "Discard Changes?",
+      title: "Rejeita Mudansa?",
       message:
-        "All unsaved profile changes will be reverted to your last saved information.",
-      confirmText: "Yes, Discard Changes",
-      cancelText: "Continue Editing",
+        "Mudansa hotu-hotu iha perfil ne’ebé seidauk rai sei fila fali ba informasaun ikus ne’ebé ita rai ona.",
+      confirmText: "Sim, rejeita mudansa",
+      cancelText: "Kontinua Hadia",
       onConfirm: () => {
         setProfileForm({
           name: profile.name,
@@ -648,11 +647,11 @@ export default function Settings() {
 
     setModal({
       type: "confirm",
-      title: "Clear Password Fields?",
+      title: "Hamoos koluna password?",
       message:
-        "All password fields will be cleared. You can fill in the form again at any time.",
-      confirmText: "Clear Fields",
-      cancelText: "Keep Editing",
+        "Koluna Password hotu-hotu sei hamoos. Ita bele prienxe fali iha tempu ne’ebé de’it.",
+      confirmText: "Hamoos koluna",
+      cancelText: "Kontinua Hadia",
       onConfirm: () => {
         setPasswordForm(emptyPassword);
         setPasswordErrors({});
@@ -950,7 +949,8 @@ export default function Settings() {
 
                       <p className="mt-1 text-xs leading-5 text-indigo-800">
                         Uza karakter minimu 8. Prevene utiliza password ne'ebe
-                        fasil atu hatene ka password ne'ebe uza ba konta seluk.
+                        fasil atu hatene ka password ne'ebe uza ona ba konta
+                        seluk.
                       </p>
                     </div>
                   </div>

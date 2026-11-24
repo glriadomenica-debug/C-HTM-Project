@@ -18,7 +18,7 @@ interface SidebarProps {
 
 const menuGroups = [
   {
-    title: "Main Menu",
+    title: "Menu Prinsipal",
     menus: [
       {
         name: "Dashboard",
@@ -28,19 +28,23 @@ const menuGroups = [
     ],
   },
   {
-    title: "Member Management",
+    title: "Jestaun Membru",
     menus: [
-      { name: "Members", path: "/administration/member", icon: UserRound },
-      { name: "Non-Members", path: "/administration/nonmember", icon: UserRoundX },
+      { name: "Membru", path: "/administration/member", icon: UserRound },
+      {
+        name: "Non-Membru",
+        path: "/administration/nonmember",
+        icon: UserRoundX,
+      },
     ],
   },
   {
-    title: "Financial Management",
+    title: "Jestaun Finanseiru",
     menus: [
       // { name: "Deposits", path: "/administration/deposits", icon: Wallet },
-      { name: "Loans", path: "/administration/loan", icon: CreditCard },
+      { name: "Emprestimu", path: "/administration/loan", icon: CreditCard },
       {
-        name: "Loan Payments",
+        name: "Pagamentu",
         path: "/administration/loanpayment",
         icon: ReceiptText,
       },
@@ -51,8 +55,8 @@ const menuGroups = [
       // },
     ],
   },
-    {
-    title: "User Management",
+  {
+    title: "Jestaun Perfil",
     menus: [
       { name: "Settings", path: "/administration/settings", icon: Settings },
     ],
