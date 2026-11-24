@@ -755,7 +755,8 @@ export default function Settings() {
               </div>
 
               <p className="mt-1 text-xs leading-5 text-slate-400">
-                Keep your account information and password secure.
+                Mantein ita-boot nia informasaun pesoal no seguransa konta C-HTM
+                nian
               </p>
             </div>
           </aside>
@@ -780,12 +781,13 @@ export default function Settings() {
                 </div>
 
                 <h2 className="mt-4 text-lg font-bold text-slate-900">
-                  Profile Unavailable
+                  Perfil la disponível
                 </h2>
 
                 <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-slate-500">
-                  We couldn't load your account information. Check your
-                  connection and login session, then try again.
+                  Labele karrega informasaun kona-ba ita-nia konta. Favor
+                  verifika ita-nia koneksaun internet no sesaun login, depois
+                  koko fali.
                 </p>
 
                 <button

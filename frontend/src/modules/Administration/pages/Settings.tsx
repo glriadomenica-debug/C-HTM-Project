@@ -696,7 +696,7 @@ export default function Settings() {
           </h1>
 
           <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
-            Maneje ita nia informasaun pessoal 
+            Jere ita-boot nia informasaun pesoál no seguransa konta C-HTM nian
           </p>
         </header>
 
@@ -734,16 +734,16 @@ export default function Settings() {
                   active={activeTab === "profile"}
                   onClick={() => setActiveTab("profile")}
                   icon="♙"
-                  title="Perfil"
-                  description="Manage your account information"
+                  title="Profile"
+                  description="Maneje ita-nia informasaun"
                 />
 
                 <TabButton
                   active={activeTab === "password"}
                   onClick={() => setActiveTab("password")}
                   icon="⌑"
-                  title="Muda Password"
-                  description="Update your account security"
+                  title="Troka Password"
+                  description="Hadia ita-nia password"
                 />
               </nav>
             </div>
@@ -755,7 +755,8 @@ export default function Settings() {
               </div>
 
               <p className="mt-1 text-xs leading-5 text-slate-400">
-                Keep your account information and password secure.
+                Mantein ita-boot nia informasaun pesoal no seguransa konta C-HTM
+                nian
               </p>
             </div>
           </aside>
@@ -766,11 +767,11 @@ export default function Settings() {
                 <Spinner />
 
                 <p className="mt-4 text-sm font-medium text-slate-600">
-                  Loading account information...
+                  Loading informasaun konta...
                 </p>
 
                 <p className="mt-1 text-xs text-slate-400">
-                  Please wait a moment.
+                  Favor hein oituan.
                 </p>
               </div>
             ) : !profile ? (
@@ -780,12 +781,13 @@ export default function Settings() {
                 </div>
 
                 <h2 className="mt-4 text-lg font-bold text-slate-900">
-                  Profile Unavailable
+                  Perfil la disponível
                 </h2>
 
                 <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-slate-500">
-                  We couldn't load your account information. Check your
-                  connection and login session, then try again.
+                  Labele karrega informasaun kona-ba ita-nia konta. Favor
+                  verifika ita-nia koneksaun internet no sesaun login, depois
+                  koko fali.
                 </p>
 
                 <button
@@ -804,7 +806,8 @@ export default function Settings() {
                   </h2>
 
                   <p className="mt-1 text-sm leading-6 text-slate-500">
-                    Update the basic information associated with your account.
+                    Atualiza informasaun báziku ne'ebé asosiadu ho ita-boot nia
+                    konta.
                   </p>
                 </div>
 
@@ -835,22 +838,23 @@ export default function Settings() {
 
                   <div>
                     <h3 className="text-sm font-semibold text-slate-800">
-                      Personal Information
+                      Informasaun Pesoal
                     </h3>
 
                     <p className="mt-1 text-xs leading-5 text-slate-500">
-                      Make sure the information you provide is correct.
+                      Favór asegura katak informasaun ne’ebé ita fornese loos no
+                      loos duni.
                     </p>
                   </div>
 
                   <div className="grid grid-cols-1 gap-x-5 gap-y-5 sm:grid-cols-2">
                     <Field
-                      label="Full Name"
+                      label="Naran kompletu"
                       name="name"
                       value={profileForm.name}
                       onChange={(value) => changeProfileField("name", value)}
                       error={profileErrors.name}
-                      placeholder="Enter your full name"
+                      placeholder="Hatama ita-nia naran kompletu"
                       autoComplete="name"
                     />
 
@@ -867,7 +871,7 @@ export default function Settings() {
 
                     <div className="sm:col-span-2">
                       <Field
-                        label="Phone Number"
+                        label="Numeru telfone"
                         name="phone_number"
                         type="tel"
                         value={profileForm.phone_number}
@@ -875,20 +879,20 @@ export default function Settings() {
                           changeProfileField("phone_number", value)
                         }
                         error={profileErrors.phone_number}
-                        placeholder="Enter your phone number (optional)"
+                        placeholder="Hatama ita-nia numeru telfone (optional)"
                         autoComplete="tel"
                       />
 
                       <p className="mt-1.5 text-xs text-slate-400">
-                        You can leave this field empty if you don't have a phone
-                        number to provide.
+                        Ita bele husik mamuk koluna ne'e, se karik ita la iha
+                        numeru telfone.
                       </p>
                     </div>
                   </div>
 
                   <div className="flex flex-col-reverse gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:items-center sm:justify-between">
                     <p className="text-xs leading-5 text-slate-400">
-                      Changes will only be saved after you click Save Changes.
+                      Sei halo mudansa wainhira ita buti butaun atualiza dadus.
                     </p>
 
                     <div className="flex flex-col-reverse gap-2 sm:flex-row">
@@ -896,18 +900,18 @@ export default function Settings() {
                         type="button"
                         onClick={resetProfile}
                         disabled={savingProfile}
-                        className="rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 transition cursor-pointer hover:bg-slate-50 disabled:opacity-50"
+                        className="rounded-lg border border-slate-200 cursor-pointer px-4 py-2.5 text-sm font-semibold text-slate-600 transition cursor-pointer hover:bg-slate-50 disabled:opacity-50"
                       >
-                        Reset Changes
+                        Kansela
                       </button>
 
                       <button
                         type="submit"
                         disabled={savingProfile}
-                        className="inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition cursor-pointer hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
+                        className="inline-flex items-center cursor-pointer justify-center gap-2 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition cursor-pointer hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
                       >
                         {savingProfile && <Spinner small />}
-                        {savingProfile ? "Saving..." : "Save Changes"}
+                        {savingProfile ? "Rai..." : "Rai dadus"}
                       </button>
                     </div>
                   </div>
@@ -917,12 +921,12 @@ export default function Settings() {
               <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
                 <div className="border-b border-slate-100 px-5 py-5 sm:px-7">
                   <h2 className="text-lg font-bold text-slate-900">
-                    Change Password
+                    Troka Password
                   </h2>
 
                   <p className="mt-1 text-sm leading-6 text-slate-500">
-                    Update your password regularly to help keep your account
-                    secure.
+                    Troka ita-nia password regular hodi garantia ita nia konta
+                    ho seguru.
                   </p>
                 </div>
 
@@ -941,19 +945,19 @@ export default function Settings() {
 
                     <div>
                       <p className="text-sm font-semibold text-indigo-900">
-                        Create a Strong Password
+                        Kria password ne'ebe forte
                       </p>
 
                       <p className="mt-1 text-xs leading-5 text-indigo-800">
-                        Use at least 8 characters. Avoid easily guessed
-                        passwords or passwords used for other accounts.
+                        Uza karakter minimu 8. Prevene utiliza password ne'ebe
+                        fasil atu hatene ka password ne'ebe uza ba konta seluk.
                       </p>
                     </div>
                   </div>
 
                   <div className="max-w-xl space-y-5">
                     <Field
-                      label="Current Password"
+                      label="Password atual"
                       name="current_password"
                       type={showCurrent ? "text" : "password"}
                       value={passwordForm.current_password}
@@ -961,7 +965,7 @@ export default function Settings() {
                         changePasswordField("current_password", value)
                       }
                       error={passwordErrors.current_password}
-                      placeholder="Enter your current password"
+                      placeholder="Hatama ita-nia password atual"
                       autoComplete="current-password"
                       suffix={
                         <button
@@ -975,7 +979,7 @@ export default function Settings() {
                     />
 
                     <Field
-                      label="New Password"
+                      label="Password Foun"
                       name="password"
                       type={showNew ? "text" : "password"}
                       value={passwordForm.password}
@@ -983,7 +987,7 @@ export default function Settings() {
                         changePasswordField("password", value)
                       }
                       error={passwordErrors.password}
-                      placeholder="Enter your new password"
+                      placeholder="Hatama password foun"
                       autoComplete="new-password"
                       suffix={
                         <button
@@ -997,7 +1001,7 @@ export default function Settings() {
                     />
 
                     <Field
-                      label="Confirm New Password"
+                      label="Konfirma passowrd foun"
                       name="password_confirmation"
                       type={showConfirmation ? "text" : "password"}
                       value={passwordForm.password_confirmation}
@@ -1005,7 +1009,7 @@ export default function Settings() {
                         changePasswordField("password_confirmation", value)
                       }
                       error={passwordErrors.password_confirmation}
-                      placeholder="Re-enter your new password"
+                      placeholder="Hatama fila-fali password foun"
                       autoComplete="new-password"
                       suffix={
                         <button
@@ -1021,7 +1025,7 @@ export default function Settings() {
 
                   <div className="flex flex-col-reverse gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:items-center sm:justify-between">
                     <p className="text-xs leading-5 text-slate-400">
-                      Never share your password with anyone.
+                      Labele fahe ita-nia password ho ema seluk.
                     </p>
 
                     <div className="flex flex-col-reverse gap-2 sm:flex-row">
@@ -1031,7 +1035,7 @@ export default function Settings() {
                         disabled={savingPassword}
                         className="rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 transition cursor-pointer hover:bg-slate-50 disabled:opacity-50"
                       >
-                        Clear Fields
+                        Hamoos koluna
                       </button>
 
                       <button
@@ -1039,7 +1043,7 @@ export default function Settings() {
                         disabled={savingPassword}
                         className="inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition cursor-pointer hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
                       >
-                        Update Password
+                        Atualiza password
                       </button>
                     </div>
                   </div>
