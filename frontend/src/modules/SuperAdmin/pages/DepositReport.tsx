@@ -25,16 +25,16 @@ type TransactionFilter = "all" | "deposit" | "withdrawal";
 const MONTHS = [
   { value: "01", label: "Janeiro" },
   { value: "02", label: "Fevereiro" },
-  { value: "03", label: "Marsu" },
+  { value: "03", label: "Março" },
   { value: "04", label: "Abril" },
-  { value: "05", label: "Maiu" },
-  { value: "06", label: "Junu" },
-  { value: "07", label: "Julu" },
-  { value: "08", label: "Agostu" },
-  { value: "09", label: "Setembru" },
-  { value: "10", label: "Outobru" },
-  { value: "11", label: "Novembru" },
-  { value: "12", label: "Dezembru" },
+  { value: "05", label: "Maio" },
+  { value: "06", label: "Junho" },
+  { value: "07", label: "Julho" },
+  { value: "08", label: "Agosto" },
+  { value: "09", label: "Setembro" },
+  { value: "10", label: "Outubro" },
+  { value: "11", label: "Novembro" },
+  { value: "12", label: "Dezembro" },
 ];
 
 const formatMoney = (amount: number) =>
@@ -316,7 +316,6 @@ export default function DepositReport() {
             <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
               Relatoriu Depositu Mensal
             </h1>
-        
           </div>
         </div>
 
@@ -349,7 +348,9 @@ export default function DepositReport() {
           className="flex flex-col gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 sm:flex-row sm:items-center sm:justify-between print:hidden"
         >
           <div>
-            <p className="font-semibold text-red-800">Labele karega relatoriu</p>
+            <p className="font-semibold text-red-800">
+              Labele karega relatoriu
+            </p>
             <p className="mt-1 text-sm text-red-700">{error}</p>
           </div>
 
@@ -440,7 +441,7 @@ export default function DepositReport() {
       <section>
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-base font-bold text-slate-900 sm:text-lg">
-            Sumariu {monthLabel} {selectedYear} 
+            Sumariu {monthLabel} {selectedYear}
           </h2>
 
           <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700 ring-1 ring-inset ring-blue-100">
@@ -546,8 +547,8 @@ export default function DepositReport() {
             Periodu relatoriu: {monthLabel} {selectedYear}
           </p>
           <p className="mt-1 text-sm text-slate-600">
-            Total depositu: {formatMoney(summary.deposits)} · Total levantamentu:{" "}
-            {formatMoney(summary.withdrawals)} · Total Montante:{" "}
+            Total depositu: {formatMoney(summary.deposits)} · Total
+            levantamentu: {formatMoney(summary.withdrawals)} · Total Montante:{" "}
             {formatMoney(netAmount)}
           </p>
         </div>
@@ -676,14 +677,12 @@ export default function DepositReport() {
                       Nu.
                     </th>
                     <th className="whitespace-nowrap px-4 py-4 font-semibold">
-                      Data 
+                      Data
                     </th>
                     <th className="whitespace-nowrap px-4 py-4 font-semibold">
                       Numeru Membru
                     </th>
-                    <th className="min-w-48 px-4 py-4 font-semibold">
-                      Naran
-                    </th>
+                    <th className="min-w-48 px-4 py-4 font-semibold">Naran</th>
                     <th className="whitespace-nowrap px-4 py-4 font-semibold">
                       Tipu depositu
                     </th>

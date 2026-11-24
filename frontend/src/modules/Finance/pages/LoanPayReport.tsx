@@ -199,16 +199,16 @@ const currentYear = String(new Date().getFullYear());
 const monthOptions = [
   { value: "01", label: "Janeiro" },
   { value: "02", label: "Fevereiro" },
-  { value: "03", label: "Marsu" },
+  { value: "03", label: "Março" },
   { value: "04", label: "Abril" },
-  { value: "05", label: "Maiu" },
-  { value: "06", label: "Junu" },
-  { value: "07", label: "Julu" },
-  { value: "08", label: "Agostu" },
-  { value: "09", label: "Setembru" },
-  { value: "10", label: "Outobru" },
-  { value: "11", label: "Novembru" },
-  { value: "12", label: "Dezembru" },
+  { value: "05", label: "Maio" },
+  { value: "06", label: "Junho" },
+  { value: "07", label: "Julho" },
+  { value: "08", label: "Agosto" },
+  { value: "09", label: "Setembro" },
+  { value: "10", label: "Outubro" },
+  { value: "11", label: "Novembro" },
+  { value: "12", label: "Dezembro" },
 ];
 
 export default function LoanPayReport() {
@@ -643,7 +643,7 @@ export default function LoanPayReport() {
                 htmlFor="payment-report-search"
                 className="mb-1.5 block text-xs font-semibold text-slate-600"
               >
-                Search 
+                Search
               </label>
               <div className="relative">
                 <Search
@@ -666,14 +666,13 @@ export default function LoanPayReport() {
                 htmlFor="payment-report-month"
                 className="mb-1.5 block text-xs font-semibold text-slate-600"
               >
-               Fulan Pagamentu
+                Fulan Pagamentu
               </label>
               <select
                 id="payment-report-month"
                 value={selectedMonth}
                 onChange={(event) => setSelectedMonth(event.target.value)}
                 className={inputClass}
-
               >
                 <option value="All">Hili-Fulan</option>
                 {monthOptions.map((month) => (
@@ -765,7 +764,6 @@ export default function LoanPayReport() {
           </div>
 
           <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-          
             <button
               type="button"
               onClick={resetFilters}
@@ -786,7 +784,9 @@ export default function LoanPayReport() {
           </div>
         ) : errorMessage ? (
           <div className="px-6 py-12 text-center text-sm text-slate-500">
-            Relatóriu pagamentu seidauk disponivel tanba sistema seidauk bele karrega rejistu pagamentu sira.          </div>
+            Relatóriu pagamentu seidauk disponivel tanba sistema seidauk bele
+            karrega rejistu pagamentu sira.{" "}
+          </div>
         ) : filteredRows.length === 0 ? (
           <div className="px-6 py-14 text-center">
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-500">
@@ -817,7 +817,8 @@ export default function LoanPayReport() {
                         {row.borrowerType} · {row.borrowerNumber}
                       </p>
                       <p className="mt-1 text-xs text-slate-500">
-                        Pagamentu #{row.payment.id} · Emprestimu #{row.payment.loan_id}
+                        Pagamentu #{row.payment.id} · Emprestimu #
+                        {row.payment.loan_id}
                       </p>
                     </div>
 
@@ -916,8 +917,12 @@ export default function LoanPayReport() {
                         Incl. funan
                       </span>
                     </th>
-                    <th className="px-4 py-3.5 text-right">Montante Pagamentu</th>
-                    <th className="px-4 py-3.5 text-right">Pagamentu ne'ebe simu ona</th>
+                    <th className="px-4 py-3.5 text-right">
+                      Montante Pagamentu
+                    </th>
+                    <th className="px-4 py-3.5 text-right">
+                      Pagamentu ne'ebe simu ona
+                    </th>
                     <th className="px-4 py-3.5 text-right">
                       Montante tenki selu
                     </th>

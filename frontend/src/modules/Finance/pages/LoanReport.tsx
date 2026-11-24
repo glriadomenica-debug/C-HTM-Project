@@ -102,18 +102,18 @@ const getBalance = (loan: Loan) =>
   round(Math.max(0, getTotal(loan) - getPaid(loan)));
 
 const MONTHS = [
-  { value: "01", label: "January" },
-  { value: "02", label: "February" },
-  { value: "03", label: "March" },
-  { value: "04", label: "April" },
-  { value: "05", label: "May" },
-  { value: "06", label: "June" },
-  { value: "07", label: "July" },
-  { value: "08", label: "August" },
-  { value: "09", label: "September" },
-  { value: "10", label: "October" },
-  { value: "11", label: "November" },
-  { value: "12", label: "December" },
+  { value: "01", label: "Janeiro" },
+  { value: "02", label: "Fevereiro" },
+  { value: "03", label: "Março" },
+  { value: "04", label: "Abril" },
+  { value: "05", label: "Maio" },
+  { value: "06", label: "Junho" },
+  { value: "07", label: "Julho" },
+  { value: "08", label: "Agosto" },
+  { value: "09", label: "Setembro" },
+  { value: "10", label: "Outubro" },
+  { value: "11", label: "Novembro" },
+  { value: "12", label: "Dezembro" },
 ];
 
 export default function LoanReport() {
@@ -148,7 +148,9 @@ export default function LoanReport() {
 
       setLoans(data as Loan[]);
     } catch {
-      setError("Unable to load the loan report. Please try again.");
+      setError(
+        "Labele atu karrega relatóriu empréstimu nian. Favor ida koko fali.",
+      );
       setLoans([]);
     } finally {
       setLoading(false);
@@ -426,7 +428,7 @@ export default function LoanReport() {
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Loan Report</h1>
             <p className="mt-1 text-sm text-gray-500">
-            Relatoriu iha {reportPeriod}
+              Relatoriu iha {reportPeriod}
             </p>
           </div>
 
@@ -608,7 +610,8 @@ export default function LoanReport() {
                 Dadus Emprestimu la iha.
               </h3>
               <p className="mt-2 text-sm text-gray-500">
-                La hetan dadus emprestimu ba {reportPeriod} ne'ebe hanesan ho filtru atual.
+                La hetan dadus emprestimu ba {reportPeriod} ne'ebe hanesan ho
+                filtru atual.
               </p>
               <button
                 type="button"
@@ -749,7 +752,7 @@ export default function LoanReport() {
                               <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
                                 <div className="border-b border-slate-200 px-4 py-3">
                                   <h3 className="font-semibold text-slate-800">
-                                   Istoria Pagamentu — {name}
+                                    Istoria Pagamentu — {name}
                                   </h3>
                                   <p className="mt-1 text-xs text-slate-500">
                                     {payments.length} Transaksaun pagamentu
@@ -758,7 +761,8 @@ export default function LoanReport() {
 
                                 {payments.length === 0 ? (
                                   <p className="p-5 text-sm text-gray-500">
-                                    Seidauk iha dadus pagamentu ba empréstimu ida-ne’e.
+                                    Seidauk iha dadus pagamentu ba empréstimu
+                                    ida-ne’e.
                                   </p>
                                 ) : (
                                   <div className="overflow-x-auto">
@@ -769,7 +773,9 @@ export default function LoanReport() {
                                           <th className="px-4 py-3">
                                             Data pagamentu
                                           </th>
-                                          <th className="px-4 py-3">Metodu pagamentu</th>
+                                          <th className="px-4 py-3">
+                                            Metodu pagamentu
+                                          </th>
                                           <th className="px-4 py-3 text-right">
                                             Montante
                                           </th>

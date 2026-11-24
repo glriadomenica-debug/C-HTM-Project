@@ -199,16 +199,16 @@ const currentYear = String(new Date().getFullYear());
 const monthOptions = [
   { value: "01", label: "Janeiro" },
   { value: "02", label: "Fevereiro" },
-  { value: "03", label: "Marsu" },
+  { value: "03", label: "Março" },
   { value: "04", label: "Abril" },
-  { value: "05", label: "Maiu" },
-  { value: "06", label: "Junu" },
-  { value: "07", label: "Julu" },
-  { value: "08", label: "Agostu" },
-  { value: "09", label: "Setembru" },
-  { value: "10", label: "Outobru" },
-  { value: "11", label: "Novembru" },
-  { value: "12", label: "Dezembru" },
+  { value: "05", label: "Maio" },
+  { value: "06", label: "Junho" },
+  { value: "07", label: "Julho" },
+  { value: "08", label: "Agosto" },
+  { value: "09", label: "Setembro" },
+  { value: "10", label: "Outubro" },
+  { value: "11", label: "Novembro" },
+  { value: "12", label: "Dezembro" },
 ];
 
 export default function LoanPayReport() {
