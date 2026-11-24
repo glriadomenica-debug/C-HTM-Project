@@ -208,7 +208,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             </div> */}
 
             <div className="min-w-0">
-              <p className="truncate text-xs font-semibold">Administrator</p>
+              <p className="truncate text-xs font-semibold">Super Admin</p>
               <p className="truncate text-[10px] text-blue-200/70">
                 C-HTM Workspace
               </p>

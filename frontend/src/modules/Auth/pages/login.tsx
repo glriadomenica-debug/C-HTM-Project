@@ -102,38 +102,38 @@ export default function Login() {
       // Mengarahkan user sesuai role
       switch (role) {
         case "superadmin":
-          toast.success("Login berhasil!");
+          toast.success("Login ho susesu!");
           navigate("/superadmin/dashboard", { replace: true });
           break;
 
         case "manager":
-          toast.success("Login berhasil!");
+          toast.success("Login ho susesu!");
           navigate("/manager/dashboard", { replace: true });
           break;
 
         case "finance":
-          toast.success("Login berhasil!");
+          toast.success("Login ho susesu!");
           navigate("/finance/dashboard", { replace: true });
           break;
 
         case "administration":
-          toast.success("Login berhasil!");
+          toast.success("Login ho susesu!");
           navigate("/administration/dashboard", { replace: true });
           break;
 
         default:
-          toast.error("Role tidak dikenali.");
+          toast.error("La hetan role ne'ebe ita hatama.");
           break;
       }
     } catch (error: unknown) {
-      console.error("Login error:", error);
+      console.error("Erru wainhira login:", error);
 
       if (axios.isAxiosError<{ message?: string }>(error)) {
-        toast.error(error.response?.data?.message || "Login gagal!");
+        toast.error(error.response?.data?.message || "Login erru!");
       } else if (error instanceof Error) {
         toast.error(error.message);
       } else {
-        toast.error("Login gagal!");
+        toast.error("Login erru!");
       }
     } finally {
       setLoading(false);
@@ -146,7 +146,7 @@ export default function Login() {
         <h1 className="mb-2 text-3xl font-bold text-blue-900">Log in</h1>
 
         <p className="mb-8 text-sm text-gray-500">
-          Please enter your email and password.
+          Favor hatama ita-nia Email no Password
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-5">

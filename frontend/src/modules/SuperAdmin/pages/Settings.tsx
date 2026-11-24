@@ -696,7 +696,7 @@ export default function Settings() {
           </h1>
 
           <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
-            Manage your personal information and C-HTM account security.
+            Jere ita-boot nia informasaun pesoál no seguransa konta C-HTM nian
           </p>
         </header>
 
@@ -804,7 +804,8 @@ export default function Settings() {
                   </h2>
 
                   <p className="mt-1 text-sm leading-6 text-slate-500">
-                    Atualiza informasaun báziku ne'ebé asosiadu ho ita-boot nia konta.
+                    Atualiza informasaun báziku ne'ebé asosiadu ho ita-boot nia
+                    konta.
                   </p>
                 </div>
 
@@ -839,8 +840,9 @@ export default function Settings() {
                     </h3>
 
                     <p className="mt-1 text-xs leading-5 text-slate-500">
-                      Favór asegura katak informasaun ne’ebé ita fornese loos no loos duni.
-                  </p>
+                      Favór asegura katak informasaun ne’ebé ita fornese loos no
+                      loos duni.
+                    </p>
                   </div>
 
                   <div className="grid grid-cols-1 gap-x-5 gap-y-5 sm:grid-cols-2">
@@ -880,8 +882,8 @@ export default function Settings() {
                       />
 
                       <p className="mt-1.5 text-xs text-slate-400">
-                        Ita bele husik mamuk koluna ne'e, 
-                        se karik ita la iha numeru telfone.
+                        Ita bele husik mamuk koluna ne'e, se karik ita la iha
+                        numeru telfone.
                       </p>
                     </div>
                   </div>
@@ -921,7 +923,8 @@ export default function Settings() {
                   </h2>
 
                   <p className="mt-1 text-sm leading-6 text-slate-500">
-                   Troka ita-nia password regular hodi garantia ita nia konta ho seguru.
+                    Troka ita-nia password regular hodi garantia ita nia konta
+                    ho seguru.
                   </p>
                 </div>
 
@@ -944,8 +947,8 @@ export default function Settings() {
                       </p>
 
                       <p className="mt-1 text-xs leading-5 text-indigo-800">
-                        Uza karakter minimu 8. Prevene utiliza password ne'ebe fasil atu hatene 
-                        ka password ne'ebe uza ba konta seluk.
+                        Uza karakter minimu 8. Prevene utiliza password ne'ebe
+                        fasil atu hatene ka password ne'ebe uza ba konta seluk.
                       </p>
                     </div>
                   </div>

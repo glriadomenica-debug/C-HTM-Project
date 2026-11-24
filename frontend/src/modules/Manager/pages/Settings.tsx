@@ -696,7 +696,8 @@ export default function Settings() {
           </h1>
 
           <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
-            Manage your personal information and C-HTM account security.
+            Jere ita-boot nia informasaun pesoál no seguransa konta C-HTM
+            nian
           </p>
         </header>
 
