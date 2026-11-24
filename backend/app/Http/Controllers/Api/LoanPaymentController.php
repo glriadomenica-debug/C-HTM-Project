@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Models\Loan;
-use App\Models\Loanpayments;
+use App\Models\LoanPayment;
 use App\Helpers\ApiMessage;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -17,7 +17,7 @@ class LoanpaymentController extends Controller
      */
     public function index()
     {
-        $payments = Loanpayments::with([
+        $payments = LoanPayment::with([
             'loan.member',
             'loan.nonmember',
         ])
@@ -69,7 +69,7 @@ class LoanpaymentController extends Controller
             $loanTotal = $this->getLoanTotal($loan);
 
             // Calculate all payments already recorded for this loan.
-            $alreadyPaid = (float) Loanpayments::where(
+            $alreadyPaid = (float) LoanPayment::where(
                 'loan_id',
                 $loan->id
             )->sum('amount');
@@ -93,7 +93,7 @@ class LoanpaymentController extends Controller
 
             $data['amount'] = $amount;
 
-            $payment = Loanpayments::create($data);
+            $payment = LoanPayment::create($data);
 
             $payment->load([
                 'loan.member',
@@ -142,7 +142,7 @@ class LoanpaymentController extends Controller
             $validator,
             $id
         ) {
-            $payment = Loanpayments::where('id', $id)
+            $payment = LoanPayment::where('id', $id)
                 ->lockForUpdate()
                 ->first();
 
@@ -173,7 +173,7 @@ class LoanpaymentController extends Controller
             $loanTotal = $this->getLoanTotal($loan);
 
             // Exclude this payment when checking the new balance.
-            $otherPayments = (float) Loanpayments::where(
+            $otherPayments = (float) LoanPayment::where(
                 'loan_id',
                 $targetLoanId
             )
@@ -233,7 +233,7 @@ class LoanpaymentController extends Controller
      */
     public function destroy($id)
     {
-        $payment = Loanpayments::find($id);
+        $payment = LoanPayment::find($id);
 
         if (!$payment) {
             return ApiMessage::error(
