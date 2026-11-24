@@ -312,14 +312,14 @@ export default function Roles() {
       resetForm();
       showNotice(
         "success",
-        editing ? "Role updated" : "Role created",
+        editing ? "Atualiza Role" : "Role Kria ona.",
         `The role "${name}" has been ${editing ? "updated" : "created"} successfully.`,
       );
       await fetchRoles(false);
     } catch (error: any) {
       showNotice(
         "error",
-        editing ? "Unable to update role" : "Unable to create role",
+        editing ? "Labele atu muda role" : "Labele atu kria role",
         getFriendlyError(error, editing ? "update" : "create"),
       );
     } finally {

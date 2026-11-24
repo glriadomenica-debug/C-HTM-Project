@@ -42,9 +42,9 @@ const menuGroups = [
     title: "Jestaun Finanseira",
     menus: [
       { name: "Depositu", path: "/manager/deposits", icon: Wallet },
-      { name: "Loans", path: "/manager/loans", icon: CreditCard },
+      { name: "Emprestimu", path: "/manager/loans", icon: CreditCard },
       {
-        name: "Emprestimu",
+        name: "Pagamentu",
         path: "/manager/loanpayments",
         icon: ReceiptText,
       },
@@ -55,7 +55,7 @@ const menuGroups = [
       },
     ],
   },
-    {
+  {
     title: "Jestaun Utilizador",
     menus: [
       { name: "Utilizador", path: "/manager/users", icon: Users },
