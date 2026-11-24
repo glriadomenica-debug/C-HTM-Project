@@ -6,7 +6,7 @@ use App\Http\Controllers\Api\MemberController;
 use App\Http\Controllers\Api\NonMemberController;
 use App\Http\Controllers\Api\DepositController;
 use App\Http\Controllers\Api\LoanController;
-use App\Http\Controllers\Api\LoanpaymentController;
+use App\Http\Controllers\Api\LoanPaymentController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\AuthenticatedUserSettingsController;
@@ -35,7 +35,7 @@ Route::apiResource('deposits', DepositController::class);
 Route::apiResource('loans', LoanController::class);
 
 // Loan payments
-Route::apiResource('loanpayments', LoanpaymentController::class);
+Route::apiResource('loanpayments', LoanPaymentController::class);
 
 // Cash Accounts
 Route::get('/cash-accounts', [TransactionController::class,  'accounts',]);
