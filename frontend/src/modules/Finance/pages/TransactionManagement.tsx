@@ -632,8 +632,9 @@ export default function TransactionManagement() {
     ) {
       setNotice({
         type: "warning",
-        title: "Invalid transfer",
-        message: "Pilih akun asal dan akun tujuan yang berbeda untuk transfer.",
+        title: "Tranferensia ne'ebe la validu",
+        message:
+          "Hili fonte no destinasaun konta sira ne'ebe diferente ba transferensia.",
       });
       return;
     }
@@ -641,7 +642,7 @@ export default function TransactionManagement() {
     if (form.type !== "transfer" && !form.account_id) {
       setNotice({
         type: "warning",
-        title: "Account required",
+        title: "Presiza iha konta / account",
         message: "Pilih akun untuk transaksi ini.",
       });
       return;
@@ -669,20 +670,20 @@ export default function TransactionManagement() {
       setForm(emptyForm());
       setNotice({
         type: "success",
-        title: "Transaction saved",
-        message: "Transaksi berhasil disimpan.",
+        title: "Transaksaun rai ona",
+        message: "Transaksaun rai ho susesu.",
       });
       await loadTransactions();
     } catch (error: any) {
       setNotice({
         type: "error",
-        title: "Unable to save transaction",
+        title: "Labele atu rai dadus transaksaun",
         message:
           (error?.response?.data?.message ??
             Object.values(error?.response?.data?.errors ?? {})
               .flat()
               .join(" ")) ||
-          "Transaksi gagal disimpan. Periksa kembali data yang dimasukkan.",
+          "Labele atu rai dadus transaksaun. Favor verifika fali dadus ne'ebe prienxe ona.",
       });
     } finally {
       setSaving(false);
@@ -696,17 +697,17 @@ export default function TransactionManagement() {
       await api.delete(`/transactions/${transaction.id}`);
       setNotice({
         type: "success",
-        title: "Transaction deleted",
-        message: "Transaksi berhasil dihapus.",
+        title: "Transaksaun hamoos ona",
+        message: "Trransaksaun hamoos ho susesu.",
       });
       await loadTransactions();
     } catch (error: any) {
       setNotice({
         type: "error",
-        title: "Unable to delete transaction",
+        title: "Labele atu hamoos dadus transaksaun",
         message:
           error?.response?.data?.message ??
-          "Transaksi gagal dihapus. Silakan coba kembali.",
+          "Labele atu hamoos dadus transaksaun. Favor koko fila fali.",
       });
     } finally {
       setDeleting(false);
@@ -716,9 +717,9 @@ export default function TransactionManagement() {
   const requestDelete = (transaction: Transaction) => {
     setNotice({
       type: "confirm",
-      title: "Delete this transaction?",
+      title: "Hamoos dadus transaksaun ne'e?",
       message:
-        "Transaksi ini akan dihapus dan saldo akun akan dihitung ulang. Tindakan ini tidak dapat dibatalkan.",
+        "Transaksaun ne'e sei hamoos no saldo konta sei halo kalkulu fali. Aksaun ne'e labele kansela ka fila fali.",
       confirmAction: () => {
         setNotice(null);
         void handleDelete(transaction);
@@ -774,7 +775,7 @@ export default function TransactionManagement() {
               d="M12 5v14m-7-7h14"
             />
           </svg>
-          Add Transaction
+          Aumenta dadus transaksaun
         </button>
       </div>
 
@@ -795,14 +796,14 @@ export default function TransactionManagement() {
             />
           </svg>
           <h2 className="text-sm font-semibold text-gray-800">
-            Find transactions
+            Buka dadus transaksaun
           </h2>
         </div>
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-[180px_minmax(200px,1fr)_190px]">
           <div className="min-w-0">
             <label className="mb-1.5 block text-xs font-semibold text-gray-500">
-              Month
+              Fulan
             </label>
             <input
               type="month"
@@ -838,14 +839,14 @@ export default function TransactionManagement() {
 
           <div className="min-w-0">
             <label className="mb-1.5 block text-xs font-semibold text-gray-500">
-              Transaction type
+              Tipu Transaksaun
             </label>
             <select
               value={typeFilter}
               onChange={(event) => setTypeFilter(event.target.value)}
               className={`${inputClass} cursor-pointer`}
             >
-              <option value="all">All types</option>
+              <option value="all">Hili tipu transaksaun</option>
               <option value="income">Income</option>
               <option value="expense">Expense</option>
               <option value="transfer">Transfer</option>
@@ -859,7 +860,7 @@ export default function TransactionManagement() {
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-sm font-bold text-gray-800">Cash accounts</h2>
           <span className="text-xs text-gray-500">
-            {activeAccounts.length} active account(s)
+            {activeAccounts.length} konta(s) aktivu
           </span>
         </div>
 
@@ -989,10 +990,10 @@ export default function TransactionManagement() {
               </svg>
             </span>
             <div>
-              <h2 className="font-semibold">No cash accounts found</h2>
+              <h2 className="font-semibold">La iha dadus cash account</h2>
               <p className="mt-1 text-sm leading-6">
-                Konfigurasikan akun kas terlebih dahulu. Akun tidak dibuat
-                otomatis dari halaman transaksi ini.
+                Konfigura uluk konta osan nian. Konta sira la kria
+                automatikamente husi pajina transaksaun ida-ne'e.
               </p>
             </div>
           </div>
@@ -1004,38 +1005,38 @@ export default function TransactionManagement() {
           {/* Summary cards */}
           <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <SummaryCard
-              label="Opening Balance"
+              label="Balansu Inisiu"
               value={
                 openingBalance === null
                   ? "Not configured"
                   : money(openingBalance)
               }
-              subtitle="Saldo anterior"
+              subtitle="Saldo husi fulan anterior"
               theme="blue"
               icon="wallet"
             />
             <SummaryCard
-              label="Total Credit"
+              label="Total Kreditu"
               value={money(totalCredit)}
-              subtitle="Money received"
+              subtitle="Osan tama"
               theme="green"
               icon="arrow-down"
             />
             <SummaryCard
-              label="Total Debit"
+              label="Total Debitu"
               value={money(totalDebit)}
-              subtitle="Money spent or transferred out"
+              subtitle="Osan ne'ebe sai ka transfere sai"
               theme="rose"
               icon="arrow-up"
             />
             <SummaryCard
-              label="Closing Balance"
+              label="Balansu Ikus"
               value={
                 closingBalance === null
                   ? "Not configured"
                   : money(closingBalance)
               }
-              subtitle="Current calculated balance"
+              subtitle="Saldo atual kalkuladu"
               theme="violet"
               icon="chart"
             />
@@ -1093,7 +1094,7 @@ export default function TransactionManagement() {
             {loading ? (
               <div className="flex flex-col items-center justify-center gap-3 px-5 py-16 text-gray-500">
                 <span className="h-8 w-8 animate-spin rounded-full border-4 border-blue-100 border-t-blue-600" />
-                <p className="text-sm">Loading transactions...</p>
+                <p className="text-sm">Loading dadus transaksaun...</p>
               </div>
             ) : openingBalance === null ? (
               <div className="m-4 rounded-xl border border-amber-200 bg-amber-50 p-4 sm:m-5">
@@ -1103,7 +1104,7 @@ export default function TransactionManagement() {
                   </span>
                   <div>
                     <h3 className="text-sm font-semibold text-amber-900">
-                      Opening balance is not configured
+                      Balansu inisiu seidauk konfigura
                     </h3>
                     <p className="mt-1 text-sm leading-6 text-amber-800">
                       Atur opening balance dan opening date pada pengaturan akun
@@ -1119,12 +1120,12 @@ export default function TransactionManagement() {
                   <table className="w-full min-w-max border-collapse text-sm">
                     <thead>
                       <tr className="bg-slate-800 text-left text-xs uppercase tracking-wide text-slate-100">
-                        <th className="whitespace-nowrap px-4 py-4">No.</th>
-                        <th className="whitespace-nowrap px-4 py-4">Date</th>
-                        <th className="whitespace-nowrap px-4 py-4">Type</th>
-                        <th className="min-w-[220px] px-4 py-4">Description</th>
+                        <th className="whitespace-nowrap px-4 py-4">Nu.</th>
+                        <th className="whitespace-nowrap px-4 py-4">Dat</th>
+                        <th className="whitespace-nowrap px-4 py-4">Tipu</th>
+                        <th className="min-w-[220px] px-4 py-4">Deskrisaun</th>
                         <th className="whitespace-nowrap px-4 py-4 text-right">
-                          Amount
+                          Montante
                         </th>
                         {columns.map((column) => (
                           <th
@@ -1141,12 +1142,12 @@ export default function TransactionManagement() {
                           </th>
                         ))}
                         <th className="whitespace-nowrap px-4 py-4 text-right">
-                          Total Debit
+                          Total Debitu
                         </th>
                         <th className="whitespace-nowrap px-4 py-4 text-right">
-                          Balance
+                          Balansu
                         </th>
-                        <th className="px-4 py-4 text-center">Actions</th>
+                        <th className="px-4 py-4 text-center">Aksaun</th>
                       </tr>
                     </thead>
 
@@ -1223,7 +1224,7 @@ export default function TransactionManagement() {
                                 type="button"
                                 onClick={() => requestDelete(row.transaction!)}
                                 aria-label="Delete transaction"
-                                title="Delete transaction"
+                                title="Hamoos transaksaun"
                                 className="inline-flex cursor-pointer h-9 w-9 items-center justify-center rounded-lg text-gray-400 transition hover:bg-rose-50 hover:text-rose-600"
                               >
                                 <TrashIcon />
@@ -1235,7 +1236,7 @@ export default function TransactionManagement() {
 
                       <tr className="bg-slate-100 font-bold text-gray-800">
                         <td colSpan={5} className="px-4 py-4 text-right">
-                          MONTH TOTAL
+                          TOTAL FULAN
                         </td>
                         {columns.map((column) => (
                           <td
@@ -1263,7 +1264,7 @@ export default function TransactionManagement() {
                 <div className="space-y-3 bg-slate-50/70 p-3 md:hidden">
                   <div className="flex items-center justify-between gap-2 px-1">
                     <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-                      Transaction history
+                      Istoria Transaksaun
                     </p>
                     <span className="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-gray-500 ring-1 ring-gray-200">
                       {selectedAccountTransactions.length} record(s)
@@ -1401,7 +1402,7 @@ export default function TransactionManagement() {
                                   requestDelete(row.transaction)
                                 }
                                 aria-label="Delete transaction"
-                                title="Delete transaction"
+                                title="Hamoos transaksaun"
                                 className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-gray-400 transition hover:bg-rose-50 hover:text-rose-600"
                               >
                                 <TrashIcon />
@@ -1455,7 +1456,7 @@ export default function TransactionManagement() {
                               ))}
                               <div>
                                 <p className="text-xs leading-5 text-gray-500">
-                                  Total Debit
+                                  Total Debitu
                                 </p>
                                 <p
                                   className={`mt-0.5 text-sm font-semibold ${row.debit ? "text-rose-700" : "text-gray-300"}`}
@@ -1488,10 +1489,11 @@ export default function TransactionManagement() {
                         </svg>
                       </div>
                       <h3 className="mt-3 text-sm font-semibold text-gray-800">
-                        No transactions found
+                        La iha dadus transaksaun
                       </h3>
                       <p className="mt-1 text-xs leading-5 text-gray-500">
-                        No records match your selected month and filters.
+                        La iha dadus transaksaun relasionadu ho fulan ne'ebe
+                        selesionadu no filtru.
                       </p>
                     </div>
                   )}
@@ -1499,7 +1501,7 @@ export default function TransactionManagement() {
                   {/* Mobile month summary */}
                   <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
                     <h3 className="mb-3 text-sm font-bold text-gray-900">
-                      Monthly summary
+                      Sumariu Mensal
                     </h3>
                     <div className="space-y-3">
                       {columns.map((column) => (
@@ -1525,7 +1527,7 @@ export default function TransactionManagement() {
                       ))}
                       <div className="flex items-center justify-between gap-3 border-t border-gray-100 pt-3">
                         <span className="text-sm text-gray-500">
-                          Total Credit
+                          Total Kreditu
                         </span>
                         <span className="text-sm font-bold text-emerald-700">
                           {money(totalCredit)}
@@ -1533,7 +1535,7 @@ export default function TransactionManagement() {
                       </div>
                       <div className="flex items-center justify-between gap-3">
                         <span className="text-sm text-gray-500">
-                          Total Debit
+                          Total Debitu
                         </span>
                         <span className="text-sm font-bold text-rose-700">
                           {money(totalDebit)}
@@ -1571,10 +1573,11 @@ export default function TransactionManagement() {
                       </svg>
                     </div>
                     <h3 className="mt-3 text-sm font-semibold text-gray-800">
-                      No transactions found
+                      La iha dadus transaksaun
                     </h3>
                     <p className="mt-1 text-sm text-gray-500">
-                      No records match your selected month and filters.
+                      La iha dadus transaksaun relasionadu ho fulan ne'ebe
+                      selesionadu no filtru.
                     </p>
                   </div>
                 )}
@@ -1590,7 +1593,7 @@ export default function TransactionManagement() {
             <div className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-100 bg-white/95 p-4 backdrop-blur sm:p-5">
               <div>
                 <h2 className="text-lg font-bold text-gray-900 sm:text-xl">
-                  Add Transaction
+                  Aumenta dadus transaksaun
                 </h2>
               </div>
               <button
@@ -1614,7 +1617,7 @@ export default function TransactionManagement() {
             <form onSubmit={handleSubmit} className="space-y-5 p-4 sm:p-6">
               <div>
                 <label className="mb-1.5 block text-sm font-semibold text-gray-700">
-                  Transaction Type *
+                  Tipu Transaksaun *
                 </label>
                 <div className="grid grid-cols-3 gap-2 ">
                   {(
@@ -1679,7 +1682,7 @@ export default function TransactionManagement() {
                       }}
                       className={inputClass}
                     >
-                      <option value="">Select source account</option>
+                      <option value="">Hili fonte konta / account</option>
                       {activeAccounts.map((account) => (
                         <option key={account.id} value={account.id}>
                           {account.name}
@@ -1699,7 +1702,7 @@ export default function TransactionManagement() {
                       }
                       className={inputClass}
                     >
-                      <option value="">Select destination account</option>
+                      <option value="">Hili destinasaun konta / account</option>
                       {activeAccounts
                         .filter(
                           (account) =>
@@ -1754,7 +1757,7 @@ export default function TransactionManagement() {
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <label className="mb-1.5 block text-sm font-semibold text-gray-700">
-                    Transaction Date *
+                    Data Transaksaun *
                   </label>
                   <input
                     type="date"
@@ -1768,7 +1771,7 @@ export default function TransactionManagement() {
                 </div>
                 <div>
                   <label className="mb-1.5 block text-sm font-semibold text-gray-700">
-                    Amount (USD) *
+                    Montante (USD) *
                   </label>
                   <div className="relative">
                     <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-semibold text-gray-400">
@@ -1810,8 +1813,7 @@ export default function TransactionManagement() {
                   ))}
                 </select>
                 <p className="mt-1.5 text-xs leading-5 text-gray-500">
-                  This category determines which ledger column records the
-                  transaction.
+                  Kategori ne'e determina koluna ledger ne'ebe maka rejista.
                 </p>
               </div>
 
@@ -1831,7 +1833,7 @@ export default function TransactionManagement() {
 
               <div>
                 <label className="mb-1.5 block text-sm font-semibold text-gray-700">
-                  Description
+                  Deskrisaun
                 </label>
                 <textarea
                   value={form.description}
@@ -1839,7 +1841,7 @@ export default function TransactionManagement() {
                     updateForm("description", event.target.value)
                   }
                   rows={3}
-                  placeholder="Additional transaction details..."
+                  placeholder="Detallu transaksaun adisional..."
                   className={`${inputClass} resize-y`}
                 />
               </div>
@@ -1850,7 +1852,7 @@ export default function TransactionManagement() {
                   onClick={() => setShowForm(false)}
                   className="rounded-xl cursor-pointer border border-gray-200 px-5 py-3 text-sm font-semibold text-gray-600 transition hover:bg-gray-50 sm:py-2.5"
                 >
-                  Cancel
+                  Kansela
                 </button>
                 <button
                   type="submit"
@@ -1908,7 +1910,7 @@ export default function TransactionManagement() {
                     onClick={() => setNotice(null)}
                     className="rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-50"
                   >
-                    Cancel
+                    Kansela
                   </button>
                 )}
 
@@ -1927,7 +1929,7 @@ export default function TransactionManagement() {
                     onClick={() => setNotice(null)}
                     className="rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
                   >
-                    Close
+                    Taka
                   </button>
                 )}
               </div>
