@@ -707,17 +707,17 @@ export default function LoanPayment() {
     setFormError("");
 
     if (!form.borrower_type) {
-      setFormError("Please select a borrower type.");
+      setFormError("Favor hili tipu membru .");
       return;
     }
 
     if (!form.borrower_number) {
-      setFormError("Please select a borrower.");
+      setFormError("Favor hili ema ne'ebe empresta.");
       return;
     }
 
     if (!form.loan_id) {
-      setFormError("Please select a loan.");
+      setFormError("Favor hili emprestimu.");
       return;
     }
 
@@ -1292,7 +1292,7 @@ export default function LoanPayment() {
                     role="alert"
                     className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
                   >
-                    <p className="font-semibold">Please check the following</p>
+                    <p className="font-semibold">Favor verifika tuirmai ne'e</p>
                     <p className="mt-1">{formError}</p>
                   </div>
                 )}
@@ -1512,7 +1512,7 @@ export default function LoanPayment() {
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <div>
                           <p className="text-sm font-semibold text-gray-900">
-                            Loan #{selectedLoan.id}
+                            Emprestimu ID #{selectedLoan.id}
                           </p>
                           <p className="mt-1 text-xs text-gray-500">
                             Ema ne'ebe empresta:{" "}
@@ -1770,7 +1770,7 @@ export default function LoanPayment() {
                   onClick={closeMessageModal}
                   className={buttonClass}
                 >
-                  Close
+                  Taka
                 </button>
               )}
             </div>
