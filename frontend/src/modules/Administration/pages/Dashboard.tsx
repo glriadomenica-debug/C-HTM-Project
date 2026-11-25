@@ -3,21 +3,21 @@ import CrudActions from "../../../components/CrudActions";
 export default function Dashboard() {
   const statistics = [
     {
-      title: "Total Users",
+      title: "Total Utilizador",
       value: "0",
-      description: "Registered users",
+      description: "",
       icon: "👥",
     },
     {
-      title: "Total Members",
+      title: "Total Membru",
       value: "0",
-      description: "Registered members",
+      description: "",
       icon: "🧑‍🤝‍🧑",
     },
     {
-      title: "Active Loans",
+      title: "Emprestimu Aktiva",
       value: "0",
-      description: "Loans in progress",
+      description: "",
       icon: "💰",
     },
     {
@@ -35,7 +35,7 @@ export default function Dashboard() {
           Dashboard
         </h1>
         <p className="mt-1 text-sm text-gray-500">
-          Welcome to the C-HTM management system.
+          Bemvindu mai sistema manajementu C-HTM.
         </p>
       </div>
 
@@ -65,15 +65,15 @@ export default function Dashboard() {
       {/* Aktivitas terbaru */}
       <section className="min-w-0 rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:p-6">
         <h2 className="text-base font-semibold text-gray-900 sm:text-lg">
-          Recent Activities
+          Aktividade resente
         </h2>
 
         <p className="mt-2 text-sm text-gray-500">
-          Recent transactions and system activities will appear here.
+          Transaksaun resente no aktividade husi sistema sei mosu iha ne'e
         </p>
 
         <div className="mt-5 rounded-lg border border-dashed border-gray-300 p-5 text-center sm:p-8">
-          <p className="text-sm text-gray-500">No activities available yet.</p>
+          <p className="text-sm text-gray-500">Seidauk iha aktividade</p>
         </div>
         <CrudActions
           canView={true}
