@@ -349,7 +349,7 @@ export default function DepositReport() {
         >
           <div>
             <p className="font-semibold text-red-800">
-              Labele karega relatoriu
+              Labele karrega relatoriu
             </p>
             <p className="mt-1 text-sm text-red-700">{error}</p>
           </div>
@@ -623,7 +623,7 @@ export default function DepositReport() {
                         <div className="flex flex-wrap items-start justify-between gap-2">
                           <div className="min-w-0">
                             <p className="text-xs text-slate-400">
-                              No. {index + 1}
+                              Nu. {index + 1}
                             </p>
                             <h3 className="mt-1 break-words font-semibold text-slate-900">
                               {getMemberName(deposit, members)}
@@ -785,13 +785,13 @@ export default function DepositReport() {
               <path d="M20 7v5h-5M4 17v-5h5" />
               <path d="M5.6 9A7 7 0 0 1 18 6l2 6M4 12l2 6a7 7 0 0 0 12.4-3" />
             </svg>
-            Refresh report
+            Refresh relatoriu
           </button>
         </footer>
       </section>
 
       <p className="text-center text-xs text-slate-400 print:hidden">
-        C-HTM · Monthly Deposit Report · {monthLabel} {selectedYear}
+        C-HTM · Relatoriu Depositu Mensal · {monthLabel} {selectedYear}
       </p>
 
       <style>{`
