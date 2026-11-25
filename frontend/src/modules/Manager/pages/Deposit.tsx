@@ -1152,7 +1152,7 @@ export default function Deposit() {
             className="inline-flex items-center justify-center gap-2 self-start rounded-lg border border-slate-200 bg-white px-3 py-2 font-semibold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50 sm:self-auto cursor-pointer"
           >
             <Icon name="refresh" />
-            Refresh list
+            Refresh lista
           </button>
         </footer>
       </section>
