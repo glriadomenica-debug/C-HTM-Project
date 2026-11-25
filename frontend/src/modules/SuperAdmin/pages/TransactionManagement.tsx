@@ -682,7 +682,7 @@ export default function TransactionManagement() {
             Object.values(error?.response?.data?.errors ?? {})
               .flat()
               .join(" ")) ||
-          "Transaksi gagal disimpan. Periksa kembali data yang dimasukkan.",
+          "Transaksaun rai la ho susesu. Favor verifika fali dadus ne'ebe prienxe ona.",
       });
     } finally {
       setSaving(false);
@@ -696,17 +696,17 @@ export default function TransactionManagement() {
       await api.delete(`/transactions/${transaction.id}`);
       setNotice({
         type: "success",
-        title: "Transaction deleted",
-        message: "Transaksi berhasil dihapus.",
+        title: "Transaksaun hamoos ona",
+        message: "Transaksaun hamoos ona ho susesu.",
       });
       await loadTransactions();
     } catch (error: any) {
       setNotice({
         type: "error",
-        title: "Unable to delete transaction",
+        title: "Labele atu hamoos transaksaun",
         message:
           error?.response?.data?.message ??
-          "Transaksi gagal dihapus. Silakan coba kembali.",
+          "Transaksaun labele atu hamoos. Favor koko fila fali.",
       });
     } finally {
       setDeleting(false);
@@ -716,9 +716,9 @@ export default function TransactionManagement() {
   const requestDelete = (transaction: Transaction) => {
     setNotice({
       type: "confirm",
-      title: "Delete this transaction?",
+      title: "Hamoos transaksaun ne'e?",
       message:
-        "Transaksi ini akan dihapus dan saldo akun akan dihitung ulang. Tindakan ini tidak dapat dibatalkan.",
+        "Transaksaun ne'e sei hamoos no saldo konta sei halo kalkulu fali. Aksaun ne'e labele kansela ka fila fali.",
       confirmAction: () => {
         setNotice(null);
         void handleDelete(transaction);
@@ -752,7 +752,7 @@ export default function TransactionManagement() {
             </p>
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">
-            Cash Transactions
+            Transaksaun Kas
           </h1>
         </div>
 
@@ -774,7 +774,7 @@ export default function TransactionManagement() {
               d="M12 5v14m-7-7h14"
             />
           </svg>
-          Add Transaction
+          Aumenta dadus transaksaun
         </button>
       </div>
 
@@ -795,14 +795,14 @@ export default function TransactionManagement() {
             />
           </svg>
           <h2 className="text-sm font-semibold text-gray-800">
-            Find transactions
+            Buka transaksaun ba konta ne'ebe seleciona
           </h2>
         </div>
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-[180px_minmax(200px,1fr)_190px]">
           <div className="min-w-0">
             <label className="mb-1.5 block text-xs font-semibold text-gray-500">
-              Month
+              Fulan
             </label>
             <input
               type="month"
@@ -845,7 +845,7 @@ export default function TransactionManagement() {
               onChange={(event) => setTypeFilter(event.target.value)}
               className={`${inputClass} cursor-pointer`}
             >
-              <option value="all">All types</option>
+              <option value="all">Hili tipu</option>
               <option value="income">Income</option>
               <option value="expense">Expense</option>
               <option value="transfer">Transfer</option>
