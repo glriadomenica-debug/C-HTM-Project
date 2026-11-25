@@ -188,7 +188,7 @@ const getErrorMessage = (error: unknown): string => {
   return (
     err.response?.data?.message ||
     err.message ||
-    "Unable to load dashboard statistics."
+    "Labela atu karrega estatístika dashboard."
   );
 };
 
