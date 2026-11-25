@@ -78,31 +78,31 @@ function friendlyError(error: any, fallback: string): string {
   const message = error?.response?.data?.message;
 
   if (!error?.response) {
-    return "Unable to connect to the server. Please check your internet connection or API server and try again.";
+    return "Labele atu konekta ba servidor.Favor cek ita-nia koneksaun internet ka servidor API no koko fali.";
   }
 
   if (status === 401) {
-    return "Your session may have expired. Please log in again.";
+    return "Karik ita-nia sesaun remata ona. Favór login fila-fali..";
   }
 
   if (status === 403) {
-    return "You do not have permission to perform this action.";
+    return "Ita-boot la iha permisaun atu hala'o asaun ida-ne'e.";
   }
 
   if (status === 404) {
-    return "Endpoint not found. Please check the Laravel backend route configuration.";
+    return "Endpoint la hetan. Favor verifika konfigurasaun route backend Laravel nian..";
   }
 
   if (status === 422) {
-    return message || "The submitted data is invalid. Please review the form.";
+    return message || "Dadus ne'ebe hatama la validu. Favor haree fila fali.";
   }
 
   if (status === 429) {
-    return "Too many attempts. Please wait a moment before trying again.";
+    return "Tentiva barak liu. Favor hein oituan molok koko fali.";
   }
 
   if (status >= 500) {
-    return "The server is experiencing a problem. Please try again later.";
+    return "Server hasoru hela problema. Favor hein oituan no koko fali.";
   }
 
   return message || fallback;
@@ -400,7 +400,7 @@ export default function Settings() {
     } catch (error: any) {
       setModal({
         type: "error",
-        title: "Unable to Load Profile",
+        title: "Labela atu karrega perfil",
         message:
           error instanceof Error && error.message === "INVALID_PROFILE"
             ? "The profile data returned by the server has an unexpected format."
@@ -687,7 +687,7 @@ export default function Settings() {
       <div className="w-full">
         <header className="mb-7">
           <p className="text-xs font-bold uppercase tracking-[0.16em] text-indigo-600">
-            Account Management
+            Jestaun Konta
           </p>
 
           <h1 className="mt-2 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
@@ -717,7 +717,7 @@ export default function Settings() {
                   </p>
 
                   <p className="mt-1 truncate text-xs text-slate-500">
-                    {profile?.email || "Account Settings"}
+                    {profile?.email || "Hadia Konta"}
                   </p>
                 </div>
               </div>
@@ -750,7 +750,7 @@ export default function Settings() {
             <div className="border-t border-slate-100 bg-slate-50/70 px-5 py-4">
               <div className="flex items-center gap-2 text-xs text-slate-500">
                 <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                Account Settings
+                Hadia Konta
               </div>
 
               <p className="mt-1 text-xs leading-5 text-slate-400">
