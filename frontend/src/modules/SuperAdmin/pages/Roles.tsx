@@ -85,7 +85,7 @@ function getFriendlyError(error: any, action: ActionType): string {
   if (status >= 500)
     return "Problema ida akontese durante prosesu ita-nia pedidu. Favór koko fali depois.";
   return {
-    load: "Labele Refresh listaa role sira. Favór koko fali.",
+    load: "Labele refresh lista role sira. Favór koko fali.",
     create: "Labele kria dadus ida-ne'e. Favór koko fali.",
     update: "Labele atualiza dadus ida-ne'e. Favór koko fali.",
     delete: "Labele hamoos dadus ida-ne'e. Favór koko fali.",
@@ -267,7 +267,7 @@ export default function Roles() {
         setLoadFailed(true);
         showNotice(
           "error",
-          "Unable to load roles",
+          "Labele atu karrega dadus role sira",
           getFriendlyError(error, "load"),
         );
       } finally {
@@ -312,14 +312,14 @@ export default function Roles() {
       resetForm();
       showNotice(
         "success",
-        editing ? "Role updated" : "Role created",
-        `The role "${name}" has been ${editing ? "updated" : "created"} successfully.`,
+        editing ? "Role atualizadu" : "Role kria",
+        `Role"${name}" atu hadia ${editing ? "atualiza" : "kria"} ho susesu.`,
       );
       await fetchRoles(false);
     } catch (error: any) {
       showNotice(
         "error",
-        editing ? "Unable to update role" : "Unable to create role",
+        editing ? "Labele atu atualiza dadus role" : "Labele atu kria role",
         getFriendlyError(error, editing ? "update" : "create"),
       );
     } finally {
@@ -337,8 +337,8 @@ export default function Roles() {
       if (editingId === role.id) resetForm();
       showNotice(
         "success",
-        "Role deleted",
-        `The role "${role.role_name}" has been deleted successfully.`,
+        "Role hamoos ona",
+        `Role "${role.role_name}" hamoos ona ho susesu.`,
       );
       await fetchRoles(false);
     } catch (error: any) {
