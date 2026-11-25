@@ -85,7 +85,7 @@ function getFriendlyError(error: any, action: ActionType): string {
   if (status >= 500)
     return "Problema ida akontese durante prosesu ita-nia pedidu. Favór koko fali depois.";
   return {
-    load: "Labele refresh lista role sira. Favór koko fali.",
+    load: "Labele Refresh listaa role sira. Favór koko fali.",
     create: "Labele kria dadus ida-ne'e. Favór koko fali.",
     update: "Labele atualiza dadus ida-ne'e. Favór koko fali.",
     delete: "Labele hamoos dadus ida-ne'e. Favór koko fali.",
