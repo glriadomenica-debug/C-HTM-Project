@@ -311,7 +311,7 @@ class LoanController extends Controller
         );
 
         // Do not allow the revised loan total to fall below
-        // the total payments already recorded.
+        // the Total Pagamentu already recorded.
         $paidAmount = (float) $loan->payments->sum('amount');
 
         if (

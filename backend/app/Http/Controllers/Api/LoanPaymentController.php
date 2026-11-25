@@ -223,7 +223,7 @@ class LoanpaymentController extends Controller
         }
 
         return ApiMessage::success(
-            'Loan payment updated successfully.',
+            'Loan Pagamentu atualiza ho susesu.',
             $result['payment']
         );
     }
@@ -245,7 +245,7 @@ class LoanpaymentController extends Controller
         $payment->delete();
 
         return ApiMessage::success(
-            'Loan payment deleted successfully.',
+            'Loan Pagamentu hamoos ho susesu.',
             null
         );
     }
