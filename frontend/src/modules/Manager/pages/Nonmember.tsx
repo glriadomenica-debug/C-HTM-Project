@@ -26,6 +26,10 @@ interface NonMember {
   loans?: unknown[];
 }
 
+interface Loan {
+  non_member_number?: string | null;
+}
+
 interface NonMemberForm {
   non_member_number: string;
   full_name: string;
@@ -203,14 +207,36 @@ export default function NonMember() {
     setLoading(true);
 
     try {
-      const response = await api.get("/nonmembers");
-      const rows = getResponseData<NonMember>(response);
+      const [nonMembersResponse, loansResponse] = await Promise.all([
+        api.get("/nonmembers"),
+        api.get("/loans"),
+      ]);
+      const rows = getResponseData<NonMember>(nonMembersResponse);
+      const loans = getResponseData<Loan>(loansResponse);
 
-      if (!rows) {
-        throw new Error("Invalid non-member data received from the server.");
+      if (!rows || !loans) {
+        throw new Error(
+          "Invalid non-member or loan data received from the server.",
+        );
       }
 
-      setNonMembers(rows);
+      const loanCounts = new Map<string, number>();
+      loans.forEach((loan) => {
+        const borrowerNumber = loan.non_member_number?.trim();
+        if (borrowerNumber) {
+          loanCounts.set(
+            borrowerNumber,
+            (loanCounts.get(borrowerNumber) ?? 0) + 1,
+          );
+        }
+      });
+
+      setNonMembers(
+        rows.map((nonMember) => ({
+          ...nonMember,
+          loans_count: loanCounts.get(nonMember.non_member_number.trim()) ?? 0,
+        })),
+      );
     } catch (error) {
       setMessage(getErrorMessage(error));
       setModal("error");
@@ -450,9 +476,9 @@ export default function NonMember() {
         </style>
       </head>
       <body>
-        <h1>C-HTM Relatoriu Non-Membru</h1>
+        <h1>Relatoriu Non-Membru</h1>
         <p>Generaliza iha: ${escapeHtml(dateStamp())}</p>
-        <p>Total non-members in this report: ${filteredNonMembers.length}</p>
+        <p>Total non-membru iha relatoriu: ${filteredNonMembers.length}</p>
         <table>
           <thead><tr>${tableHeader}</tr></thead>
           <tbody>${tableRows}</tbody>
@@ -676,7 +702,7 @@ export default function NonMember() {
                 onClick={() => setSearch("")}
                 className="mt-4 rounded-lg px-3 py-2 text-sm font-semibold text-blue-700 transition hover:bg-blue-50"
               >
-                Hamoos filtru search
+                Hamoos Search Filter
               </button>
             )}
           </div>
