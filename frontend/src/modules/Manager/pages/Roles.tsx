@@ -444,7 +444,7 @@ export default function Roles() {
               >
                 {saving && <Spinner />}
                 {saving
-                  ? "Saving..."
+                  ? "Rai dadus..."
                   : editingId !== null
                     ? "Atualiza dadus"
                     : "Rai dadus"}

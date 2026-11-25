@@ -52,7 +52,8 @@ const emptyForm: MemberForm = {
   membership_status: "Active",
 };
 
-const inputClass = "mt-1 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-100";
+const inputClass =
+  "mt-1 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-100";
 
 const labelClass = "block text-sm font-semibold text-slate-700";
 
@@ -281,82 +282,81 @@ export default function Member() {
     [members],
   );
 
-  
-const openCreateForm = () => {
-  setEditingMember(null);
-  setForm({ ...emptyForm });
-  setShowForm(true);
-};
+  const openCreateForm = () => {
+    setEditingMember(null);
+    setForm({ ...emptyForm });
+    setShowForm(true);
+  };
 
-const openEditForm = (member: Member) => {
-  setEditingMember(member);
+  const openEditForm = (member: Member) => {
+    setEditingMember(member);
 
-  setForm({
-    full_name: member.full_name ?? "",
-    gender: member.gender ?? "Male",
-    id_card_number: member.id_card_number ?? "",
-    phone_number: member.phone_number ?? "",
-    address: member.address ?? "",
-    employer: member.employer ?? "",
-    work_location: member.work_location ?? "",
-    membership_status: member.membership_status ?? "Active",
-  });
+    setForm({
+      full_name: member.full_name ?? "",
+      gender: member.gender ?? "Male",
+      id_card_number: member.id_card_number ?? "",
+      phone_number: member.phone_number ?? "",
+      address: member.address ?? "",
+      employer: member.employer ?? "",
+      work_location: member.work_location ?? "",
+      membership_status: member.membership_status ?? "Active",
+    });
 
-  setShowForm(true);
-};
+    setShowForm(true);
+  };
 
-const closeForm = () => {
-  if (saving) return;
-
-  setShowForm(false);
-  setEditingMember(null);
-  setForm({ ...emptyForm });
-};
-
-const updateField = <K extends keyof MemberForm>(
-  field: K,
-  value: MemberForm[K],
-) => {
-  setForm((previous) => ({
-    ...previous,
-    [field]: value,
-  }));
-};
-
-const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-  event.preventDefault();
-
-  if (saving) return;
-
-  setSaving(true);
-
-  try {
-    const payload: MemberForm = { ...form };
-
-    const response = editingMember
-      ? await api.put(`/members/${editingMember.id}`, payload)
-      : await api.post("/members", payload);
-
-    setMessage(
-      response.data?.message ||
-        (editingMember
-          ? "Dadus hadia ho susesu."
-          : "Dadus aumenta ho susesu."),
-    );
+  const closeForm = () => {
+    if (saving) return;
 
     setShowForm(false);
     setEditingMember(null);
     setForm({ ...emptyForm });
-    setModal("success");
+  };
 
-    await fetchMembers();
-  } catch (error) {
-    setMessage(getErrorMessage(error));
-    setModal("error");
-  } finally {
-    setSaving(false);
-  }
-};
+  const updateField = <K extends keyof MemberForm>(
+    field: K,
+    value: MemberForm[K],
+  ) => {
+    setForm((previous) => ({
+      ...previous,
+      [field]: value,
+    }));
+  };
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (saving) return;
+
+    setSaving(true);
+
+    try {
+      const payload: MemberForm = { ...form };
+
+      const response = editingMember
+        ? await api.put(`/members/${editingMember.id}`, payload)
+        : await api.post("/members", payload);
+
+      setMessage(
+        response.data?.message ||
+          (editingMember
+            ? "Dadus hadia ho susesu."
+            : "Dadus aumenta ho susesu."),
+      );
+
+      setShowForm(false);
+      setEditingMember(null);
+      setForm({ ...emptyForm });
+      setModal("success");
+
+      await fetchMembers();
+    } catch (error) {
+      setMessage(getErrorMessage(error));
+      setModal("error");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const confirmDelete = (member: Member) => {
     setSelectedMember(member);
@@ -390,39 +390,31 @@ const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     }
   };
 
-const [currentPage, setCurrentPage] = useState(1);
-const [pageSize, setPageSize] = useState(10);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
-const totalPages = Math.max(
-  1,
-  Math.ceil(filteredMembers.length / pageSize),
-);
+  const totalPages = Math.max(1, Math.ceil(filteredMembers.length / pageSize));
 
-const paginatedMembers = useMemo(() => {
-  const startIndex = (currentPage - 1) * pageSize;
+  const paginatedMembers = useMemo(() => {
+    const startIndex = (currentPage - 1) * pageSize;
 
-  return filteredMembers.slice(startIndex, startIndex + pageSize);
-}, [filteredMembers, currentPage, pageSize]);
+    return filteredMembers.slice(startIndex, startIndex + pageSize);
+  }, [filteredMembers, currentPage, pageSize]);
 
-const startItem =
-  filteredMembers.length === 0
-    ? 0
-    : (currentPage - 1) * pageSize + 1;
+  const startItem =
+    filteredMembers.length === 0 ? 0 : (currentPage - 1) * pageSize + 1;
 
-const endItem = Math.min(
-  currentPage * pageSize,
-  filteredMembers.length,
-);
+  const endItem = Math.min(currentPage * pageSize, filteredMembers.length);
 
-useEffect(() => {
-  setCurrentPage(1);
-}, [search, pageSize]);
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, pageSize]);
 
-useEffect(() => {
-  if (currentPage > totalPages) {
-    setCurrentPage(totalPages);
-  }
-}, [currentPage, totalPages]);
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
 
   const closeModal = () => {
     if (deleting) return;
@@ -562,7 +554,7 @@ useEffect(() => {
       </head>
       <body>
         <h1>C-HTM Member Report</h1>
-        <p>Generated on: ${escapeHtml(dateStamp())}</p>
+        <p>Generaliza iha: ${escapeHtml(dateStamp())}</p>
         <p>Total members in this report: ${filteredMembers.length}</p>
         <table>
           <thead>
@@ -595,7 +587,7 @@ useEffect(() => {
       <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between print:hidden">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-700">
-            C-HTM / Member Management
+            C-HTM / Jestaun Membru
           </p>
 
           <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
@@ -753,7 +745,7 @@ useEffect(() => {
             C-HTM Member Report
           </h1>
           <p className="mt-1 text-sm text-slate-600">
-            Generated on {dateStamp()} · {filteredMembers.length} members
+            Generaliza iha {dateStamp()} · {filteredMembers.length} members
           </p>
           {search.trim() && (
             <p className="mt-1 text-sm text-slate-600">
@@ -790,7 +782,7 @@ useEffect(() => {
                 onClick={() => setSearch("")}
                 className="mt-4 rounded-lg px-3 py-2 text-sm font-semibold text-blue-700 transition hover:bg-blue-50"
               >
-                Clear search
+                Hamoos filtru search
               </button>
             )}
           </div>
@@ -887,9 +879,7 @@ useEffect(() => {
                     <th className="whitespace-nowrap px-4 py-4 font-semibold">
                       Numeru Membru
                     </th>
-                    <th className="min-w-52 px-4 py-4 font-semibold">
-                      Naran
-                    </th>
+                    <th className="min-w-52 px-4 py-4 font-semibold">Naran</th>
                     <th className="whitespace-nowrap px-4 py-4 font-semibold">
                       BI/Eleitoral
                     </th>
@@ -1030,11 +1020,19 @@ useEffect(() => {
 
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-wrap items-center gap-3">
-              <label htmlFor="member-page-size" className="text-xs font-medium text-slate-600">
-                Rows per page 
+              <label
+                htmlFor="member-page-size"
+                className="text-xs font-medium text-slate-600"
+              >
+                Rows per page
               </label>
-              
-              <select id="member-page-size" value={pageSize} onChange={(event) => setPageSize(Number(event.target.value))} className="rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-xs font-medium text-slate-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
+
+              <select
+                id="member-page-size"
+                value={pageSize}
+                onChange={(event) => setPageSize(Number(event.target.value))}
+                className="rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-xs font-medium text-slate-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+              >
                 <option value={10}>10</option>
                 <option value={25}>25</option>
                 <option value={50}>50</option>
@@ -1043,34 +1041,54 @@ useEffect(() => {
 
               <span className="text-xs text-slate-500">
                 Showing{" "}
-                <strong className="text-slate-800">{startItem}–{endItem}</strong>
-                {" "}of{" "}
+                <strong className="text-slate-800">
+                  {startItem}–{endItem}
+                </strong>{" "}
+                of{" "}
                 <strong className="text-slate-800">
                   {filteredMembers.length}
                 </strong>
               </span>
             </div>
 
-          <div className="flex items-center justify-between gap-2 sm:justify-end">
-            <button type="button" onClick={() => setCurrentPage((page) => Math.max(1, page - 1))} disabled={currentPage === 1 || loading} className="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40">
-              <Icon name="chevron-left" /> Previous </button>
+            <div className="flex items-center justify-between gap-2 sm:justify-end">
+              <button
+                type="button"
+                onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                disabled={currentPage === 1 || loading}
+                className="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <Icon name="chevron-left" /> Previous{" "}
+              </button>
               <span className="whitespace-nowrap text-xs font-medium text-slate-600">
-                Page <strong className="text-slate-900">{currentPage}</strong> of{" "}
-                <strong className="text-slate-900">{totalPages}</strong>
+                Page <strong className="text-slate-900">{currentPage}</strong>{" "}
+                of <strong className="text-slate-900">{totalPages}</strong>
               </span>
 
-            <button type="button" onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))} disabled={currentPage >= totalPages || loading} className="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40" >
-              Next 
-              <Icon name="chevron-right" />
-            </button>
-          </div>
+              <button
+                type="button"
+                onClick={() =>
+                  setCurrentPage((page) => Math.min(totalPages, page + 1))
+                }
+                disabled={currentPage >= totalPages || loading}
+                className="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Next
+                <Icon name="chevron-right" />
+              </button>
+            </div>
           </div>
 
-        <button type="button" onClick={() => void fetchMembers()} disabled={loading} className="inline-flex items-center justify-center gap-2 self-start rounded-lg border border-slate-200 bg-white px-3 py-2 font-semibold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50 sm:self-auto">
-        <Icon name="refresh" />
-        Refresh list
-        </button>
-      </footer>
+          <button
+            type="button"
+            onClick={() => void fetchMembers()}
+            disabled={loading}
+            className="inline-flex items-center justify-center gap-2 self-start rounded-lg border border-slate-200 bg-white px-3 py-2 font-semibold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50 sm:self-auto"
+          >
+            <Icon name="refresh" />
+            Refresh list
+          </button>
+        </footer>
       </section>
 
       {showForm && (
@@ -1089,7 +1107,8 @@ useEffect(() => {
                 disabled={saving}
                 aria-label="Close form"
                 className="rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 disabled:opacity-50"
-              ><Icon name="warning" />
+              >
+                <Icon name="warning" />
               </button>
             </div>
 
@@ -1116,7 +1135,9 @@ useEffect(() => {
                       </span>
                     </div>
                     <p className="mt-1 text-xs text-slate-500">
-                      Sistema sei fó númeru úniku ba membru ne’e bainhira ita rai ona dadus membru                   </p>
+                      Sistema sei fó númeru úniku ba membru ne’e bainhira ita
+                      rai ona dadus membru{" "}
+                    </p>
                   </FormField>
                 )}
 
@@ -1251,7 +1272,7 @@ useEffect(() => {
                 >
                   {saving && <Spinner />}
                   {saving
-                    ? "Saving..."
+                    ? "Rai dadus..."
                     : editingMember
                       ? "Atualiza dadus membru"
                       : "Rai dadus membru"}
@@ -1261,7 +1282,6 @@ useEffect(() => {
           </div>
         </div>
       )}
-
 
       {/* Confirmation and feedback modal */}
       {modal && (

@@ -160,14 +160,14 @@ const getBorrowerName = (loan: Loan): string => {
   if (loan.nonmember?.full_name) return loan.nonmember.full_name;
 
   if (loan.member_number) {
-    return `Member ${loan.member_number}`;
+    return `Membru ${loan.member_number}`;
   }
 
   if (loan.non_member_number) {
-    return `Non-Member ${loan.non_member_number}`;
+    return `Non-Membru ${loan.non_member_number}`;
   }
 
-  return "Unknown borrower";
+  return "Mutuariu deskonesidu";
 };
 
 const getBorrowerNumber = (loan: Loan): string =>
@@ -361,7 +361,11 @@ export default function LoanPayment() {
 
       setPayments(Array.isArray(data) ? data : []);
     } catch (error) {
-      showMessage("error", "Unable to Load Payments", getErrorMessage(error));
+      showMessage(
+        "error",
+        "Labele atu karrega pagamentu sira",
+        getErrorMessage(error),
+      );
     }
   }, []);
 
@@ -372,7 +376,11 @@ export default function LoanPayment() {
 
       setLoans(Array.isArray(data) ? data : []);
     } catch (error) {
-      showMessage("error", "Unable to Load Loans", getErrorMessage(error));
+      showMessage(
+        "error",
+        "Labele atu karrega emprestimu sira",
+        getErrorMessage(error),
+      );
     }
   }, []);
 
@@ -391,7 +399,11 @@ export default function LoanPayment() {
       setMembers(Array.isArray(memberData) ? memberData : []);
       setNonmembers(Array.isArray(nonmemberData) ? nonmemberData : []);
     } catch (error) {
-      showMessage("error", "Unable to Load Borrowers", getErrorMessage(error));
+      showMessage(
+        "error",
+        "Labela atu karrega lista emprestimu sira",
+        getErrorMessage(error),
+      );
     } finally {
       setLoadingBorrowers(false);
     }
@@ -712,18 +724,18 @@ export default function LoanPayment() {
     const amount = Number(form.amount);
 
     if (!form.amount.trim() || !Number.isFinite(amount) || amount <= 0) {
-      setFormError("Enter a valid payment amount greater than zero.");
+      setFormError("Hatama montante pagamentu validu ne'ebe boot liu zero");
       return;
     }
 
     if (!form.payment_date) {
-      setFormError("Please select a payment date.");
+      setFormError("Favor hili data pagamentu.");
       return;
     }
 
     if (!selectedLoan) {
       setFormError(
-        "The selected loan could not be found. Please select it again.",
+        "Emprestimu ne'ebe ita hili la hetan. Favor koko hili fila-fali.",
       );
       return;
     }
@@ -734,14 +746,14 @@ export default function LoanPayment() {
 
     if (!editingPayment && remaining <= 0.009) {
       setFormError(
-        "This loan is already fully paid. No additional payment can be recorded.",
+        "Emprestimu ida-ne'e selu hotu ona. Labele rejista pagamentu tan.",
       );
       return;
     }
 
     if (Math.round(amount * 100) > Math.round(maximumAllowed * 100)) {
       setFormError(
-        `Payment amount cannot exceed the remaining balance of ${formatCurrency(maximumAllowed)}.`,
+        `Montante pagamentu labele liu saldu restu husi ${formatCurrency(maximumAllowed)}.`,
       );
       return;
     }
@@ -759,10 +771,10 @@ export default function LoanPayment() {
     try {
       if (editingPayment) {
         await api.put(`/loanpayments/${editingPayment.id}`, payload);
-        setNotice("Payment updated successfully.");
+        setNotice("Pagamentu atualiza ho susesu.");
       } else {
         await api.post("/loanpayments", payload);
-        setNotice("Payment recorded successfully.");
+        setNotice("Pagamentu rai ho susesu.");
       }
 
       resetForm();
@@ -793,10 +805,14 @@ export default function LoanPayment() {
       await api.delete(`/loanpayments/${selectedPayment.id}`);
 
       closeMessageModal();
-      setNotice("Payment deleted successfully.");
+      setNotice("Pagamentu hamoos ho susesu.");
       await refreshData();
     } catch (error) {
-      showMessage("error", "Unable to Delete Payment", getErrorMessage(error));
+      showMessage(
+        "error",
+        "Labele atu hamoos dadus ne'e",
+        getErrorMessage(error),
+      );
     } finally {
       setDeleting(false);
     }
@@ -817,7 +833,7 @@ export default function LoanPayment() {
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-700">
-            C-HTM / Finance Management
+            C-HTM / Jestaun Finanseiru
           </p>
           <h1 className="text-2xl font-bold tracking-tight text-gray-900">
             Pagamentu Emprestimu
@@ -1133,7 +1149,9 @@ export default function LoanPayment() {
 
                       <td className="px-5 py-4">
                         <div className="font-medium text-gray-900">
-                          {loan ? getBorrowerName(loan) : "Unknown borrower"}
+                          {loan
+                            ? getBorrowerName(loan)
+                            : "Mutuariu deskonesidu"}
                         </div>
                         <div className="mt-1 text-xs text-gray-500">
                           {loan ? getBorrowerNumber(loan) : "-"}
@@ -1686,7 +1704,7 @@ export default function LoanPayment() {
                   className={`${buttonClass} cursor-pointer`}
                 >
                   {submitting
-                    ? "Saving..."
+                    ? "Rai dadus..."
                     : editingPayment
                       ? "Atualiza dadus"
                       : "Rai dadus"}

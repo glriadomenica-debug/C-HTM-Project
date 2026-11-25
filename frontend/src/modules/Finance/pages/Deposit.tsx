@@ -691,7 +691,7 @@ export default function Deposit() {
       <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-700">
-            C-HTM / Finance Management
+            C-HTM / Jestaun Finanseiru
           </p>
           <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
             Dadus depositu
@@ -766,7 +766,6 @@ export default function Deposit() {
                   {filteredDeposits.length}
                 </span>
               </div>
-             
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row">
@@ -982,9 +981,7 @@ export default function Deposit() {
                       Data
                     </th>
 
-                    <th className="min-w-52 px-4 py-4 font-semibold">
-                      Naran
-                    </th>
+                    <th className="min-w-52 px-4 py-4 font-semibold">Naran</th>
 
                     <th className="whitespace-nowrap px-4 py-4 font-semibold">
                       Tipu Depositu

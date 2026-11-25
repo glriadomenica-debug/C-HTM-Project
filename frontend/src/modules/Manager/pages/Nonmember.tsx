@@ -450,8 +450,8 @@ export default function NonMember() {
         </style>
       </head>
       <body>
-        <h1>C-HTM Non-Member Report</h1>
-        <p>Generated on: ${escapeHtml(dateStamp())}</p>
+        <h1>C-HTM Relatoriu Non-Membru</h1>
+        <p>Generaliza iha: ${escapeHtml(dateStamp())}</p>
         <p>Total non-members in this report: ${filteredNonMembers.length}</p>
         <table>
           <thead><tr>${tableHeader}</tr></thead>
@@ -481,7 +481,7 @@ export default function NonMember() {
       <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between print:hidden">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-700">
-            C-HTM / Member Management
+            C-HTM / Jestaun Membru
           </p>
           <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
             Non-Membru
@@ -634,10 +634,11 @@ export default function NonMember() {
         {/* Print heading */}
         <div className="hidden px-5 py-4 print:block">
           <h1 className="text-xl font-bold text-slate-900">
-            C-HTM Non-Member Report
+            C-HTM Relatoriu Non-Membru
           </h1>
           <p className="mt-1 text-sm text-slate-600">
-            Generated on {dateStamp()} · {filteredNonMembers.length} non-members
+            Generaliza iha {dateStamp()} · {filteredNonMembers.length}{" "}
+            non-members
           </p>
           {search.trim() && (
             <p className="mt-1 text-sm text-slate-600">
@@ -651,7 +652,7 @@ export default function NonMember() {
           <div className="flex flex-col items-center justify-center px-4 py-16 text-center">
             <span className="h-9 w-9 animate-spin rounded-full border-4 border-blue-100 border-t-blue-600" />
             <p className="mt-3 text-sm font-medium text-slate-700">
-              Loading non-members...
+              Loading non-membru
             </p>
           </div>
         ) : filteredNonMembers.length === 0 ? (
@@ -661,13 +662,13 @@ export default function NonMember() {
             </div>
             <h3 className="mt-4 font-semibold text-slate-900">
               {search.trim()
-                ? "No matching non-members"
-                : "No non-members registered"}
+                ? "Laiha dadus non-membru ne'ebe korresponde"
+                : "Laiha non-membru ne'ebe rejista"}
             </h3>
             <p className="mx-auto mt-1 max-w-sm text-sm leading-6 text-slate-500">
               {search.trim()
-                ? "No records match your search. Try a different name, number, or phone number."
-                : "Add a non-member to start building your registry."}
+                ? "La iha dadus non-membru ne'ebe korresponde ba ita-nia buka. Koko naran, numeru telfone..."
+                : "Aumenta non-membru ida atu hahu jere ita nia dadus."}
             </p>
             {search.trim() && (
               <button
@@ -675,7 +676,7 @@ export default function NonMember() {
                 onClick={() => setSearch("")}
                 className="mt-4 rounded-lg px-3 py-2 text-sm font-semibold text-blue-700 transition hover:bg-blue-50"
               >
-                Clear search
+                Hamoos filtru search
               </button>
             )}
           </div>
@@ -697,7 +698,7 @@ export default function NonMember() {
                       <div className="flex flex-wrap items-start justify-between gap-2">
                         <div className="min-w-0">
                           <p className="mb-1 text-xs text-slate-400">
-                            No. {index + 1}
+                            Nu. {index + 1}
                           </p>
                           <h3 className="break-words font-semibold text-slate-900">
                             {nonMember.full_name || "-"}
@@ -707,7 +708,7 @@ export default function NonMember() {
                           </p>
                         </div>
                         <span className="rounded-lg bg-blue-50 px-2.5 py-1.5 text-xs font-bold text-blue-700">
-                          Loans: {getLoanCount(nonMember)}
+                          Empresta: {getLoanCount(nonMember)}
                         </span>
                       </div>
                     </div>
@@ -715,20 +716,23 @@ export default function NonMember() {
 
                   <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-4 rounded-xl bg-slate-50 p-3">
                     <MobileField
-                      label="Phone number"
+                      label="Numeru telfone"
                       value={nonMember.phone_number}
                     />
-                    <MobileField label="Gender" value={nonMember.gender} />
+                    <MobileField label="Jeneru" value={nonMember.gender} />
                     <MobileField
-                      label="ID card number"
+                      label="BI / ELEITORAL"
                       value={nonMember.id_card_number}
                     />
-                    <MobileField label="Employer" value={nonMember.employer} />
                     <MobileField
-                      label="Work location"
+                      label="Instituisaun"
+                      value={nonMember.employer}
+                    />
+                    <MobileField
+                      label="Fatin servisu"
                       value={nonMember.work_location}
                     />
-                    <MobileField label="Address" value={nonMember.address} />
+                    <MobileField label="Hela-fatin" value={nonMember.address} />
                   </div>
 
                   <div className="mt-3 flex justify-end gap-2">
@@ -739,7 +743,7 @@ export default function NonMember() {
                       className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-white px-3 py-2 text-xs font-semibold text-blue-700 transition hover:bg-blue-50 cursor-pointer"
                     >
                       <Icon name="edit" />
-                      Edit
+                      Hadia
                     </button>
                     <button
                       type="button"
@@ -748,7 +752,7 @@ export default function NonMember() {
                       className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-50 cursor-pointer"
                     >
                       <Icon name="trash" />
-                      Delete
+                      Hamoos
                     </button>
                   </div>
                 </article>
@@ -887,12 +891,12 @@ export default function NonMember() {
         {/* Table footer */}
         <footer className="flex flex-col gap-3 border-t border-slate-200 bg-slate-50 px-4 py-3.5 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between print:hidden">
           <p>
-            Showing{" "}
+            Fo sai dadus{" "}
             <strong className="text-slate-800">
               {filteredNonMembers.length}
             </strong>{" "}
-            of <strong className="text-slate-800">{nonMembers.length}</strong>{" "}
-            non-members
+            husi <strong className="text-slate-800">{nonMembers.length}</strong>{" "}
+            non-membru
           </p>
 
           <button
@@ -902,7 +906,7 @@ export default function NonMember() {
             className="inline-flex items-center justify-center gap-2 self-start rounded-lg border border-slate-200 bg-white px-3 py-2 font-semibold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50 sm:self-auto cursor-pointer"
           >
             <Icon name="refresh" />
-            Refresh list
+            Refresh lista
           </button>
         </footer>
       </section>
@@ -1065,7 +1069,7 @@ export default function NonMember() {
                 >
                   {saving && <Spinner />}
                   {saving
-                    ? "Saving..."
+                    ? "Rai dadus..."
                     : editingNonMember
                       ? "Atualiza dadus "
                       : "Rai dadus"}

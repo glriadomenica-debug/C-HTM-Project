@@ -132,7 +132,7 @@ const getBorrowerName = (loan: Loan | null): string => {
       ? `Member ${loan.member_number}`
       : loan.non_member_number
         ? `Non-Member ${loan.non_member_number}`
-        : "Unknown borrower")
+        : "Mutuariu deskonesidu")
   );
 };
 
@@ -458,19 +458,19 @@ export default function LoanPayReport() {
 
   const exportCsv = () => {
     const headers = [
-      "Payment ID",
-      "Payment Date",
-      "Borrower",
-      "Borrower Type",
-      "Borrower Number",
-      "Loan ID",
-      "Total Loan Amount Including Interest",
-      "Payment Amount",
-      "Total Paid",
-      "Balance After Payment",
-      "Payment Method",
-      "Status After Payment",
-      "Description",
+      "ID Pagamentu",
+      "Data Pagamentu",
+      "Naran Mutuariu",
+      "Tipu Mutuariu",
+      "Numeru Mutuariu",
+      "ID Empresta",
+      "Total Empresta (inc. funan)",
+      "Montante Pagamentu",
+      "Pagamentu ne'ebe simu ona",
+      "Montante tenki selu",
+      "Metodu Pagamentu",
+      "Status",
+      "Deskrisaun",
     ];
 
     const csvRows = filteredRows.map((row) => [
@@ -485,7 +485,7 @@ export default function LoanPayReport() {
       row.cumulativePaid.toFixed(2),
       row.loan ? row.balanceAfterPayment.toFixed(2) : "",
       getPaymentMethod(row.payment),
-      row.loan ? row.statusAfterPayment : "Loan unavailable",
+      row.loan ? row.statusAfterPayment : "Dadus  emprestimu la disponivel",
       row.payment.description || "",
     ]);
 
@@ -526,7 +526,7 @@ export default function LoanPayReport() {
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div className="min-w-0">
           <p className="text-xs font-bold uppercase tracking-[0.15em] text-blue-700">
-            C-HTM / Finance Management
+            C-HTM / Jestaun Finanseiru
           </p>
 
           <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
@@ -574,7 +574,9 @@ export default function LoanPayReport() {
         >
           <AlertCircle size={19} className="mt-0.5 shrink-0" />
           <div className="min-w-0 flex-1">
-            <p className="font-semibold">Unable to load payment records</p>
+            <p className="font-semibold">
+              Labele atu karrega rejistu pagamentu sira
+            </p>
             <p className="mt-1">{errorMessage}</p>
             <button
               type="button"
@@ -996,7 +998,7 @@ export default function LoanPayReport() {
                           </span>
                         ) : (
                           <span className="text-xs text-slate-400">
-                            Loan unavailable
+                            Dadus emprestimu la disponivel
                           </span>
                         )}
                       </td>

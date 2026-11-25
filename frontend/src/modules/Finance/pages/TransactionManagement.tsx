@@ -748,7 +748,7 @@ export default function TransactionManagement() {
         <div className="min-w-0">
           <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-blue-600">
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-700">
-              C-HTM / Finance Management
+              C-HTM / Jestaun Finanseiru
             </p>
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">
@@ -1860,7 +1860,7 @@ export default function TransactionManagement() {
                   {saving && (
                     <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
                   )}
-                  {saving ? "Saving..." : "Save Transaction"}
+                  {saving ? "Rai dadus..." : "Rai dadus transaksaun"}
                 </button>
               </div>
             </form>
@@ -1919,7 +1919,7 @@ export default function TransactionManagement() {
                     onClick={() => notice.confirmAction?.()}
                     className="rounded-xl bg-rose-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-rose-700 disabled:opacity-60"
                   >
-                    {deleting ? "Deleting..." : "Yes, delete"}
+                    {deleting ? "Hamoos..." : "Sim, Hamoos"}
                   </button>
                 ) : (
                   <button

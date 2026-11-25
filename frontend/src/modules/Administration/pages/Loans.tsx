@@ -144,16 +144,11 @@ const getErrorMessage = (error: unknown): string => {
 
   if (err.response?.status === 409) {
     return "Empréstimu ida-ne'e labele hamoos tanba iha pagamentu sira ne'ebé eziste ona.";
-    
   }
 
   return err.message || "Akontese Erru ruma. Koko fila-fali!";
 };
 
-/**
- * Preview rate based on borrower type and principal.
- * Laravel remains responsible for calculating and saving the rate.
- */
 const calculateInterestRate = (
   amount: number,
   ownerType: OwnerType,
@@ -265,7 +260,7 @@ export default function Loan() {
     } catch (error) {
       setLoans([]);
       setModalType("error");
-      setModalTitle("Unable to Load Loans");
+      setModalTitle("Labele atu karrega emprestimu sira");
       setModalMessage(getErrorMessage(error));
       setSelectedLoan(null);
     } finally {
@@ -291,7 +286,7 @@ export default function Loan() {
       setMembers([]);
       setNonmembers([]);
       setModalType("error");
-      setModalTitle("Unable to Load Borrowers");
+      setModalTitle("Labela atu karrega lista emprestimu sira");
       setModalMessage(getErrorMessage(error));
       setSelectedLoan(null);
     } finally {
@@ -432,17 +427,17 @@ export default function Loan() {
     setFormError("");
 
     if (form.owner_type === "member" && !form.member_number) {
-      setFormError("Please select a member as the borrower.");
+      setFormError("Favor hili membru ida hanesan ema ne'ebe empresta.");
       return;
     }
 
     if (form.owner_type === "nonmember" && !form.non_member_number) {
-      setFormError("Please select a non-member as the borrower.");
+      setFormError("Favor hili non-membru ida hanesan ema ne'ebe empresta.");
       return;
     }
 
     if (!form.loan_date) {
-      setFormError("The loan date is required.");
+      setFormError("Data emprestimu tenki prienxe.");
       return;
     }
 
@@ -453,7 +448,9 @@ export default function Loan() {
       !Number.isFinite(amount) ||
       amount < 1
     ) {
-      setFormError("The principal loan amount must be at least $1.00.");
+      setFormError(
+        "Montante prinsipal emprestimu tenke menus-liu ka hanesan ho $1.00.",
+      );
       return;
     }
 
@@ -480,9 +477,7 @@ export default function Loan() {
       setModalType("success");
       setModalTitle("Success");
       setModalMessage(
-        editingLoan
-          ? "Dadus hadia ho susesu."
-          : "Dadus aumenta ho susesu.",
+        editingLoan ? "Dadus hadia ho susesu." : "Dadus aumenta ho susesu.",
       );
       setSelectedLoan(null);
 
@@ -499,7 +494,7 @@ export default function Loan() {
       setModalType("warning");
       setModalTitle("Labele hamoos dadus ne'e");
       setModalMessage(
-        "Empréstimu ida-ne’e iha ona pagamentu. Favór ida, haree uluk rejistu pagamentu sira antes hamoos empréstimu ne’e."
+        "Empréstimu ida-ne’e iha ona pagamentu. Favór ida, haree uluk rejistu pagamentu sira antes hamoos empréstimu ne’e.",
       );
       setSelectedLoan(null);
       return;
@@ -507,15 +502,15 @@ export default function Loan() {
 
     setSelectedLoan(loan);
     setModalType("confirm");
-    setModalTitle("Delete Loan");
+    setModalTitle("Hamoos dadus emprestimu");
     setModalMessage(
-      `Are you sure you want to delete the loan for ${
+      `Ita-boot hakarak duni atu hamoos dadus emprestimu ba ${
         loan.member?.full_name ||
         loan.nonmember?.full_name ||
         loan.member_number ||
         loan.non_member_number ||
         `#${loan.id}`
-      }? This action cannot be undone.`,
+      }? Aksaun ida ne'e labele kansela ka fila-fali..`,
     );
   };
 
@@ -558,7 +553,7 @@ export default function Loan() {
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-700">
-              C-HTM / Finance Management
+              C-HTM / Jestaun Finanseiru
             </p>
             <h1 className="text-2xl font-bold text-gray-900">
               Dadus Emprestimu
@@ -584,7 +579,9 @@ export default function Loan() {
 
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-sm font-medium text-gray-500">Total Emprestimu</p>
+                <p className="text-sm font-medium text-gray-500">
+                  Total Emprestimu
+                </p>
                 <p className="mt-3 text-3xl font-bold tracking-tight text-gray-900">
                   {loans.length}
                 </p>
@@ -653,9 +650,7 @@ export default function Loan() {
 
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-sm font-medium text-gray-500">
-                  Total funan
-                </p>
+                <p className="text-sm font-medium text-gray-500">Total funan</p>
                 <p className="mt-3 break-words text-2xl font-bold tracking-tight text-amber-700">
                   {formatCurrency(totalInterest)}
                 </p>
@@ -727,7 +722,7 @@ export default function Loan() {
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-sm font-medium text-gray-500">
-                  Total Pagamentu 
+                  Total Pagamentu
                 </p>
                 <p className="mt-3 break-words text-2xl font-bold tracking-tight text-emerald-700">
                   {formatCurrency(totalPaid)}
@@ -754,7 +749,7 @@ export default function Loan() {
             </div>
           </div>
 
-          {/* Outstanding Balance */}
+          {/* Balansu Outstading */}
           <div className="group relative overflow-hidden rounded-2xl border border-rose-100 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md">
             <div className="absolute inset-x-0 top-0 h-1 bg-rose-500" />
 
@@ -841,11 +836,13 @@ export default function Loan() {
           </div>
         </div>
 
-        {/* Loan Records Table */}
+        {/* Lista Emprestimu Table */}
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
           <div className="flex flex-col justify-between gap-3 border-b border-slate-200 bg-white px-5 py-5 sm:flex-row sm:items-center">
             <div>
-              <h2 className="text-lg font-bold text-slate-800">Lista emprestimu</h2>
+              <h2 className="text-lg font-bold text-slate-800">
+                Lista emprestimu
+              </h2>
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
@@ -913,11 +910,9 @@ export default function Loan() {
             <div className="flex flex-col items-center justify-center px-4 py-16">
               <div className="h-9 w-9 animate-spin rounded-full border-4 border-blue-100 border-t-blue-600" />
               <p className="mt-4 text-sm font-medium text-slate-600">
-                Loading ...
+                Loading dadus emprestimu ...
               </p>
-              <p className="mt-1 text-xs text-slate-400">
-                Favor hein oituan.
-              </p>
+              <p className="mt-1 text-xs text-slate-400">Favor hein oituan.</p>
             </div>
           ) : filteredLoans.length === 0 ? (
             <div className="flex flex-col items-center justify-center px-4 py-16 text-center">
@@ -960,7 +955,7 @@ export default function Loan() {
                   disabled={loadingOwners}
                   className="mt-5 cursor-pointer rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-50"
                 >
-                  + Add First Loan
+                  +Hatama emprestimu dahuluk
                 </button>
               )}
             </div>
@@ -1222,16 +1217,12 @@ export default function Loan() {
                   </span>{" "}
                   {filteredLoans.length === 1 ? "record" : "records"}
                 </p>
-
-                <p className="text-xs text-slate-400">
-                  All amounts are displayed in USD
-                </p>
               </div>
             </>
           )}
         </div>
       </div>
-    
+
       {/* Create/Edit Loan Modal */}
       {showForm && (
         <div
@@ -1268,7 +1259,9 @@ export default function Loan() {
 
                 <div className="min-w-0">
                   <h2 className="text-lg font-bold text-slate-900">
-                    {editingLoan ? "Hadia dadus emprestimu" : "Aumenta dadus emprestimu"}
+                    {editingLoan
+                      ? "Hadia dadus emprestimu"
+                      : "Aumenta dadus emprestimu"}
                   </h2>
                   {/* <p className="mt-0.5 text-xs text-slate-500">
                     Borrower information and loan details
@@ -1334,15 +1327,10 @@ export default function Loan() {
                       strokeWidth="2"
                       aria-hidden="true"
                     >
-                      <circle
-                        cx="12"
-                        cy="12"
-                        r="9"
-                        strokeOpacity="0.25"
-                      />
+                      <circle cx="12" cy="12" r="9" strokeOpacity="0.25" />
                       <path d="M21 12a9 9 0 0 0-9-9" />
                     </svg>
-                    Loading borrower information...
+                    Loading informasaun emprestim...
                   </div>
                 )}
 
@@ -1419,8 +1407,7 @@ export default function Loan() {
                       htmlFor="loan-member"
                       className="mb-1.5 block text-sm font-semibold text-slate-700"
                     >
-                      Hili membru{" "}
-                      <span className="text-red-500">*</span>
+                      Hili membru <span className="text-red-500">*</span>
                     </label>
 
                     <select
@@ -1446,7 +1433,7 @@ export default function Loan() {
 
                     {!loadingOwners && members.length === 0 && (
                       <p className="mt-1.5 text-xs text-amber-700">
-                      Dadus membru laiha. Favor rejistu uluk dadus membru.
+                        Dadus membru laiha. Favor rejistu uluk dadus membru.
                       </p>
                     )}
                   </div>
@@ -1456,8 +1443,7 @@ export default function Loan() {
                       htmlFor="loan-nonmember"
                       className="mb-1.5 block text-sm font-semibold text-slate-700"
                     >
-                      Hili non-membru{" "}
-                      <span className="text-red-500">*</span>
+                      Hili non-membru <span className="text-red-500">*</span>
                     </label>
 
                     <select
@@ -1479,8 +1465,7 @@ export default function Loan() {
                           key={nonmember.id}
                           value={nonmember.non_member_number}
                         >
-                          {nonmember.full_name} (
-                          {nonmember.non_member_number})
+                          {nonmember.full_name} ({nonmember.non_member_number})
                         </option>
                       ))}
                     </select>
@@ -1499,8 +1484,7 @@ export default function Loan() {
                       htmlFor="loan-date"
                       className="mb-1.5 block text-sm font-semibold text-slate-700"
                     >
-                      Data empresta{" "}
-                      <span className="text-red-500">*</span>
+                      Data empresta <span className="text-red-500">*</span>
                     </label>
 
                     <input
@@ -1585,9 +1569,7 @@ export default function Loan() {
                         Funan
                       </p>
                       <p className="mt-1.5 break-words text-base font-bold tabular-nums text-amber-700">
-                        {formatCurrency(
-                          preview.valid ? preview.interest : 0,
-                        )}
+                        {formatCurrency(preview.valid ? preview.interest : 0)}
                       </p>
                     </div>
 
@@ -1596,9 +1578,7 @@ export default function Loan() {
                         Total Empresta
                       </p>
                       <p className="mt-1.5 break-words text-lg font-bold tabular-nums text-blue-800">
-                        {formatCurrency(
-                          preview.valid ? preview.total : 0,
-                        )}
+                        {formatCurrency(preview.valid ? preview.total : 0)}
                       </p>
                     </div>
                   </div>
@@ -1619,7 +1599,8 @@ export default function Loan() {
                   </svg>
 
                   <p className="text-xs leading-5 text-amber-800">
-                    Pagamentu sira aplika ba montante total empréstimu, inklui funan.
+                    Pagamentu sira aplika ba montante total empréstimu, inklui
+                    funan.
                   </p>
                 </div>
               </div>
@@ -1650,15 +1631,10 @@ export default function Loan() {
                         strokeWidth="2"
                         aria-hidden="true"
                       >
-                        <circle
-                          cx="12"
-                          cy="12"
-                          r="9"
-                          strokeOpacity="0.25"
-                        />
+                        <circle cx="12" cy="12" r="9" strokeOpacity="0.25" />
                         <path d="M21 12a9 9 0 0 0-9-9" />
                       </svg>
-                      Saving...
+                      Rai dadus...
                     </>
                   ) : (
                     <>
@@ -1685,7 +1661,6 @@ export default function Loan() {
           </div>
         </div>
       )}
-
 
       {/* Confirmation and Feedback Modal */}
       {modalTitle && (
@@ -1756,7 +1731,7 @@ export default function Loan() {
                     disabled={deleting}
                     className="rounded-lg bg-red-600 cursor-pointer px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-50"
                   >
-                    {deleting ? "Deleting..." : "Yes, Delete"}
+                    {deleting ? "Hamoos..." : "Sim, Hamoos"}
                   </button>
                 </>
               ) : (

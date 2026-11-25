@@ -264,7 +264,7 @@ export default function Loan() {
     } catch (error) {
       setLoans([]);
       setModalType("error");
-      setModalTitle("Unable to Load Loans");
+      setModalTitle("Labele atu karrega emprestimu sira");
       setModalMessage(getErrorMessage(error));
       setSelectedLoan(null);
     } finally {
@@ -290,7 +290,7 @@ export default function Loan() {
       setMembers([]);
       setNonmembers([]);
       setModalType("error");
-      setModalTitle("Unable to Load Borrowers");
+      setModalTitle("Labela atu karrega lista emprestimu sira");
       setModalMessage(getErrorMessage(error));
       setSelectedLoan(null);
     } finally {
@@ -431,17 +431,17 @@ export default function Loan() {
     setFormError("");
 
     if (form.owner_type === "member" && !form.member_number) {
-      setFormError("Please select a member as the borrower.");
+      setFormError("Favor hili membru ida hanesan ema ne'ebe empresta.");
       return;
     }
 
     if (form.owner_type === "nonmember" && !form.non_member_number) {
-      setFormError("Please select a non-member as the borrower.");
+      setFormError("Favor hili non-membru ida hanesan ema ne'ebe empresta.");
       return;
     }
 
     if (!form.loan_date) {
-      setFormError("The loan date is required.");
+      setFormError("Data emprestimu tenki prienxe.");
       return;
     }
 
@@ -452,7 +452,9 @@ export default function Loan() {
       !Number.isFinite(amount) ||
       amount < 1
     ) {
-      setFormError("The principal loan amount must be at least $1.00.");
+      setFormError(
+        "Montante prinsipal emprestimu tenke menus-liu ka hanesan ho $1.00.",
+      );
       return;
     }
 
@@ -504,15 +506,15 @@ export default function Loan() {
 
     setSelectedLoan(loan);
     setModalType("confirm");
-    setModalTitle("Delete Loan");
+    setModalTitle("Hamoos dadus emprestimu");
     setModalMessage(
-      `Are you sure you want to delete the loan for ${
+      `Ita-boot hakarak duni atu hamoos dadus emprestimu ba ${
         loan.member?.full_name ||
         loan.nonmember?.full_name ||
         loan.member_number ||
         loan.non_member_number ||
         `#${loan.id}`
-      }? This action cannot be undone.`,
+      }? Aksaun ida ne'e labele kansela ka fila-fali..`,
     );
   };
 
@@ -555,7 +557,7 @@ export default function Loan() {
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-700">
-              C-HTM / Finance Management
+              C-HTM / Jestaun Finanseiru
             </p>
             <h1 className="text-2xl font-bold text-gray-900">
               Dadus Emprestimu
@@ -751,7 +753,7 @@ export default function Loan() {
             </div>
           </div>
 
-          {/* Outstanding Balance */}
+          {/* Balansu Outstading */}
           <div className="group relative overflow-hidden rounded-2xl border border-rose-100 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md">
             <div className="absolute inset-x-0 top-0 h-1 bg-rose-500" />
 
@@ -838,7 +840,7 @@ export default function Loan() {
           </div>
         </div>
 
-        {/* Loan Records Table */}
+        {/* Lista Emprestimu Table */}
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
           <div className="flex flex-col justify-between gap-3 border-b border-slate-200 bg-white px-5 py-5 sm:flex-row sm:items-center">
             <div>
@@ -957,7 +959,7 @@ export default function Loan() {
                   disabled={loadingOwners}
                   className="mt-5 cursor-pointer rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-50"
                 >
-                  + Add First Loan
+                  +Hatama emprestimu dahuluk
                 </button>
               )}
             </div>
@@ -1220,9 +1222,7 @@ export default function Loan() {
                   {filteredLoans.length === 1 ? "record" : "records"}
                 </p>
 
-                <p className="text-xs text-slate-400">
-                  All amounts are displayed in USD
-                </p>
+                <p className="text-xs text-slate-400"></p>
               </div>
             </>
           )}
@@ -1336,7 +1336,7 @@ export default function Loan() {
                       <circle cx="12" cy="12" r="9" strokeOpacity="0.25" />
                       <path d="M21 12a9 9 0 0 0-9-9" />
                     </svg>
-                    Loading borrower information...
+                    Loading informasaun emprestim...
                   </div>
                 )}
 
@@ -1640,7 +1640,7 @@ export default function Loan() {
                         <circle cx="12" cy="12" r="9" strokeOpacity="0.25" />
                         <path d="M21 12a9 9 0 0 0-9-9" />
                       </svg>
-                      Saving...
+                      Rai dadus...
                     </>
                   ) : (
                     <>
@@ -1737,7 +1737,7 @@ export default function Loan() {
                     disabled={deleting}
                     className="rounded-lg bg-red-600 cursor-pointer px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-50"
                   >
-                    {deleting ? "Deleting..." : "Yes, Delete"}
+                    {deleting ? "Hamoos..." : "Sim, Hamoos"}
                   </button>
                 </>
               ) : (

@@ -160,14 +160,14 @@ const getBorrowerName = (loan: Loan): string => {
   if (loan.nonmember?.full_name) return loan.nonmember.full_name;
 
   if (loan.member_number) {
-    return `Member ${loan.member_number}`;
+    return `Membru ${loan.member_number}`;
   }
 
   if (loan.non_member_number) {
-    return `Non-Member ${loan.non_member_number}`;
+    return `Non-Membru ${loan.non_member_number}`;
   }
 
-  return "Unknown borrower";
+  return "Mutuariu deskonesidu";
 };
 
 const getBorrowerNumber = (loan: Loan): string =>
@@ -267,13 +267,6 @@ const getLoanBalance = (loan: Loan, paid: number): number =>
 const isFullyPaid = (loan: Loan, paid: number): boolean =>
   getLoanBalance(loan, paid) <= 0.009;
 
-/**
- * Calculates the payment progress at the date and position
- * of the individual transaction.
- *
- * Older transactions do not include payments made later.
- * Integer cents are used to avoid floating-point errors.
- */
 const getPaymentProgress = (
   payment: LoanPayment,
   loan: Loan,
@@ -361,7 +354,11 @@ export default function LoanPayment() {
 
       setPayments(Array.isArray(data) ? data : []);
     } catch (error) {
-      showMessage("error", "Unable to Load Payments", getErrorMessage(error));
+      showMessage(
+        "error",
+        "Labele atu karrega pagamentu sira",
+        getErrorMessage(error),
+      );
     }
   }, []);
 
@@ -372,7 +369,11 @@ export default function LoanPayment() {
 
       setLoans(Array.isArray(data) ? data : []);
     } catch (error) {
-      showMessage("error", "Unable to Load Loans", getErrorMessage(error));
+      showMessage(
+        "error",
+        "Labele atu karrega emprestimu sira",
+        getErrorMessage(error),
+      );
     }
   }, []);
 
@@ -391,7 +392,11 @@ export default function LoanPayment() {
       setMembers(Array.isArray(memberData) ? memberData : []);
       setNonmembers(Array.isArray(nonmemberData) ? nonmemberData : []);
     } catch (error) {
-      showMessage("error", "Unable to Load Borrowers", getErrorMessage(error));
+      showMessage(
+        "error",
+        "Labela atu karrega lista emprestimu sira",
+        getErrorMessage(error),
+      );
     } finally {
       setLoadingBorrowers(false);
     }
@@ -480,57 +485,55 @@ export default function LoanPayment() {
     });
   }, [payments, loans, search, methodFilter, statusFilter]);
 
-  
-const borrowerOptions = useMemo(() => {
-  if (form.borrower_type === "member") {
-    return members
-      .filter((member) => {
-        if (!member.member_number) return false;
+  const borrowerOptions = useMemo(() => {
+    if (form.borrower_type === "member") {
+      return members
+        .filter((member) => {
+          if (!member.member_number) return false;
 
-        // Include members who have at least one outstanding loan.
-        return loans.some((loan) => {
-          if (loan.member_number !== String(member.member_number)) {
-            return false;
-          }
+          // Include members who have at least one outstanding loan.
+          return loans.some((loan) => {
+            if (loan.member_number !== String(member.member_number)) {
+              return false;
+            }
 
-          const paid = getLoanPaid(loan, payments);
-          const remaining = getLoanBalance(loan, paid);
+            const paid = getLoanPaid(loan, payments);
+            const remaining = getLoanBalance(loan, paid);
 
-          return remaining > 0.009;
-        });
-      })
-      .map((member) => ({
-        number: String(member.member_number),
-        name: member.full_name,
-      }));
-  }
+            return remaining > 0.009;
+          });
+        })
+        .map((member) => ({
+          number: String(member.member_number),
+          name: member.full_name,
+        }));
+    }
 
-  if (form.borrower_type === "nonmember") {
-    return nonmembers
-      .filter((member) => {
-        if (!member.non_member_number) return false;
+    if (form.borrower_type === "nonmember") {
+      return nonmembers
+        .filter((member) => {
+          if (!member.non_member_number) return false;
 
-        // Include non-members who have at least one outstanding loan.
-        return loans.some((loan) => {
-          if (loan.non_member_number !== String(member.non_member_number)) {
-            return false;
-          }
+          // Include non-members who have at least one outstanding loan.
+          return loans.some((loan) => {
+            if (loan.non_member_number !== String(member.non_member_number)) {
+              return false;
+            }
 
-          const paid = getLoanPaid(loan, payments);
-          const remaining = getLoanBalance(loan, paid);
+            const paid = getLoanPaid(loan, payments);
+            const remaining = getLoanBalance(loan, paid);
 
-          return remaining > 0.009;
-        });
-      })
-      .map((member) => ({
-        number: String(member.non_member_number),
-        name: member.full_name,
-      }));
-  }
+            return remaining > 0.009;
+          });
+        })
+        .map((member) => ({
+          number: String(member.non_member_number),
+          name: member.full_name,
+        }));
+    }
 
-  return [];
-}, [form.borrower_type, members, nonmembers, loans, payments]);
-
+    return [];
+  }, [form.borrower_type, members, nonmembers, loans, payments]);
 
   const availableLoans = useMemo(() => {
     if (!form.borrower_type || !form.borrower_number) {
@@ -714,18 +717,18 @@ const borrowerOptions = useMemo(() => {
     const amount = Number(form.amount);
 
     if (!form.amount.trim() || !Number.isFinite(amount) || amount <= 0) {
-      setFormError("Enter a valid payment amount greater than zero.");
+      setFormError("Hatama montante pagamentu validu ne'ebe boot liu zero");
       return;
     }
 
     if (!form.payment_date) {
-      setFormError("Please select a payment date.");
+      setFormError("Favor hili data pagamentu.");
       return;
     }
 
     if (!selectedLoan) {
       setFormError(
-        "The selected loan could not be found. Please select it again.",
+        "Emprestimu ne'ebe ita hili la hetan. Favor koko hili fila-fali.",
       );
       return;
     }
@@ -736,14 +739,14 @@ const borrowerOptions = useMemo(() => {
 
     if (!editingPayment && remaining <= 0.009) {
       setFormError(
-        "This loan is already fully paid. No additional payment can be recorded.",
+        "Emprestimu ida-ne'e selu hotu ona. Labele rejista pagamentu tan.",
       );
       return;
     }
 
     if (Math.round(amount * 100) > Math.round(maximumAllowed * 100)) {
       setFormError(
-        `Payment amount cannot exceed the remaining balance of ${formatCurrency(maximumAllowed)}.`,
+        `Montante pagamentu labele liu saldu restu husi ${formatCurrency(maximumAllowed)}.`,
       );
       return;
     }
@@ -761,10 +764,10 @@ const borrowerOptions = useMemo(() => {
     try {
       if (editingPayment) {
         await api.put(`/loanpayments/${editingPayment.id}`, payload);
-        setNotice("Payment updated successfully.");
+        setNotice("Pagamentu atualiza ho susesu.");
       } else {
         await api.post("/loanpayments", payload);
-        setNotice("Payment recorded successfully.");
+        setNotice("Pagamentu rai ho susesu.");
       }
 
       resetForm();
@@ -795,10 +798,14 @@ const borrowerOptions = useMemo(() => {
       await api.delete(`/loanpayments/${selectedPayment.id}`);
 
       closeMessageModal();
-      setNotice("Payment deleted successfully.");
+      setNotice("Pagamentu hamoos ho susesu.");
       await refreshData();
     } catch (error) {
-      showMessage("error", "Unable to Delete Payment", getErrorMessage(error));
+      showMessage(
+        "error",
+        "Labele atu hamoos dadus ne'e",
+        getErrorMessage(error),
+      );
     } finally {
       setDeleting(false);
     }
@@ -819,7 +826,7 @@ const borrowerOptions = useMemo(() => {
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-700">
-            C-HTM / Finance Management
+            C-HTM / Jestaun Finanseiru
           </p>
           <h1 className="text-2xl font-bold tracking-tight text-gray-900">
             Pagamentu Emprestimu
@@ -1090,13 +1097,15 @@ const borrowerOptions = useMemo(() => {
                     Montante Pagamentu
                   </th>
                   <th className="px-5 py-3.5 text-right font-semibold">
-                  Pagamentu
+                    Pagamentu
                     <p> ne'ebe simu ona</p>
                   </th>
                   <th className="px-5 py-3.5 text-right font-semibold">
                     Montante tenki<p> selu </p>
                   </th>
-                  <th className="px-5 py-3.5 font-semibold">Metodu <p>pagamentu</p></th>
+                  <th className="px-5 py-3.5 font-semibold">
+                    Metodu <p>pagamentu</p>
+                  </th>
                   <th className="px-5 py-3.5 font-semibold">Status</th>
                   <th className="px-5 py-3.5 text-right font-semibold">
                     Aksaun
@@ -1126,21 +1135,21 @@ const borrowerOptions = useMemo(() => {
                           {index + 1}
                         </div>
                       </td>
-                      
+
                       <td className="whitespace-nowrap px-5 py-4 text-gray-600">
                         {formatDate(payment.payment_date)}
                       </td>
-                      
+
                       <td className="px-5 py-4">
                         <div className="font-medium text-gray-900">
-                          {loan ? getBorrowerName(loan) : "Unknown borrower"}
+                          {loan
+                            ? getBorrowerName(loan)
+                            : "Mutuariu deskonesidu"}
                         </div>
                         <div className="mt-1 text-xs text-gray-500">
                           {loan ? getBorrowerNumber(loan) : "-"}
                         </div>
                       </td>
-
-                      
 
                       <td className="whitespace-nowrap px-5 py-4 text-right font-medium text-gray-900">
                         {progress ? formatCurrency(progress.total) : "-"}
@@ -1284,7 +1293,8 @@ const borrowerOptions = useMemo(() => {
                 {/* Borrower Type */}
                 <div>
                   <label className="mb-2 block text-sm font-semibold text-gray-800">
-                    1. Hili Membru/Non-membru <span className="text-red-500">*</span>
+                    1. Hili Membru/Non-membru{" "}
+                    <span className="text-red-500">*</span>
                   </label>
 
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -1322,7 +1332,8 @@ const borrowerOptions = useMemo(() => {
                         <div className="min-w-0 flex-1">
                           <p className="font-semibold text-gray-900">Membru</p>
                           <p className="mt-1 text-xs leading-5 text-gray-500">
-                           Hili membru ne’ebé rejista ona hanesan ema ne’ebé foti empréstimu.
+                            Hili membru ne’ebé rejista ona hanesan ema ne’ebé
+                            foti empréstimu.
                           </p>
                         </div>
 
@@ -1369,7 +1380,8 @@ const borrowerOptions = useMemo(() => {
                             Non-Membru
                           </p>
                           <p className="mt-1 text-xs leading-5 text-gray-500">
-                            Hili non-membru ne’ebé rejista ona hanesan ema ne’ebé foti empréstimu.
+                            Hili non-membru ne’ebé rejista ona hanesan ema
+                            ne’ebé foti empréstimu.
                           </p>
                         </div>
 
@@ -1387,7 +1399,8 @@ const borrowerOptions = useMemo(() => {
                     htmlFor="borrower"
                     className="mb-1.5 block text-sm font-semibold text-gray-800"
                   >
-                    2. Hili membru/non-membru ne'ebe empresta <span className="text-red-500">*</span>
+                    2. Hili membru/non-membru ne'ebe empresta{" "}
+                    <span className="text-red-500">*</span>
                   </label>
 
                   <select
@@ -1410,8 +1423,8 @@ const borrowerOptions = useMemo(() => {
                         : !form.borrower_type
                           ? "Hili uluk tipu ema ne'ebe foti empresta"
                           : borrowerOptions.length === 0
-                          ? "La iha ema ne'ebe seidauk selu emprestimu. Hotu-hotu selu ona!"
-                          : "Hili ema ne'ebe foti empresta"}
+                            ? "La iha ema ne'ebe seidauk selu emprestimu. Hotu-hotu selu ona!"
+                            : "Hili ema ne'ebe foti empresta"}
                     </option>
 
                     {borrowerOptions.map((borrower) => (
@@ -1421,12 +1434,14 @@ const borrowerOptions = useMemo(() => {
                     ))}
                   </select>
 
-                 {form.borrower_type && !loadingBorrowers && (
-                  <p className="mt-1.5 text-xs text-gray-500">
-                    {borrowerOptions.length}{" "}
-                    {form.borrower_type === "member" ? "members" : "non-members"}{" "}
-                    Ne'ebe emprestimu seidauk selu kompletu.
-                  </p>
+                  {form.borrower_type && !loadingBorrowers && (
+                    <p className="mt-1.5 text-xs text-gray-500">
+                      {borrowerOptions.length}{" "}
+                      {form.borrower_type === "member"
+                        ? "members"
+                        : "non-members"}{" "}
+                      Ne'ebe emprestimu seidauk selu kompletu.
+                    </p>
                   )}
                 </div>
 
@@ -1436,7 +1451,8 @@ const borrowerOptions = useMemo(() => {
                     htmlFor="loan"
                     className="mb-1.5 block text-sm font-semibold text-gray-800"
                   >
-                    3. Hili montante empresta <span className="text-red-500">*</span>
+                    3. Hili montante empresta{" "}
+                    <span className="text-red-500">*</span>
                   </label>
 
                   <select
@@ -1479,8 +1495,8 @@ const borrowerOptions = useMemo(() => {
 
                   {form.borrower_number && availableLoans.length === 0 && (
                     <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm text-amber-800">
-                      La hetan empréstimu ba ema ne’e. 
-                      Favór ida, hili ema seluk ka verifica rejistu empréstimu sira.
+                      La hetan empréstimu ba ema ne’e. Favór ida, hili ema seluk
+                      ka verifica rejistu empréstimu sira.
                     </div>
                   )}
 
@@ -1530,9 +1546,9 @@ const borrowerOptions = useMemo(() => {
 
                       {selectedLoanProgress.fullyPaid && (
                         <p className="mt-3 rounded-lg bg-green-50 px-3 py-2 text-xs font-medium text-green-800">
-                          Empréstimu ida-ne’e selu hotu ona. 
-                          Empréstimu ne’e sei kontinua hatudu atu bele haree fali, 
-                          maibé labele rejista pagamentu tan.                       
+                          Empréstimu ida-ne’e selu hotu ona. Empréstimu ne’e sei
+                          kontinua hatudu atu bele haree fali, maibé labele
+                          rejista pagamentu tan.
                         </p>
                       )}
                     </div>
@@ -1587,8 +1603,8 @@ const borrowerOptions = useMemo(() => {
                         role="alert"
                         className="mt-1.5 text-sm font-medium text-red-600"
                       >
-                       Montante pagamentu labele liu saldo restante ne’ebé mak seidauk selu.{" "}
-                        {formatCurrency(maximumAllowedPayment)}.
+                        Montante pagamentu labele liu saldo restante ne’ebé mak
+                        seidauk selu. {formatCurrency(maximumAllowedPayment)}.
                       </p>
                     )}
                   </div>
@@ -1681,7 +1697,7 @@ const borrowerOptions = useMemo(() => {
                   className={`${buttonClass} cursor-pointer`}
                 >
                   {submitting
-                    ? "Saving..."
+                    ? "Rai dadus..."
                     : editingPayment
                       ? "Atualiza dadus"
                       : "Rai dadus"}
@@ -1747,7 +1763,7 @@ const borrowerOptions = useMemo(() => {
                   onClick={closeMessageModal}
                   className={buttonClass}
                 >
-                  Close
+                  Taka
                 </button>
               )}
             </div>

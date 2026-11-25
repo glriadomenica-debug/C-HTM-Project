@@ -512,7 +512,7 @@ export default function Users() {
       <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between print:hidden">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-700">
-            C-HTM / User Management
+            C-HTM / Jestaun Utilizador
           </p>
           <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
             Dadus Utilizador
@@ -757,7 +757,7 @@ export default function Users() {
                   <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
                 )}
                 {saving
-                  ? "Saving..."
+                  ? "Rai dadus..."
                   : editingId !== null
                     ? "Atualiza dadus"
                     : "Rai dadus"}

@@ -554,7 +554,7 @@ export default function Member() {
       </head>
       <body>
         <h1>C-HTM Member Report</h1>
-        <p>Generated on: ${escapeHtml(dateStamp())}</p>
+        <p>Generaliza iha: ${escapeHtml(dateStamp())}</p>
         <p>Total members in this report: ${filteredMembers.length}</p>
         <table>
           <thead>
@@ -587,7 +587,7 @@ export default function Member() {
       <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between print:hidden">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-700">
-            C-HTM / Member Management
+            C-HTM / Jestaun Membru
           </p>
 
           <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
@@ -745,7 +745,7 @@ export default function Member() {
             C-HTM Member Report
           </h1>
           <p className="mt-1 text-sm text-slate-600">
-            Generated on {dateStamp()} · {filteredMembers.length} members
+            Generaliza iha {dateStamp()} · {filteredMembers.length} members
           </p>
           {search.trim() && (
             <p className="mt-1 text-sm text-slate-600">
@@ -782,7 +782,7 @@ export default function Member() {
                 onClick={() => setSearch("")}
                 className="mt-4 rounded-lg px-3 py-2 text-sm font-semibold text-blue-700 transition hover:bg-blue-50"
               >
-                Clear search
+                Hamoos filtru search
               </button>
             )}
           </div>
@@ -1272,7 +1272,7 @@ export default function Member() {
                 >
                   {saving && <Spinner />}
                   {saving
-                    ? "Saving..."
+                    ? "Rai dadus..."
                     : editingMember
                       ? "Atualiza dadus membru"
                       : "Rai dadus membru"}

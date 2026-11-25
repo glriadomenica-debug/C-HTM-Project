@@ -143,7 +143,7 @@ export default function LoanReport() {
       const data = body?.data ?? body;
 
       if (!Array.isArray(data)) {
-        throw new Error("Invalid loan data");
+        throw new Error("Data invalidu");
       }
 
       setLoans(data as Loan[]);
@@ -176,7 +176,7 @@ export default function LoanReport() {
       const name =
         loan.member?.full_name ??
         loan.nonmember?.full_name ??
-        "Unknown borrower";
+        "Mutuariu deskonesidu";
 
       const borrowerNumber = loan.member_number ?? loan.non_member_number ?? "";
 
@@ -284,7 +284,7 @@ export default function LoanReport() {
       const name =
         loan.member?.full_name ??
         loan.nonmember?.full_name ??
-        "Unknown borrower";
+        "Mutuariu deskonesidu";
 
       const borrowerNumber = loan.member_number ?? loan.non_member_number ?? "";
 
@@ -359,9 +359,9 @@ export default function LoanReport() {
 
   const selectedMonthLabel =
     selectedMonth === "all"
-      ? "All Months"
+      ? "Fulan hotu-hotu"
       : (MONTHS.find((month) => month.value === selectedMonth)?.label ??
-        "All Months");
+        "Fulan hotu-hotu");
 
   const reportPeriod =
     selectedMonth === "all" && selectedYear === "all"
@@ -370,7 +370,7 @@ export default function LoanReport() {
 
   const summaryCards = [
     {
-      label: "Loan Records",
+      label: "Lista Emprestimu",
       value: String(filteredLoans.length),
       description: "",
       icon: "▤",
@@ -380,7 +380,7 @@ export default function LoanReport() {
       valueColor: "text-gray-900",
     },
     {
-      label: "Total Loan Amount (exc. interest)",
+      label: "Total Montante Emprestimu (exc. funan)",
       value: money(summary.principal),
       description: "",
       icon: "$",
@@ -390,7 +390,7 @@ export default function LoanReport() {
       valueColor: "text-emerald-700",
     },
     {
-      label: "Total Loan Amount (inc. interest)",
+      label: "Total Montante Emprestimu (incl. funan)",
       value: money(summary.total),
       description: "",
       icon: "↗",
@@ -400,7 +400,7 @@ export default function LoanReport() {
       valueColor: "text-blue-700",
     },
     {
-      label: "Total Payments",
+      label: "Total Pagamentu",
       value: money(summary.paid),
       description: "",
       icon: "✓",
@@ -410,7 +410,7 @@ export default function LoanReport() {
       valueColor: "text-violet-700",
     },
     {
-      label: "Outstanding Balance",
+      label: "Balansu Outstading",
       value: money(summary.balance),
       description: "",
       icon: "!",
@@ -426,7 +426,9 @@ export default function LoanReport() {
       <div className="mx-auto max-w-[1600px] space-y-6">
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center print:hidden">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Loan Report</h1>
+            <h1 className="text-2xl font-bold text-gray-900">
+              Relatoriu Emprestimu
+            </h1>
             <p className="mt-1 text-sm text-gray-500">
               Relatoriu iha {reportPeriod}
             </p>
@@ -532,7 +534,7 @@ export default function LoanReport() {
               onChange={(event) => setSelectedMonth(event.target.value)}
               className="rounded-lg cursor-pointer border border-gray-300 bg-white px-3 py-2.5 text-sm"
             >
-              <option value="all">All Months</option>
+              <option value="all">Fulan hotu-hotu</option>
               {MONTHS.map((month) => (
                 <option key={month.value} value={month.value}>
                   {month.label}
@@ -546,7 +548,7 @@ export default function LoanReport() {
               onChange={(event) => setSelectedYear(event.target.value)}
               className="rounded-lg cursor-pointer border border-gray-300 bg-white px-3 py-2.5 text-sm"
             >
-              <option value="all">All Years</option>
+              <option value="all">Tinan hotu-hotu</option>
               {availableYears.map((year) => (
                 <option key={year} value={String(year)}>
                   {year}
@@ -560,7 +562,7 @@ export default function LoanReport() {
               onChange={(event) => setOwner(event.target.value)}
               className="rounded-lg cursor-pointer border border-gray-300 bg-white px-3 py-2.5 text-sm"
             >
-              <option value="all">Ema</option>
+              <option value="all">Tipu membru</option>
               <option value="member">Membru</option>
               <option value="nonmember">Non-Membru</option>
             </select>
@@ -653,7 +655,7 @@ export default function LoanReport() {
                     const name =
                       loan.member?.full_name ??
                       loan.nonmember?.full_name ??
-                      "Unknown borrower";
+                      "Mutuariu deskonesidu";
 
                     const borrowerNumber =
                       loan.member_number ?? loan.non_member_number ?? "-";
