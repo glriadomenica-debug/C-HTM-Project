@@ -508,7 +508,7 @@ export default function Member() {
       <html>
       <head>
         <meta charset="utf-8">
-        <title>CHTM Member Report</title>
+        <title>CHTM Lista Membru</title>
         <style>
           body {
             font-family: Arial, sans-serif;
@@ -555,7 +555,7 @@ export default function Member() {
       <body>
         <h1>C-HTM Member Report</h1>
         <p>Generaliza iha: ${escapeHtml(dateStamp())}</p>
-        <p>Total members in this report: ${filteredMembers.length}</p>
+        <p>Total Membru iha relatoriu ne'e:: ${filteredMembers.length}</p>
         <table>
           <thead>
             <tr>${tableHeader}</tr>
