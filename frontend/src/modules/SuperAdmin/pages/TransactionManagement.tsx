@@ -632,8 +632,9 @@ export default function TransactionManagement() {
     ) {
       setNotice({
         type: "warning",
-        title: "Invalid transfer",
-        message: "Pilih akun asal dan akun tujuan yang berbeda untuk transfer.",
+        title: "Tranferensia ne'ebe la validu",
+        message:
+          "Hili fonte no destinasaun konta sira ne'ebe diferente ba transferensia.",
       });
       return;
     }
@@ -641,7 +642,7 @@ export default function TransactionManagement() {
     if (form.type !== "transfer" && !form.account_id) {
       setNotice({
         type: "warning",
-        title: "Account required",
+        title: "Presiza iha konta / account",
         message: "Pilih akun untuk transaksi ini.",
       });
       return;
@@ -845,7 +846,7 @@ export default function TransactionManagement() {
               onChange={(event) => setTypeFilter(event.target.value)}
               className={`${inputClass} cursor-pointer`}
             >
-              <option value="all">Hili tipu</option>
+              <option value="all">Hili tipu transaksaun</option>
               <option value="income">Income</option>
               <option value="expense">Expense</option>
               <option value="transfer">Transfer</option>
@@ -859,7 +860,7 @@ export default function TransactionManagement() {
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-sm font-bold text-gray-800">Cash accounts</h2>
           <span className="text-xs text-gray-500">
-            {activeAccounts.length} active account(s)
+            {activeAccounts.length} konta(s) aktivu
           </span>
         </div>
 
@@ -991,8 +992,8 @@ export default function TransactionManagement() {
             <div>
               <h2 className="font-semibold">Dadus cash account la iha</h2>
               <p className="mt-1 text-sm leading-6">
-                Konfigurasikan akun kas terlebih dahulu. Akun tidak dibuat
-                otomatis dari halaman transaksi ini.
+                Konfigura uluk konta osan nian. Konta sira la kria
+                automatikamente husi pájina tranzasaun ida-ne'e.
               </p>
             </div>
           </div>
@@ -1681,7 +1682,7 @@ export default function TransactionManagement() {
                       }}
                       className={inputClass}
                     >
-                      <option value="">Select source account</option>
+                      <option value="">Hili fonte konta / account</option>
                       {activeAccounts.map((account) => (
                         <option key={account.id} value={account.id}>
                           {account.name}
@@ -1701,7 +1702,7 @@ export default function TransactionManagement() {
                       }
                       className={inputClass}
                     >
-                      <option value="">Select destination account</option>
+                      <option value="">Hili destinasaun konta / account</option>
                       {activeAccounts
                         .filter(
                           (account) =>
