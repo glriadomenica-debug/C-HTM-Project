@@ -469,7 +469,7 @@ export default function Deposit() {
       const rows = getResponseData<Member>(response);
 
       if (!rows) {
-        throw new Error("Invalid member data received from the server.");
+        throw new Error("Dadus membru ne'ebe simu husi servidor la loos");
       }
 
       setMembers(rows);
@@ -600,13 +600,13 @@ export default function Deposit() {
     }
 
     if (!Number.isFinite(amount) || amount <= 0) {
-      setMessage("Amount must be greater than zero.");
+      setMessage("Montante tenki bo'ot liu zero .");
       setModal("error");
       return;
     }
 
     if (!form.deposit_date) {
-      setMessage("Please select the transaction date.");
+      setMessage("Favor hili data transaksaun.");
       setModal("error");
       return;
     }
@@ -627,8 +627,8 @@ export default function Deposit() {
       setMessage(
         response.data?.message ||
           (editingDeposit
-            ? "Deposit transaction updated successfully."
-            : "Deposit transaction created successfully."),
+            ? "Transaksaun depositu atualiza ho susesu."
+            : "Transaksaun depositu rai ho susesu."),
       );
 
       setShowForm(false);
@@ -662,7 +662,8 @@ export default function Deposit() {
       const response = await api.delete(`/deposits/${selectedDeposit.id}`);
 
       setMessage(
-        response.data?.message || "Deposit transaction deleted successfully.",
+        response.data?.message ||
+          "Dadus transaksaun depositu hamoos ho susesu.",
       );
 
       setModal("success");
