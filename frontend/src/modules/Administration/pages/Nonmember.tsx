@@ -463,7 +463,7 @@ export default function NonMember() {
       <html>
       <head>
         <meta charset="utf-8">
-        <title>CHTM Non-Member Report</title>
+        <title>CHTM Lista Non-Membru</title>
         <style>
           body { font-family: Arial, sans-serif; color: #1e293b; }
           h1 { color: #1e3a8a; margin-bottom: 5px; }
