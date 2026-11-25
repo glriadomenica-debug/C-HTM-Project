@@ -14,7 +14,7 @@ return new class extends Migration
             $table->unsignedBigInteger('current_number')->default(0);
         });
 
-        // Start after the highest existing CHTM member number.
+        // Continue from the highest existing CHTM member number.
         $maximum = 0;
 
         foreach (DB::table('members')->pluck('member_number') as $number) {
