@@ -190,7 +190,7 @@ const getErrorMessage = (error: unknown) => {
   return (
     err.response?.data?.message ||
     err.message ||
-    "Unable to load payment report."
+    "Labele atu karrega relatoriu emprestimu."
   );
 };
 
@@ -253,7 +253,7 @@ export default function LoanPayReport() {
         // Payment records remain visible if supplementary loan data fails.
         setLoans([]);
         setLoanWarning(
-          "Loan details could not be loaded. Some borrower names or loan totals may be unavailable.",
+          "Detallu emprestimu nian labele karrega. Naran emprestimu balu ka total emprestimu nian bele la disponivel.",
         );
       }
     } catch (error) {
