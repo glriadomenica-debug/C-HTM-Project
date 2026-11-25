@@ -263,20 +263,20 @@ export default function LoanReport() {
   const exportCSV = () => {
     const rows: (string | number)[][] = [
       [
-        "Loan ID",
-        "Borrower",
-        "Borrower Number",
-        "Loan Date",
-        "Principal",
-        "Interest Rate (%)",
-        "Interest",
-        "Total Loan",
-        "Total Paid",
+        "ID Emprestimu",
+        "Naran Mutuariu",
+        "Numeru Membru/Non-Membru",
+        "Data Empresta",
+        "Montante Empresta",
+        "Funan (%)",
+        "Funan iha $",
+        "Total Empresta (inc. funan)",
+        "Total Pagamentu",
         "Outstanding",
-        "Payment Date",
-        "Payment Amount",
-        "Payment Method",
-        "Description",
+        "Data Pagamentu",
+        "Montante Pagamentu",
+        "Metodu Pagamentu",
+        "Deskrisaun Pagamentu",
       ],
     ];
 
