@@ -1336,7 +1336,7 @@ export default function Loan() {
                       <circle cx="12" cy="12" r="9" strokeOpacity="0.25" />
                       <path d="M21 12a9 9 0 0 0-9-9" />
                     </svg>
-                    Loading informasaun emprestim...
+                    Loading informasaun emprestimu...
                   </div>
                 )}
 
