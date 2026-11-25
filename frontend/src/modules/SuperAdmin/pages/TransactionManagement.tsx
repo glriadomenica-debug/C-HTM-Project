@@ -676,7 +676,7 @@ export default function TransactionManagement() {
     } catch (error: any) {
       setNotice({
         type: "error",
-        title: "Unable to save transaction",
+        title: "Labele atu rai dadus transaksaun",
         message:
           (error?.response?.data?.message ??
             Object.values(error?.response?.data?.errors ?? {})
