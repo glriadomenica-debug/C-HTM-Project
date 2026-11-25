@@ -35,7 +35,7 @@ export default function Dashboard() {
           Dashboard
         </h1>
         <p className="mt-1 text-sm text-gray-500">
-          Bemvindu mai sistema manajementu C-HTM.
+          Bemvindu mai Sistema Manajementu C-HTM.
         </p>
       </div>
 
@@ -73,9 +73,7 @@ export default function Dashboard() {
         </p>
 
         <div className="mt-5 rounded-lg border border-dashed border-gray-300 p-5 text-center sm:p-8">
-          <p className="text-sm text-gray-500">
-            Seidauk iha aktividade
-          </p>
+          <p className="text-sm text-gray-500">Seidauk iha aktividade</p>
         </div>
         <CrudActions
           canView={true}
