@@ -193,7 +193,7 @@ export default function MemberSavingsReport() {
     } catch (err: any) {
       setError(
         err?.response?.data?.message ||
-          "Unable to load member savings. Please check your connection and try again.",
+          "Labele atu karrega dadus membru savings. Favor check ita-nia koneksaun internet no koko fila fali.",
       );
     } finally {
       setLoading(false);
@@ -280,7 +280,7 @@ export default function MemberSavingsReport() {
       <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-gray-500">
-            <span>Finance</span>
+            <span>finansas</span>
             <span>/</span>
             <span>Relatoriu</span>
             <span>/</span>
