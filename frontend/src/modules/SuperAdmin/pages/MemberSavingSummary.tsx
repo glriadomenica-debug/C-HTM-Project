@@ -193,7 +193,7 @@ export default function MemberSavingsReport() {
     } catch (err: any) {
       setError(
         err?.response?.data?.message ||
-          "Unable to load member savings. Please check your connection and try again.",
+          "Labele atu karrega dadus membru savings. Favor check ita-nia koneksaun internet no koko fila fali.",
       );
     } finally {
       setLoading(false);
@@ -280,7 +280,7 @@ export default function MemberSavingsReport() {
       <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-gray-500">
-            <span>Finance</span>
+            <span>Finansas</span>
             <span>/</span>
             <span>Relatoriu</span>
             <span>/</span>
@@ -288,7 +288,7 @@ export default function MemberSavingsReport() {
           </div>
 
           <h1 className="mt-2 text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">
-            Membru Saving 
+            Membru Saving
           </h1>
         </div>
 
@@ -526,9 +526,10 @@ export default function MemberSavingsReport() {
             Kona-ba relatoriu
           </p>
           <p className="mt-1 text-xs leading-5 text-blue-800">
-            Saldo ida-idak kalkula bazeia ba transaksaun ne'ebé rejista ba membru. 
-            Levantamentu osan hasai husi total saving. 
-            Total rezumu inklui membru hotu-hotu no la muda bainhira ita buka ka filtra lista.
+            Saldo ida-idak kalkula bazeia ba transaksaun ne'ebé rejista ba
+            membru. Levantamentu osan hasai husi total saving. Total rezumu
+            inklui membru hotu-hotu no la muda bainhira ita buka ka filtra
+            lista.
           </p>
         </div>
       </div>
@@ -548,7 +549,7 @@ export default function MemberSavingsReport() {
                   </span>
                 )} */}
               </div>
-{/* 
+              {/* 
               <p className="mt-1 text-sm text-gray-500">
                 {loading
                   ? "Retrieving member records..."
@@ -621,7 +622,7 @@ export default function MemberSavingsReport() {
           </div>
         ) : error ? (
           <div className="p-10 text-center text-sm text-gray-500">
-            Tabela saving sei mosu depois de dadus sira karrega ho susesu.            
+            Tabela saving sei mosu depois de dadus sira karrega ho susesu.
           </div>
         ) : filteredMembers.length === 0 ? (
           <div className="flex flex-col items-center px-6 py-14 text-center">
@@ -696,9 +697,7 @@ export default function MemberSavingsReport() {
                     </div>
 
                     <div className="text-right">
-                      <p className="mb-1 text-xs text-gray-500">
-                        Total Saving
-                      </p>
+                      <p className="mb-1 text-xs text-gray-500">Total Saving</p>
                       <SavingsAmount amount={member.savings} />
                     </div>
                   </div>
@@ -778,8 +777,8 @@ export default function MemberSavingsReport() {
                 {formatMoney(totalSavings)}
               </p>
               <p className="mt-1 text-xs leading-5 text-gray-500">
-                Total ida-ne'e inklui membru hotu-hotu, 
-                la'ós de'it membru sira ne'ebé mosu depois aplika filtru.
+                Total ida-ne'e inklui membru hotu-hotu, la'ós de'it membru sira
+                ne'ebé mosu depois aplika filtru.
               </p>
             </div>
           </>
@@ -790,7 +789,9 @@ export default function MemberSavingsReport() {
             <span>
               Showing {filteredMembers.length} of {members.length} membru
             </span>
-            <span>Saldo sira inklui data transasaun hotu-hotu ne'ebé rejista ona.</span>
+            <span>
+              Saldo sira inklui data transasaun hotu-hotu ne'ebé rejista ona.
+            </span>
           </div>
         )}
       </section>
