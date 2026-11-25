@@ -669,8 +669,8 @@ export default function TransactionManagement() {
       setForm(emptyForm());
       setNotice({
         type: "success",
-        title: "Transaction saved",
-        message: "Transaksi berhasil disimpan.",
+        title: "Transaksaun rai ona",
+        message: "Transaksaun rai ona ho susesu.",
       });
       await loadTransactions();
     } catch (error: any) {
