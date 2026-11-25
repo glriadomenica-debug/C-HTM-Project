@@ -227,7 +227,7 @@ export default function Member() {
       const rows = getResponseData<Member>(response);
 
       if (!rows) {
-        throw new Error("Invalid member data received from the server.");
+        throw new Error("Dadus membru ne'ebe simu husi servidor la loos");
       }
 
       setMembers(rows);
