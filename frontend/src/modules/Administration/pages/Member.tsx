@@ -461,7 +461,7 @@ export default function Member() {
 
     XLSX.utils.book_append_sheet(workbook, worksheet, "Members");
 
-    XLSX.writeFile(workbook, `CHTM_Member_Report_${dateStamp()}.xlsx`);
+    XLSX.writeFile(workbook, `C-HTM Member Report${dateStamp()}.xlsx`);
 
     closeExportMenu();
   };
