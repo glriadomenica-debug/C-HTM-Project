@@ -267,7 +267,7 @@ export default function Roles() {
         setLoadFailed(true);
         showNotice(
           "error",
-          "Unable to load roles",
+          "Labele atu karrega dadus role sira",
           getFriendlyError(error, "load"),
         );
       } finally {
@@ -312,8 +312,8 @@ export default function Roles() {
       resetForm();
       showNotice(
         "success",
-        editing ? "Atualiza Role" : "Role Kria ona.",
-        `The role "${name}" has been ${editing ? "updated" : "created"} successfully.`,
+        editing ? "Role atualizadu" : "Role kria",
+        `Role "${name}" atu hadia ${editing ? "atualiza" : "kria"} ho susesu.`,
       );
       await fetchRoles(false);
     } catch (error: any) {
@@ -337,8 +337,8 @@ export default function Roles() {
       if (editingId === role.id) resetForm();
       showNotice(
         "success",
-        "Role deleted",
-        `The role "${role.role_name}" has been deleted successfully.`,
+        "Role hamoos ona",
+        `Role "${role.role_name}" hamoos ona ho susesu.`,
       );
       await fetchRoles(false);
     } catch (error: any) {
