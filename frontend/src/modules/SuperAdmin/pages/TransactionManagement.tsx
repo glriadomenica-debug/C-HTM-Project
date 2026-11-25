@@ -338,10 +338,10 @@ export default function TransactionManagement() {
       setAccounts([]);
       setNotice({
         type: "error",
-        title: "Unable to load transactions",
+        title: "Labele atu karrega dadus transaksaun",
         message:
           error?.response?.data?.message ??
-          "Data transaksi gagal dimuat. Periksa koneksi API dan konfigurasi akun.",
+          "Dadus transaksaun labela karrega. Favor verifika koneksaun API no konfigurasaun konta.",
       });
     } finally {
       setLoading(false);
