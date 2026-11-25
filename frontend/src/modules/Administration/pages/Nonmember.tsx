@@ -234,8 +234,7 @@ export default function NonMember() {
       setNonMembers(
         rows.map((nonMember) => ({
           ...nonMember,
-          loans_count:
-            loanCounts.get(nonMember.non_member_number.trim()) ?? 0,
+          loans_count: loanCounts.get(nonMember.non_member_number.trim()) ?? 0,
         })),
       );
     } catch (error) {
@@ -933,7 +932,7 @@ export default function NonMember() {
             className="inline-flex items-center justify-center gap-2 self-start rounded-lg border border-slate-200 bg-white px-3 py-2 font-semibold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50 sm:self-auto cursor-pointer"
           >
             <Icon name="refresh" />
-            Refresh lista
+            Refresh listaa
           </button>
         </footer>
       </section>
