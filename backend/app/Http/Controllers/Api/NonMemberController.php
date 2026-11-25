@@ -13,8 +13,7 @@ class NonMemberController extends Controller
     public function index()
     {
         try {
-            // $nonmembers = NonMember::withCount('loans')->get();
-            $nonmembers = NonMember::all();
+            $nonmembers = NonMember::withCount('loans')->get();
 
             return ApiMessage::success(
                 'Success get all nonmembers data',
