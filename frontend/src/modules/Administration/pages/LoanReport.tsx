@@ -275,7 +275,7 @@ export default function LoanReport() {
         "Outstanding",
         "Data Pagamentu",
         "Montante Pagamentu",
-        "Methodu Pagamentu",
+        "Metodu Pagamentu",
         "Deskrisaun Pagamentu",
       ],
     ];
