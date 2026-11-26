@@ -17,6 +17,7 @@ class Transaction extends Model
         'category',
         'ledger_category',
         'description',
+        'source_key',
     ];
 
     protected $casts = [
