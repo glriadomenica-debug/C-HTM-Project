@@ -310,35 +310,55 @@ export default function TransactionManagement() {
     setLoading(true);
 
     try {
-      const response = await api.get("/transactions", { params: { month } });
-      const responseData = response.data;
-      const nestedData = responseData?.data;
-      const result =
-        nestedData &&
-        !Array.isArray(nestedData) &&
-        typeof nestedData === "object"
-          ? nestedData
-          : responseData;
+      // Load transactions and cash accounts from their own API endpoints.
+      // Do not depend on GET /transactions including an `accounts` property.
+      const [transactionResponse, accountResponse] = await Promise.all([
+        api.get("/transactions", { params: { month } }),
+        api.get("/cash-accounts"),
+      ]);
 
-      // Accept both plain Laravel JSON and ApiMessage-wrapped responses.
-      // Depending on the controller/helper, accounts may be at the top level
-      // or nested inside `data`.
+      const transactionData = transactionResponse.data;
+      const transactionPayload = transactionData?.data;
+      const transactionResult =
+        transactionPayload &&
+        !Array.isArray(transactionPayload) &&
+        typeof transactionPayload === "object"
+          ? transactionPayload
+          : transactionData;
+
       const transactionCandidates = [
-        responseData?.transactions,
-        Array.isArray(responseData?.data) ? responseData.data : null,
-        result?.transactions,
-        Array.isArray(result?.data) ? result.data : null,
+        transactionData?.transactions,
+        Array.isArray(transactionData?.data) ? transactionData.data : null,
+        transactionResult?.transactions,
+        Array.isArray(transactionResult?.data) ? transactionResult.data : null,
       ];
       const returnedTransactions =
         transactionCandidates.find(Array.isArray) ?? [];
 
+      const accountData = accountResponse.data;
+      const accountNestedData = accountData?.data;
+      const accountResult =
+        accountNestedData &&
+        !Array.isArray(accountNestedData) &&
+        typeof accountNestedData === "object"
+          ? accountNestedData
+          : accountData;
+
+      // Support standard Laravel arrays, ApiMessage wrappers, and paginated data.
       const accountCandidates = [
-        responseData?.accounts,
-        responseData?.cash_accounts,
-        nestedData?.accounts,
-        nestedData?.cash_accounts,
-        result?.accounts,
-        result?.cash_accounts,
+        Array.isArray(accountData) ? accountData : null,
+        Array.isArray(accountData?.data) ? accountData.data : null,
+        Array.isArray(accountData?.cash_accounts)
+          ? accountData.cash_accounts
+          : null,
+        Array.isArray(accountNestedData?.data) ? accountNestedData.data : null,
+        Array.isArray(accountNestedData?.cash_accounts)
+          ? accountNestedData.cash_accounts
+          : null,
+        Array.isArray(accountResult?.data) ? accountResult.data : null,
+        Array.isArray(accountResult?.cash_accounts)
+          ? accountResult.cash_accounts
+          : null,
       ];
       const returnedAccounts: Account[] =
         accountCandidates.find(Array.isArray) ?? [];
@@ -354,13 +374,15 @@ export default function TransactionManagement() {
           return previous;
         }
 
-        const active = returnedAccounts.find(
-          (account) =>
-            account.is_active !== false &&
-            account.is_active !== 0 &&
-            account.is_active !== "0" &&
-            account.is_active !== "false",
-        );
+        const active = returnedAccounts.find((account) => {
+          const status = account.is_active;
+          return (
+            status !== false &&
+            status !== 0 &&
+            status !== "0" &&
+            status !== "false"
+          );
+        });
 
         return active ? String(active.id) : "";
       });
@@ -372,7 +394,7 @@ export default function TransactionManagement() {
         title: "Labela atu karrega dadus transaksaun",
         message:
           error?.response?.data?.message ??
-          "Dadus transaksaun labele karrega. Favor verifika koneksaun API no konfigurasaun konta.",
+          "Dadus transaksaun ka konta kas labele karrega. Favor verifika koneksaun API.",
       });
     } finally {
       setLoading(false);
