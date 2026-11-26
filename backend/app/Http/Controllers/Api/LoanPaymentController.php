@@ -6,6 +6,8 @@ use App\Models\Loan;
 use App\Models\LoanPayment;
 use App\Helpers\ApiMessage;
 use App\Http\Controllers\Controller;
+use App\Services\AutomaticLedgerService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -31,10 +33,12 @@ class LoanpaymentController extends Controller
     }
 
     /**
-     * Create a loan payment.
+     * Create a loan payment and synchronize its ledger entry.
      */
-    public function store(Request $request)
-    {
+    public function store(
+        Request $request,
+        AutomaticLedgerService $ledgerService
+    ) {
         $validator = Validator::make($request->all(), [
             'loan_id' => 'required|exists:loans,id',
             'amount' => 'required|numeric|min:0.01',
@@ -50,10 +54,24 @@ class LoanpaymentController extends Controller
             );
         }
 
-        $result = DB::transaction(function () use ($validator) {
-            $data = $validator->validated();
+        $data = $validator->validated();
 
-            // Lock the loan to prevent simultaneous overpayments.
+        $paymentDate = Carbon::parse(
+            $data['payment_date']
+        )->toDateString();
+
+        if ($paymentDate < config('cash.start_date', '2026-11-01')) {
+            return ApiMessage::error(
+                'Payment dates cannot be before the cash ledger start date.',
+                422
+            );
+        }
+
+        $result = DB::transaction(function () use (
+            $data,
+            $ledgerService,
+            $paymentDate
+        ) {
             $loan = Loan::where('id', $data['loan_id'])
                 ->lockForUpdate()
                 ->first();
@@ -65,10 +83,8 @@ class LoanpaymentController extends Controller
                 ];
             }
 
-            // Calculate the full loan amount, including interest.
             $loanTotal = $this->getLoanTotal($loan);
 
-            // Calculate all payments already recorded for this loan.
             $alreadyPaid = (float) LoanPayment::where(
                 'loan_id',
                 $loan->id
@@ -79,7 +95,10 @@ class LoanpaymentController extends Controller
                 2
             );
 
-            $amount = round((float) $data['amount'], 2);
+            $amount = round(
+                (float) $data['amount'],
+                2
+            );
 
             if ($amount > $remaining) {
                 return [
@@ -92,17 +111,26 @@ class LoanpaymentController extends Controller
             }
 
             $data['amount'] = $amount;
+            $data['payment_date'] = $paymentDate;
 
             $payment = LoanPayment::create($data);
+
+            if ($payment->payment_method === 'Cash') {
+                $ledgerService->syncCashPaymentDate(
+                    Carbon::parse(
+                        $payment->payment_date
+                    )->toDateString()
+                );
+            } else {
+                $ledgerService->syncBankPayment($payment);
+            }
 
             $payment->load([
                 'loan.member',
                 'loan.nonmember',
             ]);
 
-            return [
-                'payment' => $payment,
-            ];
+            return ['payment' => $payment];
         });
 
         if (isset($result['error'])) {
@@ -119,10 +147,13 @@ class LoanpaymentController extends Controller
     }
 
     /**
-     * Update an existing loan payment.
+     * Update a payment and synchronize old and new ledger entries.
      */
-    public function update(Request $request, $id)
-    {
+    public function update(
+        Request $request,
+        $id,
+        AutomaticLedgerService $ledgerService
+    ) {
         $validator = Validator::make($request->all(), [
             'loan_id' => 'sometimes|required|exists:loans,id',
             'amount' => 'sometimes|required|numeric|min:0.01',
@@ -138,9 +169,27 @@ class LoanpaymentController extends Controller
             );
         }
 
+        $data = $validator->validated();
+
+        if (isset($data['payment_date'])) {
+            $paymentDate = Carbon::parse(
+                $data['payment_date']
+            )->toDateString();
+
+            if ($paymentDate < config('cash.start_date', '2026-11-01')) {
+                return ApiMessage::error(
+                    'Payment dates cannot be before the cash ledger start date.',
+                    422
+                );
+            }
+
+            $data['payment_date'] = $paymentDate;
+        }
+
         $result = DB::transaction(function () use (
-            $validator,
-            $id
+            $data,
+            $id,
+            $ledgerService
         ) {
             $payment = LoanPayment::where('id', $id)
                 ->lockForUpdate()
@@ -153,7 +202,12 @@ class LoanpaymentController extends Controller
                 ];
             }
 
-            $data = $validator->validated();
+            $oldDate = Carbon::parse(
+                $payment->payment_date
+            )->toDateString();
+
+            $oldMethod = $payment->payment_method;
+            $oldPaymentId = (int) $payment->id;
 
             $targetLoanId = $data['loan_id']
                 ?? $payment->loan_id;
@@ -169,10 +223,8 @@ class LoanpaymentController extends Controller
                 ];
             }
 
-            // Calculate the full amount, including interest.
             $loanTotal = $this->getLoanTotal($loan);
 
-            // Exclude this payment when checking the new balance.
             $otherPayments = (float) LoanPayment::where(
                 'loan_id',
                 $targetLoanId
@@ -205,14 +257,33 @@ class LoanpaymentController extends Controller
             $payment->fill($data);
             $payment->save();
 
+            $newDate = Carbon::parse(
+                $payment->payment_date
+            )->toDateString();
+
+            $newMethod = $payment->payment_method;
+
+            // Recalculate the previous cash payment date
+            // or remove the previous bank transfer entry.
+            if ($oldMethod === 'Cash') {
+                $ledgerService->syncCashPaymentDate($oldDate);
+            } else {
+                $ledgerService->deleteBankPayment($oldPaymentId);
+            }
+
+            // Synchronize the updated payment.
+            if ($newMethod === 'Cash') {
+                $ledgerService->syncCashPaymentDate($newDate);
+            } else {
+                $ledgerService->syncBankPayment($payment);
+            }
+
             $payment->load([
                 'loan.member',
                 'loan.nonmember',
             ]);
 
-            return [
-                'payment' => $payment,
-            ];
+            return ['payment' => $payment];
         });
 
         if (isset($result['error'])) {
@@ -223,41 +294,68 @@ class LoanpaymentController extends Controller
         }
 
         return ApiMessage::success(
-            'Loan Pagamentu atualiza ho susesu.',
+            'Loan payment updated successfully.',
             $result['payment']
         );
     }
 
     /**
-     * Delete a loan payment.
+     * Delete a payment and synchronize its ledger entry.
      */
-    public function destroy($id)
-    {
-        $payment = LoanPayment::find($id);
+    public function destroy(
+        $id,
+        AutomaticLedgerService $ledgerService
+    ) {
+        $result = DB::transaction(function () use (
+            $id,
+            $ledgerService
+        ) {
+            $payment = LoanPayment::where('id', $id)
+                ->lockForUpdate()
+                ->first();
 
-        if (!$payment) {
+            if (!$payment) {
+                return [
+                    'error' => 'Loan payment not found.',
+                    'status' => 404,
+                ];
+            }
+
+            $paymentDate = Carbon::parse(
+                $payment->payment_date
+            )->toDateString();
+
+            $paymentMethod = $payment->payment_method;
+            $paymentId = (int) $payment->id;
+
+            $payment->delete();
+
+            if ($paymentMethod === 'Cash') {
+                $ledgerService->syncCashPaymentDate(
+                    $paymentDate
+                );
+            } else {
+                $ledgerService->deleteBankPayment($paymentId);
+            }
+
+            return ['success' => true];
+        });
+
+        if (isset($result['error'])) {
             return ApiMessage::error(
-                'Loan payment not found.',
-                404
+                $result['error'],
+                $result['status']
             );
         }
 
-        $payment->delete();
-
         return ApiMessage::success(
-            'Loan Pagamentu hamoos ho susesu.',
+            'Loan payment deleted successfully.',
             null
         );
     }
 
     /**
      * Calculate the full loan total, including interest.
-     *
-     * Priority:
-     * 1. Use total_amount when it is greater than principal.
-     * 2. Otherwise use a saved interest_amount.
-     * 3. Otherwise calculate from a saved interest_rate.
-     * 4. If no rate exists, calculate using the C-HTM tiers.
      */
     private function getLoanTotal(Loan $loan): float
     {
@@ -278,22 +376,18 @@ class LoanpaymentController extends Controller
 
         $rate = (float) ($loan->interest_rate ?? 0);
 
-        // The saved total already includes interest.
         if ($storedTotal > $principal) {
             return $storedTotal;
         }
 
-        // Use a positive saved interest amount.
         if ($interest > 0) {
             return round($principal + $interest, 2);
         }
 
-        // Support rates saved as 4 or 0.04 for 4%.
         if ($rate > 0 && $rate < 1) {
             $rate *= 100;
         }
 
-        // Use the stored interest rate when available.
         if ($rate > 0) {
             $interest = round(
                 $principal * $rate / 100,
@@ -303,21 +397,8 @@ class LoanpaymentController extends Controller
             return round($principal + $interest, 2);
         }
 
-        // Determine the loan owner type.
-        $ownerType = strtolower(
-            (string) ($loan->owner_type ?? '')
-        );
+        $isMember = $loan->member()->exists();
 
-        if ($ownerType === 'member') {
-            $isMember = true;
-        } elseif ($ownerType === 'nonmember') {
-            $isMember = false;
-        } else {
-            // Fallback to the member relationship.
-            $isMember = $loan->member()->exists();
-        }
-
-        // C-HTM member interest tiers.
         if ($isMember) {
             if ($principal < 1000) {
                 $rate = 4;
@@ -333,7 +414,6 @@ class LoanpaymentController extends Controller
                 $rate = 1;
             }
         } else {
-            // C-HTM non-member interest tiers.
             if ($principal < 5000) {
                 $rate = 5;
             } elseif ($principal < 10000) {
@@ -348,6 +428,9 @@ class LoanpaymentController extends Controller
             2
         );
 
-        return round($principal + $interest, 2);
+        return round(
+            $principal + $interest,
+            2
+        );
     }
 }

@@ -4,17 +4,15 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Loan;
+use App\Services\AutomaticLedgerService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\ValidationException;
 
 class LoanController extends Controller
 {
-    /**
-     * Determine the interest rate from borrower type and loan amount.
-     */
     private function calculateInterestRate(
         float $loanAmount,
         bool $isMember
@@ -54,9 +52,6 @@ class LoanController extends Controller
         return 3.50;
     }
 
-    /**
-     * Calculate and return the loan's financial values.
-     */
     private function calculateLoanAmounts(
         float $loanAmount,
         bool $isMember
@@ -82,9 +77,6 @@ class LoanController extends Controller
         ];
     }
 
-    /**
-     * Return a consistent API response.
-     */
     private function apiResponse(
         string $message,
         mixed $data = null,
@@ -117,10 +109,12 @@ class LoanController extends Controller
     }
 
     /**
-     * Create a new loan.
+     * Create a loan and synchronize its daily ledger summary.
      */
-    public function store(Request $request): JsonResponse
-    {
+    public function store(
+        Request $request,
+        AutomaticLedgerService $ledgerService
+    ): JsonResponse {
         $validator = Validator::make($request->all(), [
             'member_number' => [
                 'nullable',
@@ -147,9 +141,7 @@ class LoanController extends Controller
         if ($validator->fails()) {
             return $this->apiResponse(
                 'Validation failed.',
-                [
-                    'errors' => $validator->errors(),
-                ],
+                ['errors' => $validator->errors()],
                 422
             );
         }
@@ -159,7 +151,6 @@ class LoanController extends Controller
         $memberNumber = $data['member_number'] ?? null;
         $nonMemberNumber = $data['non_member_number'] ?? null;
 
-        // A loan must belong to exactly one borrower type.
         if (
             (empty($memberNumber) && empty($nonMemberNumber)) ||
             (!empty($memberNumber) && !empty($nonMemberNumber))
@@ -179,12 +170,35 @@ class LoanController extends Controller
             $isMember
         );
 
-        $loan = Loan::create([
-            'member_number' => $memberNumber,
-            'non_member_number' => $nonMemberNumber,
-            'loan_date' => $data['loan_date'],
-            ...$financialData,
-        ]);
+        $loanDate = Carbon::parse($data['loan_date'])
+            ->toDateString();
+
+        if ($loanDate < config('cash.start_date', '2026-11-01')) {
+            return $this->apiResponse(
+                'Loan dates cannot be before the cash ledger start date.',
+                null,
+                422
+            );
+        }
+
+        $loan = DB::transaction(function () use (
+            $memberNumber,
+            $nonMemberNumber,
+            $loanDate,
+            $financialData,
+            $ledgerService
+        ) {
+            $loan = Loan::create([
+                'member_number' => $memberNumber,
+                'non_member_number' => $nonMemberNumber,
+                'loan_date' => $loanDate,
+                ...$financialData,
+            ]);
+
+            $ledgerService->syncLoanDate($loanDate);
+
+            return $loan;
+        });
 
         $loan->load([
             'member',
@@ -225,10 +239,13 @@ class LoanController extends Controller
     }
 
     /**
-     * Update an existing loan.
+     * Update a loan and synchronize affected dates.
      */
-    public function update(Request $request, string $id): JsonResponse
-    {
+    public function update(
+        Request $request,
+        string $id,
+        AutomaticLedgerService $ledgerService
+    ): JsonResponse {
         $loan = Loan::with('payments')->find($id);
 
         if (!$loan) {
@@ -267,9 +284,7 @@ class LoanController extends Controller
         if ($validator->fails()) {
             return $this->apiResponse(
                 'Validation failed.',
-                [
-                    'errors' => $validator->errors(),
-                ],
+                ['errors' => $validator->errors()],
                 422
             );
         }
@@ -279,7 +294,6 @@ class LoanController extends Controller
         $memberNumber = $loan->member_number;
         $nonMemberNumber = $loan->non_member_number;
 
-        // If borrower information is submitted, update the borrower type.
         if (
             array_key_exists('member_number', $data) ||
             array_key_exists('non_member_number', $data)
@@ -310,8 +324,6 @@ class LoanController extends Controller
             $isMember
         );
 
-        // Do not allow the revised loan total to fall below
-        // the Total Pagamentu already recorded.
         $paidAmount = (float) $loan->payments->sum('amount');
 
         if (
@@ -327,14 +339,47 @@ class LoanController extends Controller
             );
         }
 
-        $loan->update([
-            'member_number' => $memberNumber,
-            'non_member_number' => $nonMemberNumber,
-            'loan_date' => $data['loan_date'] ?? $loan->loan_date,
-            ...$financialData,
-        ]);
+        $oldDate = Carbon::parse($loan->loan_date)
+            ->toDateString();
 
-        $loan->load([
+        $newDate = Carbon::parse(
+            $data['loan_date'] ?? $oldDate
+        )->toDateString();
+
+        if ($newDate < config('cash.start_date', '2026-11-01')) {
+            return $this->apiResponse(
+                'Loan dates cannot be before the cash ledger start date.',
+                null,
+                422
+            );
+        }
+
+        DB::transaction(function () use (
+            $loan,
+            $memberNumber,
+            $nonMemberNumber,
+            $newDate,
+            $financialData,
+            $oldDate,
+            $ledgerService
+        ) {
+            $loan->update([
+                'member_number' => $memberNumber,
+                'non_member_number' => $nonMemberNumber,
+                'loan_date' => $newDate,
+                ...$financialData,
+            ]);
+
+            // Recalculate the original date's summary.
+            $ledgerService->syncLoanDate($oldDate);
+
+            // If the date changed, recalculate the destination date too.
+            if ($newDate !== $oldDate) {
+                $ledgerService->syncLoanDate($newDate);
+            }
+        });
+
+        $loan->refresh()->load([
             'member',
             'nonmember',
             'payments',
@@ -347,10 +392,12 @@ class LoanController extends Controller
     }
 
     /**
-     * Delete a loan that has no payment records.
+     * Delete a loan that has no payments and synchronize its date.
      */
-    public function destroy(string $id): JsonResponse
-    {
+    public function destroy(
+        string $id,
+        AutomaticLedgerService $ledgerService
+    ): JsonResponse {
         $loan = Loan::with('payments')->find($id);
 
         if (!$loan) {
@@ -369,7 +416,20 @@ class LoanController extends Controller
             );
         }
 
-        $loan->delete();
+        $loanDate = Carbon::parse($loan->loan_date)
+            ->toDateString();
+
+        DB::transaction(function () use (
+            $loan,
+            $loanDate,
+            $ledgerService
+        ) {
+            $loan->delete();
+
+            // Delete the summary if no loans remain on this date;
+            // otherwise, update its amount and borrower count.
+            $ledgerService->syncLoanDate($loanDate);
+        });
 
         return $this->apiResponse(
             'Loan deleted successfully.'

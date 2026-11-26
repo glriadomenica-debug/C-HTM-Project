@@ -698,7 +698,7 @@ export default function TransactionManagement() {
       setNotice({
         type: "success",
         title: "Transaksaun hamoos ona",
-        message: "Trransaksaun hamoos ho susesu.",
+        message: "Transaksaun hamoos ho susesu.",
       });
       await loadTransactions();
     } catch (error: any) {
@@ -1096,25 +1096,28 @@ export default function TransactionManagement() {
                 <span className="h-8 w-8 animate-spin rounded-full border-4 border-blue-100 border-t-blue-600" />
                 <p className="text-sm">Loading dadus transaksaun...</p>
               </div>
-            ) : openingBalance === null ? (
-              <div className="m-4 rounded-xl border border-amber-200 bg-amber-50 p-4 sm:m-5">
-                <div className="flex gap-3">
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-700">
-                    !
-                  </span>
-                  <div>
-                    <h3 className="text-sm font-semibold text-amber-900">
-                      Balansu inisiu seidauk konfigura
-                    </h3>
-                    <p className="mt-1 text-sm leading-6 text-amber-800">
-                      Atur opening balance dan opening date pada pengaturan akun
-                      sebelum menganggap saldo akhir sebagai nilai yang valid.
-                    </p>
-                  </div>
-                </div>
-              </div>
             ) : (
               <>
+                {openingBalance === null && (
+                  <div className="m-4 rounded-xl border border-amber-200 bg-amber-50 p-4 sm:m-5">
+                    <div className="flex gap-3">
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-700">
+                        !
+                      </span>
+                      <div>
+                        <h3 className="text-sm font-semibold text-amber-900">
+                          Balansu inisiu seidauk konfigura
+                        </h3>
+                        <p className="mt-1 text-sm leading-6 text-amber-800">
+                          Opening balance seidauk hatene. Dadus transaksaun sei
+                          hatudu, maibé saldo atual labele kalkula ho loos to'o
+                          opening balance konfigura.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Desktop ledger table */}
                 <div className="hidden overflow-x-auto md:block">
                   <table className="w-full min-w-max border-collapse text-sm">
