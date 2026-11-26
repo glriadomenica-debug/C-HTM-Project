@@ -13,8 +13,15 @@ use Illuminate\Validation\ValidationException;
 
 class TransactionController extends Controller
 {
+    private function ledgerStartDate(): string
+    {
+        return Carbon::parse(
+            config('cash.start_date', '2026-11-01')
+        )->toDateString();
+    }
+
     /**
-     * Daftar akun dan saldo sampai tanggal tertentu.
+     * List active accounts with balances.
      */
     public function accounts(Request $request)
     {
@@ -22,7 +29,9 @@ class TransactionController extends Controller
             'as_of' => ['nullable', 'date'],
         ]);
 
-        $asOf = $data['as_of'] ?? now()->toDateString();
+        $asOf = Carbon::parse(
+            $data['as_of'] ?? now()->toDateString()
+        )->toDateString();
 
         $accounts = CashAccount::where('is_active', true)
             ->orderBy('id')
@@ -43,15 +52,12 @@ class TransactionController extends Controller
     }
 
     /**
-     * Daftar transaksi dan ringkasan saldo bulanan.
+     * List transactions and calculate monthly summaries.
      */
     public function index(Request $request)
     {
         $data = $request->validate([
-            'month' => [
-                'nullable',
-                'date_format:Y-m',
-            ],
+            'month' => ['nullable', 'date_format:Y-m'],
             'account_id' => [
                 'nullable',
                 'integer',
@@ -72,15 +78,16 @@ class TransactionController extends Controller
 
         $end = $start->copy()->endOfMonth();
 
+        $ledgerStart = Carbon::parse($this->ledgerStartDate());
+
         $query = Transaction::with([
             'account:id,name',
             'fromAccount:id,name',
             'toAccount:id,name',
-        ])
-            ->whereBetween('transaction_date', [
-                $start->toDateString(),
-                $end->toDateString(),
-            ]);
+        ])->whereBetween('transaction_date', [
+            $start->toDateString(),
+            $end->toDateString(),
+        ]);
 
         if (!empty($data['account_id'])) {
             $accountId = $data['account_id'];
@@ -104,15 +111,23 @@ class TransactionController extends Controller
         $accounts = CashAccount::where('is_active', true)
             ->orderBy('id')
             ->get()
-            ->map(function ($account) use ($start, $end) {
+            ->map(function ($account) use (
+                $start,
+                $end,
+                $ledgerStart
+            ) {
                 $previousDay = $start->copy()
                     ->subDay()
                     ->toDateString();
 
-                $account->opening_balance = $this->balanceAsOf(
-                    $account,
-                    $previousDay
-                );
+                // The ledger starts at zero on 1 November 2026.
+                $account->opening_balance = $previousDay
+                    < $ledgerStart->toDateString()
+                    ? 0.00
+                    : $this->balanceAsOf(
+                        $account,
+                        $previousDay
+                    );
 
                 $account->closing_balance = $this->balanceAsOf(
                     $account,
@@ -159,7 +174,7 @@ class TransactionController extends Controller
     }
 
     /**
-     * Simpan income, expense atau transfer.
+     * Create a manual income, expense, or transfer.
      */
     public function store(Request $request)
     {
@@ -171,6 +186,7 @@ class TransactionController extends Controller
             'transaction_date' => ['required', 'date'],
             'amount' => ['required', 'numeric', 'gt:0'],
             'category' => ['nullable', 'string', 'max:255'],
+            'ledger_category' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:2000'],
 
             'account_id' => [
@@ -195,6 +211,17 @@ class TransactionController extends Controller
                 'exists:cash_accounts,id',
             ],
         ]);
+
+        $transactionDate = Carbon::parse(
+            $data['transaction_date']
+        )->toDateString();
+
+        if ($transactionDate < $this->ledgerStartDate()) {
+            throw ValidationException::withMessages([
+                'transaction_date' =>
+                'Transactions cannot be recorded before the ledger start date.',
+            ]);
+        }
 
         if ($data['type'] === 'transfer') {
             $from = CashAccount::findOrFail(
@@ -223,7 +250,10 @@ class TransactionController extends Controller
             }
         }
 
+        $data['transaction_date'] = $transactionDate;
+
         $transaction = DB::transaction(function () use ($data) {
+            // source_key is intentionally not accepted from the client.
             return Transaction::create($data);
         });
 
@@ -240,11 +270,19 @@ class TransactionController extends Controller
     }
 
     /**
-     * Hapus transaksi.
-     * Saldo akan dihitung ulang dari transaksi yang tersisa.
+     * Delete manual transactions only.
+     * Automatically generated ledger entries must be maintained
+     * through their corresponding loan/payment records.
      */
     public function destroy(Transaction $transaction)
     {
+        if ($transaction->source_key !== null) {
+            throw ValidationException::withMessages([
+                'transaction' =>
+                'This is an automatic ledger entry. Update or delete its original loan or payment record instead.',
+            ]);
+        }
+
         $transaction->delete();
 
         return response()->json([
@@ -253,39 +291,39 @@ class TransactionController extends Controller
     }
 
     /**
-     * Hitung saldo akun sampai tanggal tertentu.
+     * Calculate an account balance as of a date.
      *
-     * opening_balance adalah saldo pada opening_date.
+     * The ledger starts at zero on the configured start date.
+     * Opening balances stored in the accounts table are not used.
      */
     private function balanceAsOf(
         CashAccount $account,
         string $date
     ): ?float {
-        if (
-            $account->opening_balance === null ||
-            $account->opening_date === null
-        ) {
+        $ledgerStart = $this->ledgerStartDate();
+
+        if ($date < $ledgerStart) {
             return null;
         }
 
-        $openingDate = $account->opening_date->toDateString();
-
-        if ($date < $openingDate) {
-            return null;
-        }
-
-        $income = Transaction::where('account_id', $account->id)
+        $income = Transaction::where(
+            'account_id',
+            $account->id
+        )
             ->where('type', 'income')
             ->whereBetween('transaction_date', [
-                $openingDate,
+                $ledgerStart,
                 $date,
             ])
             ->sum('amount');
 
-        $expense = Transaction::where('account_id', $account->id)
+        $expense = Transaction::where(
+            'account_id',
+            $account->id
+        )
             ->where('type', 'expense')
             ->whereBetween('transaction_date', [
-                $openingDate,
+                $ledgerStart,
                 $date,
             ])
             ->sum('amount');
@@ -296,7 +334,7 @@ class TransactionController extends Controller
         )
             ->where('type', 'transfer')
             ->whereBetween('transaction_date', [
-                $openingDate,
+                $ledgerStart,
                 $date,
             ])
             ->sum('amount');
@@ -307,14 +345,13 @@ class TransactionController extends Controller
         )
             ->where('type', 'transfer')
             ->whereBetween('transaction_date', [
-                $openingDate,
+                $ledgerStart,
                 $date,
             ])
             ->sum('amount');
 
         return round(
-            (float) $account->opening_balance
-                + (float) $income
+            (float) $income
                 - (float) $expense
                 + (float) $transferIn
                 - (float) $transferOut,
@@ -328,13 +365,25 @@ class TransactionController extends Controller
         Carbon $start,
         Carbon $end
     ): float {
+        $effectiveStart = $start->copy();
+
+        $ledgerStart = Carbon::parse($this->ledgerStartDate());
+
+        if ($effectiveStart->lt($ledgerStart)) {
+            $effectiveStart = $ledgerStart->copy();
+        }
+
+        if ($effectiveStart->gt($end)) {
+            return 0.0;
+        }
+
         return (float) Transaction::where(
             'account_id',
             $account->id
         )
             ->where('type', $type)
             ->whereBetween('transaction_date', [
-                $start->toDateString(),
+                $effectiveStart->toDateString(),
                 $end->toDateString(),
             ])
             ->sum('amount');
@@ -346,6 +395,18 @@ class TransactionController extends Controller
         Carbon $start,
         Carbon $end
     ): float {
+        $effectiveStart = $start->copy();
+
+        $ledgerStart = Carbon::parse($this->ledgerStartDate());
+
+        if ($effectiveStart->lt($ledgerStart)) {
+            $effectiveStart = $ledgerStart->copy();
+        }
+
+        if ($effectiveStart->gt($end)) {
+            return 0.0;
+        }
+
         $column = $direction === 'in'
             ? 'to_account_id'
             : 'from_account_id';
@@ -356,7 +417,7 @@ class TransactionController extends Controller
         )
             ->where('type', 'transfer')
             ->whereBetween('transaction_date', [
-                $start->toDateString(),
+                $effectiveStart->toDateString(),
                 $end->toDateString(),
             ])
             ->sum('amount');
