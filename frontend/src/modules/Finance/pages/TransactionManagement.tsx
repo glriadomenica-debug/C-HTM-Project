@@ -405,17 +405,10 @@ export default function TransactionManagement() {
     void loadTransactions();
   }, [loadTransactions]);
 
-  const activeAccounts = useMemo(
-    () =>
-      accounts.filter(
-        (account) =>
-          account.is_active !== false &&
-          account.is_active !== 0 &&
-          account.is_active !== "0" &&
-          account.is_active !== "false",
-      ),
-    [accounts],
-  );
+  // These three ledgers use the cash-account records already returned by the API.
+  // Do not block transactions just because is_active is false, null, or represented
+  // differently by the backend; the ledger screen is not an account-configuration page.
+  const activeAccounts = accounts;
 
   const selectedAccount = useMemo(
     () =>
@@ -638,9 +631,9 @@ export default function TransactionManagement() {
     if (activeAccounts.length === 0) {
       setNotice({
         type: "warning",
-        title: "Cash account not configured",
+        title: "Dadus ledger seidauk disponivel",
         message:
-          "Tambahkan dan aktifkan akun kas terlebih dahulu melalui pengaturan Cash Accounts.",
+          "API la fó fila dadus konta BNU, Brankas/Manleu no Office. Favor refresh pajina; se konta sira seidauk iha iha database, transaksaun labele liga ho ledger ida.",
       });
       return;
     }
@@ -915,9 +908,9 @@ export default function TransactionManagement() {
       {/* Account selector */}
       <section>
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-sm font-bold text-gray-800">Cash accounts</h2>
+          <h2 className="text-sm font-bold text-gray-800">Ledger accounts</h2>
           <span className="text-xs text-gray-500">
-            {activeAccounts.length} konta(s) aktivu
+            {activeAccounts.length} ledger/account(s)
           </span>
         </div>
 
@@ -925,8 +918,14 @@ export default function TransactionManagement() {
           <div className="flex min-w-max gap-3">
             {accounts.map((account) => {
               const selected = selectedAccountId === String(account.id);
+              const status = account.is_active;
               const active =
-                account.is_active !== false && account.is_active !== 0;
+                status !== false &&
+                status !== 0 &&
+                status !== "0" &&
+                status !== "false" &&
+                status !== "inactive" &&
+                status !== "Inactive";
               const kind = identifyAccount(account);
 
               return (
@@ -996,6 +995,13 @@ export default function TransactionManagement() {
                     <span
                       className={`block truncate text-sm font-semibold ${selected ? "text-blue-900" : "text-gray-800"}`}
                     >
+                      {identifyAccount(account) === "bank"
+                        ? "BNU Ledger"
+                        : identifyAccount(account) === "cash"
+                          ? "Brankas / Manleu Ledger"
+                          : "Office Ledger"}
+                    </span>
+                    <span className="block truncate text-xs text-gray-500">
                       {account.name}
                     </span>
                     <span className="mt-1 flex items-center gap-1.5 text-xs text-gray-500">
@@ -1049,8 +1055,9 @@ export default function TransactionManagement() {
             <div>
               <h2 className="font-semibold">La iha dadus cash account</h2>
               <p className="mt-1 text-sm leading-6">
-                Konfigura uluk konta osan nian. Konta sira la kria
-                automatikamente husi pajina transaksaun ida-ne'e.
+                API seidauk fó fila konta ledger. Pajina ida-ne'e uza konta BNU,
+                Brankas/Manleu no Office ne'ebé iha database; la presiza
+                konfigurasaun manual husi pajina ida-ne'e.
               </p>
             </div>
           </div>
@@ -1779,7 +1786,7 @@ export default function TransactionManagement() {
               ) : (
                 <div>
                   <label className="mb-1.5 block text-sm font-semibold text-gray-700">
-                    Cash Account *
+                    Ledger / Konta *
                   </label>
                   <select
                     required
@@ -1804,7 +1811,7 @@ export default function TransactionManagement() {
                     }}
                     className={inputClass}
                   >
-                    <option value="">Select account</option>
+                    <option value="">Hili ledger</option>
                     {activeAccounts.map((account) => (
                       <option key={account.id} value={account.id}>
                         {account.name}

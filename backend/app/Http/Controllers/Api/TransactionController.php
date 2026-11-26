@@ -21,10 +21,36 @@ class TransactionController extends Controller
     }
 
     /**
+     * Automatically create the three standard ledger accounts
+     * if they do not already exist.
+     */
+    private function ensureDefaultAccounts(): void
+    {
+        $accounts = [
+            'Bank BNU',
+            'Brankas Manleu',
+            'Office CHTM',
+        ];
+
+        foreach ($accounts as $name) {
+            CashAccount::firstOrCreate(
+                ['name' => $name],
+                [
+                    'opening_balance' => null,
+                    'opening_date' => null,
+                    'is_active' => true,
+                ]
+            );
+        }
+    }
+
+    /**
      * List active accounts with balances.
      */
     public function accounts(Request $request)
     {
+        $this->ensureDefaultAccounts();
+
         $data = $request->validate([
             'as_of' => ['nullable', 'date'],
         ]);
@@ -56,6 +82,8 @@ class TransactionController extends Controller
      */
     public function index(Request $request)
     {
+        $this->ensureDefaultAccounts();
+
         $data = $request->validate([
             'month' => ['nullable', 'date_format:Y-m'],
             'account_id' => [
@@ -120,14 +148,31 @@ class TransactionController extends Controller
                     ->subDay()
                     ->toDateString();
 
-                // The ledger starts at zero on 1 November 2026.
-                $account->opening_balance = $previousDay
-                    < $ledgerStart->toDateString()
-                    ? 0.00
-                    : $this->balanceAsOf(
-                        $account,
-                        $previousDay
-                    );
+                /*
+                 * The ledger starts on 1 November 2026.
+                 * Keep the Office CHTM opening balance unknown
+                 * before the ledger start date.
+                 */
+                $isOfficeAccount = str_contains(
+                    strtolower($account->name),
+                    'office'
+                );
+
+                if (
+                    $previousDay < $ledgerStart->toDateString()
+                    && $isOfficeAccount
+                    && $account->opening_balance === null
+                ) {
+                    $account->opening_balance = null;
+                } else {
+                    $account->opening_balance = $previousDay
+                        < $ledgerStart->toDateString()
+                        ? 0.00
+                        : $this->balanceAsOf(
+                            $account,
+                            $previousDay
+                        );
+                }
 
                 $account->closing_balance = $this->balanceAsOf(
                     $account,
@@ -178,6 +223,8 @@ class TransactionController extends Controller
      */
     public function store(Request $request)
     {
+        $this->ensureDefaultAccounts();
+
         $data = $request->validate([
             'type' => [
                 'required',
@@ -294,7 +341,8 @@ class TransactionController extends Controller
      * Calculate an account balance as of a date.
      *
      * The ledger starts at zero on the configured start date.
-     * Opening balances stored in the accounts table are not used.
+     * Opening balances stored in the accounts table are not used
+     * for this calculation.
      */
     private function balanceAsOf(
         CashAccount $account,
