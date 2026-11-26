@@ -22,7 +22,7 @@ interface Account {
   expense_total?: number | string;
   transfer_in_total?: number | string;
   transfer_out_total?: number | string;
-  is_active?: boolean | number;
+  is_active?: boolean | number | string;
 }
 
 interface Transaction {
@@ -311,12 +311,39 @@ export default function TransactionManagement() {
 
     try {
       const response = await api.get("/transactions", { params: { month } });
-      const result = response.data;
+      const responseData = response.data;
+      const nestedData = responseData?.data;
+      const result =
+        nestedData &&
+        !Array.isArray(nestedData) &&
+        typeof nestedData === "object"
+          ? nestedData
+          : responseData;
 
-      setTransactions(Array.isArray(result?.data) ? result.data : []);
-      const returnedAccounts: Account[] = Array.isArray(result?.accounts)
-        ? result.accounts
-        : [];
+      // Accept both plain Laravel JSON and ApiMessage-wrapped responses.
+      // Depending on the controller/helper, accounts may be at the top level
+      // or nested inside `data`.
+      const transactionCandidates = [
+        responseData?.transactions,
+        Array.isArray(responseData?.data) ? responseData.data : null,
+        result?.transactions,
+        Array.isArray(result?.data) ? result.data : null,
+      ];
+      const returnedTransactions =
+        transactionCandidates.find(Array.isArray) ?? [];
+
+      const accountCandidates = [
+        responseData?.accounts,
+        responseData?.cash_accounts,
+        nestedData?.accounts,
+        nestedData?.cash_accounts,
+        result?.accounts,
+        result?.cash_accounts,
+      ];
+      const returnedAccounts: Account[] =
+        accountCandidates.find(Array.isArray) ?? [];
+
+      setTransactions(returnedTransactions as Transaction[]);
       setAccounts(returnedAccounts);
 
       setSelectedAccountId((previous) => {
@@ -328,7 +355,11 @@ export default function TransactionManagement() {
         }
 
         const active = returnedAccounts.find(
-          (account) => account.is_active !== false && account.is_active !== 0,
+          (account) =>
+            account.is_active !== false &&
+            account.is_active !== 0 &&
+            account.is_active !== "0" &&
+            account.is_active !== "false",
         );
 
         return active ? String(active.id) : "";
@@ -355,7 +386,11 @@ export default function TransactionManagement() {
   const activeAccounts = useMemo(
     () =>
       accounts.filter(
-        (account) => account.is_active !== false && account.is_active !== 0,
+        (account) =>
+          account.is_active !== false &&
+          account.is_active !== 0 &&
+          account.is_active !== "0" &&
+          account.is_active !== "false",
       ),
     [accounts],
   );
